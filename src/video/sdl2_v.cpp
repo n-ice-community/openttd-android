@@ -30,14 +30,6 @@
 
 #include "../safeguards.h"
 
-static bool old_ctrl_pressed = false;
-static Point _multitouch_second_point = {-1, -1};
-static int _multitouch_finger_distance = 0;
-enum { PINCH_ZOOM_SENSITIVITY = 20 };
-#ifdef __EMSCRIPTEN__
-static bool fullscreen_first_click = false;
-#endif
-
 void VideoDriver_SDL_Base::MakeDirty(int left, int top, int width, int height)
 {
 	Rect r = {left, top, left + width, top + height};
@@ -83,54 +75,21 @@ static void FindResolutions()
 	}
 
 	SortResolutions();
-
-#ifdef __EMSCRIPTEN__
-	// Only the browser window size is available on Emscripten, clean all other modes
-	_resolutions.clear();
-	SDL_DisplayMode mode;
-	SDL_GetDesktopDisplayMode(0, &mode);
-	// Stupid mobile web browser reports 2x smaller window size
-	mode.w *= emscripten_get_device_pixel_ratio();
-	mode.h *= emscripten_get_device_pixel_ratio();
-	_resolutions.emplace_back(mode.w, mode.h); // 1920x1080
-	_resolutions.emplace_back(mode.w * 8 / 9, mode.h * 8 / 9); // 8 / 9 : 1920x1080 -> 1706x960
-	_resolutions.emplace_back(mode.w * 7 / 8, mode.h * 7 / 8); // 7 / 8 : 1920x1080 -> 1680x945
-	_resolutions.emplace_back(mode.w * 5 / 6, mode.h * 5 / 6); // 5 / 6 : 1920x1080 -> 1600x900
-	_resolutions.emplace_back(mode.w * 7 / 9, mode.h * 7 / 9); // 7 / 9 : 1920x1080 -> 1493x840
-	_resolutions.emplace_back(mode.w * 6 / 8, mode.h * 6 / 8); // 6 / 8 : 1920x1080 -> 1440x810
-	_resolutions.emplace_back(mode.w * 4 / 6, mode.h * 4 / 6); // 4 / 6 : 1920x1080 -> 1280x720
-	_resolutions.emplace_back(mode.w * 5 / 8, mode.h * 5 / 8); // 5 / 8 : 1920x1080 -> 1200x675
-	_resolutions.emplace_back(mode.w * 5 / 9, mode.h * 5 / 9); // 5 / 9 : 1920x1080 -> 1066x600
-	_resolutions.emplace_back(mode.w * 3 / 6, mode.h * 3 / 6); // 3 / 6 : 1920x1080 -> 960x540
-	_resolutions.emplace_back(mode.w * 4 / 9, mode.h * 4 / 9); // 4 / 9 : 1920x1080 -> 853x480
-	_resolutions.emplace_back(mode.w * 3 / 8, mode.h * 3 / 8); // 3 / 8 : 1920x1080 -> 720x405
-	_resolutions.emplace_back(mode.w * 2 / 6, mode.h * 2 / 6); // 2 / 6 : 1920x1080 -> 640x360
-	_resolutions.emplace_back(mode.w * 5 / 18, mode.h * 5 / 18); // 5 / 18: 1920x1080 -> 533x300
-	_resolutions.emplace_back(mode.w * 2 / 8, mode.h * 2 / 8); // 2 / 8 : 1920x1080 -> 480x270
-	_resolutions.emplace_back(mode.w * 2 / 9, mode.h * 2 / 9); // 2 / 9 : 1920x1080 -> 426x240
-#endif
 }
 
 static void GetAvailableVideoMode(uint *w, uint *h)
 {
-#ifndef __EMSCRIPTEN__ // Ignore fullscreen flag in the mobile web browser, we want to match the resolution anyway
 	/* All modes available? */
 	if (!_fullscreen || _resolutions.empty()) return;
-#endif
+
 	/* Is the wanted mode among the available modes? */
 	if (std::find(_resolutions.begin(), _resolutions.end(), Dimension(*w, *h)) != _resolutions.end()) return;
 
 	/* Use the closest possible resolution */
 	uint best = 0;
 	uint delta = Delta(_resolutions[0].width, *w) * Delta(_resolutions[0].height, *h);
-	if (*w <= 1) {
-		delta = Delta(_resolutions[0].height, *h);
-	}
 	for (uint i = 1; i != _resolutions.size(); ++i) {
 		uint newdelta = Delta(_resolutions[i].width, *w) * Delta(_resolutions[i].height, *h);
-		if (*w <= 1) {
-			newdelta = Delta(_resolutions[i].height, *h);
-		}
 		if (newdelta < delta) {
 			best = i;
 			delta = newdelta;
@@ -181,9 +140,6 @@ bool VideoDriver_SDL_Base::CreateMainWindow(uint w, uint h, uint flags)
 
 	if (_fullscreen) {
 		flags |= SDL_WINDOW_FULLSCREEN;
-#ifdef __EMSCRIPTEN__
-		fullscreen_first_click = true;
-#endif
 	}
 
 	int x = SDL_WINDOWPOS_UNDEFINED, y = SDL_WINDOWPOS_UNDEFINED;
@@ -193,7 +149,6 @@ bool VideoDriver_SDL_Base::CreateMainWindow(uint w, uint h, uint flags)
 		y = r.y + std::max(0, r.h - static_cast<int>(h)) / 4; // decent desktops have taskbars at the bottom
 	}
 
-	SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, "#canvas");
 	char caption[50];
 	seprintf(caption, lastof(caption), "OpenTTD %s", _openttd_revision);
 	this->sdl_window = SDL_CreateWindow(
@@ -230,11 +185,6 @@ bool VideoDriver_SDL_Base::CreateMainSurface(uint w, uint h, bool resize)
 	Debug(driver, 1, "SDL2: using mode {}x{}", w, h);
 
 	if (!this->CreateMainWindow(w, h)) return false;
-#ifdef __EMSCRIPTEN__
-	int cur_w = w, cur_h = h;
-	SDL_GetWindowSize(this->sdl_window, &cur_w, &cur_h);
-	if (cur_w != (int)w || cur_h != (int)h) resize = true;
-#endif
 	if (resize) SDL_SetWindowSize(this->sdl_window, w, h);
 	this->ClientSizeChanged(w, h, true);
 
@@ -422,26 +372,8 @@ bool VideoDriver_SDL_Base::PollEvent()
 
 	switch (ev.type) {
 		case SDL_MOUSEMOTION:
-			if (_multitouch_second_point.x >= 0) {
-				Point mouse;
-				SDL_GetMouseState(&mouse.x, &mouse.y);
-				_cursor.UpdateCursorPosition((mouse.x + _multitouch_second_point.x) / 2, (mouse.y + _multitouch_second_point.y) / 2, false);
-				int pinch_zoom_threshold = std::min(_screen.width, _screen.height) / PINCH_ZOOM_SENSITIVITY;
-				int new_distance = sqrtf(powf(mouse.x - _multitouch_second_point.x, 2) + powf(mouse.y - _multitouch_second_point.y, 2));
-				if (new_distance - _multitouch_finger_distance >= pinch_zoom_threshold) {
-					_multitouch_finger_distance += pinch_zoom_threshold;
-					_cursor.wheel--;
-					_right_button_down = false;
-				}
-				if (_multitouch_finger_distance - new_distance >= pinch_zoom_threshold) {
-					_multitouch_finger_distance -= pinch_zoom_threshold;
-					_cursor.wheel++;
-					_right_button_down = false;
-				}
-			} else {
-				if (_cursor.UpdateCursorPosition(ev.motion.x, ev.motion.y, true)) {
-					SDL_WarpMouseInWindow(this->sdl_window, _cursor.pos.x, _cursor.pos.y);
-				}
+			if (_cursor.UpdateCursorPosition(ev.motion.x, ev.motion.y, true)) {
+				SDL_WarpMouseInWindow(this->sdl_window, _cursor.pos.x, _cursor.pos.y);
 			}
 			HandleMouseEvents();
 			break;
@@ -467,8 +399,6 @@ bool VideoDriver_SDL_Base::PollEvent()
 				case SDL_BUTTON_RIGHT:
 					_right_button_down = true;
 					_right_button_clicked = true;
-					_right_button_down_pos.x = _cursor.pos.x;
-					_right_button_down_pos.y = _cursor.pos.y;
 					break;
 
 				default: break;
@@ -488,76 +418,6 @@ bool VideoDriver_SDL_Base::PollEvent()
 				_right_button_down = false;
 			}
 			HandleMouseEvents();
-#ifdef __EMSCRIPTEN__
-			if (fullscreen_first_click) {
-				fullscreen_first_click = false;
-				EM_ASM(
-					if (document.documentElement.requestFullscreen) {
-						console.log("Attempting to set fullscreen mode");
-						document.documentElement.requestFullscreen().then(() => {
-							console.log("Seting fullscreen mode success");
-						}).catch(err => {
-							console.error("Error setting fullscreen mode: " + err);
-						});
-					}
-				);
-			}
-#endif
-			break;
-
-		case SDL_FINGERDOWN:
-			//Debug(misc, 0, "Finger {} down at {}:{}", ev.tfinger.fingerId, ev.tfinger.x, ev.tfinger.y);
-			if (ev.tfinger.fingerId == 1) {
-				_left_button_down = false;
-				_left_button_clicked = false;
-				HandleMouseEvents(); // Release left mouse button
-				_multitouch_second_point.x = Clamp(ev.tfinger.x, 0.0f, 1.0f) * _screen.width;
-				_multitouch_second_point.y = Clamp(ev.tfinger.y, 0.0f, 1.0f) * _screen.height;
-				Point mouse;
-				SDL_GetMouseState(&mouse.x, &mouse.y);
-				_cursor.UpdateCursorPosition((mouse.x + _multitouch_second_point.x) / 2, (mouse.y + _multitouch_second_point.y) / 2, false);
-				_right_button_down_pos.x = _cursor.pos.x;
-				_right_button_down_pos.y = _cursor.pos.y;
-				_multitouch_finger_distance = sqrtf(powf(mouse.x - _multitouch_second_point.x, 2) + powf(mouse.y - _multitouch_second_point.y, 2));
-				HandleMouseEvents(); // Move mouse with no buttons pressed to the middle position between fingers
-				_right_button_down = true;
-				_right_button_clicked = true;
-				HandleMouseEvents(); // Simulate right button click with two finger touch
-			}
-			break;
-
-		case SDL_FINGERUP:
-			//Debug(misc, 0, "Finger {} up at {}:{}", ev.tfinger.fingerId, ev.tfinger.x, ev.tfinger.y);
-			if (ev.tfinger.fingerId == 1) {
-				_right_button_down = false;
-				_multitouch_second_point.x = -1;
-				_multitouch_second_point.y = -1;
-				HandleMouseEvents();
-			}
-			break;
-
-		case SDL_FINGERMOTION:
-			//Debug(misc, 0, "Finger {} move at {}:{}", ev.tfinger.fingerId, ev.tfinger.x, ev.tfinger.y);
-			if (ev.tfinger.fingerId == 1) {
-				_multitouch_second_point.x = Clamp(ev.tfinger.x, 0.0f, 1.0f) * _screen.width;
-				_multitouch_second_point.y = Clamp(ev.tfinger.y, 0.0f, 1.0f) * _screen.height;
-				Point mouse;
-				SDL_GetMouseState(&mouse.x, &mouse.y);
-				_cursor.UpdateCursorPosition((mouse.x + _multitouch_second_point.x) / 2, (mouse.y + _multitouch_second_point.y) / 2, false);
-				int pinch_zoom_threshold = std::min(_screen.width, _screen.height) / PINCH_ZOOM_SENSITIVITY;
-				int new_distance = sqrtf(powf(mouse.x - _multitouch_second_point.x, 2) + powf(mouse.y - _multitouch_second_point.y, 2));
-				if (new_distance - _multitouch_finger_distance >= pinch_zoom_threshold) {
-					_multitouch_finger_distance += pinch_zoom_threshold;
-					_cursor.wheel--;
-					_right_button_down = false;
-				}
-				if (_multitouch_finger_distance - new_distance >= pinch_zoom_threshold) {
-					_multitouch_finger_distance -= pinch_zoom_threshold;
-					_cursor.wheel++;
-					_right_button_down = false;
-				}
-				HandleMouseEvents();
-			}
 			break;
 
 		case SDL_QUIT:
@@ -590,21 +450,6 @@ bool VideoDriver_SDL_Base::PollEvent()
 					!IsValidChar(character, CS_ALPHANUMERAL)) {
 					HandleKeypress(keycode, character);
 				}
-				if (ev.key.keysym.sym == SDLK_LCTRL || ev.key.keysym.sym == SDLK_RCTRL) {
-					_ctrl_pressed = true;
-				}
-				if (ev.key.keysym.sym == SDLK_LSHIFT || ev.key.keysym.sym == SDLK_RSHIFT) {
-					_shift_pressed = true;
-				}
-			}
-			break;
-
-		case SDL_KEYUP:
-			if (ev.key.keysym.sym == SDLK_LCTRL || ev.key.keysym.sym == SDLK_RCTRL) {
-				_ctrl_pressed = false;
-			}
-			if (ev.key.keysym.sym == SDLK_LSHIFT || ev.key.keysym.sym == SDLK_RSHIFT) {
-				_shift_pressed = false;
 			}
 			break;
 
@@ -627,13 +472,9 @@ bool VideoDriver_SDL_Base::PollEvent()
 				// Force a redraw of the entire screen.
 				this->MakeDirty(0, 0, _screen.width, _screen.height);
 			} else if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-#ifdef __EMSCRIPTEN__ // Just re-create the video surface
-				CreateMainSurface(_cur_resolution.width, _cur_resolution.height, false);
-#else
 				int w = std::max(ev.window.data1, 64);
 				int h = std::max(ev.window.data2, 64);
 				CreateMainSurface(w, h, w != ev.window.data1 || h != ev.window.data2);
-#endif
 			} else if (ev.window.event == SDL_WINDOWEVENT_ENTER) {
 				// mouse entered the window, enable cursor
 				_cursor.in_window = true;
@@ -731,7 +572,11 @@ void VideoDriver_SDL_Base::InputLoop()
 	uint32 mod = SDL_GetModState();
 	const Uint8 *keys = SDL_GetKeyboardState(nullptr);
 
-#ifndef __EMSCRIPTEN__
+	bool old_ctrl_pressed = _ctrl_pressed;
+
+	_ctrl_pressed  = !!(mod & KMOD_CTRL);
+	_shift_pressed = !!(mod & KMOD_SHIFT);
+
 #if defined(_DEBUG)
 	this->fast_forward_key_pressed = _shift_pressed;
 #else
@@ -739,7 +584,6 @@ void VideoDriver_SDL_Base::InputLoop()
 	 * to switch to another application. */
 	this->fast_forward_key_pressed = keys[SDL_SCANCODE_TAB] && (mod & KMOD_ALT) == 0;
 #endif /* defined(_DEBUG) */
-#endif // __EMSCRIPTEN__
 
 	/* Determine which directional keys are down. */
 	_dirkeys =
@@ -749,12 +593,6 @@ void VideoDriver_SDL_Base::InputLoop()
 		(keys[SDL_SCANCODE_DOWN]  ? 8 : 0);
 
 	if (old_ctrl_pressed != _ctrl_pressed) HandleCtrlChanged();
-	old_ctrl_pressed = _ctrl_pressed;
-
-	if (!this->set_clipboard_text.empty()) {
-		SDL_SetClipboardText(this->set_clipboard_text.c_str());
-		this->set_clipboard_text = "";
-	}
 }
 
 void VideoDriver_SDL_Base::LoopOnce()
@@ -810,16 +648,11 @@ bool VideoDriver_SDL_Base::ChangeResolution(int w, int h)
 
 bool VideoDriver_SDL_Base::ToggleFullscreen(bool fullscreen)
 {
-	int w, h;
-
 	/* Remember current window size */
+	int w, h;
+	SDL_GetWindowSize(this->sdl_window, &w, &h);
+
 	if (fullscreen) {
-		SDL_GetWindowSize(this->sdl_window, &w, &h);
-
-#ifdef __EMSCRIPTEN__
-		EM_ASM( if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().then(() => {}).catch(err => {}); } );
-#endif
-
 		/* Find fullscreen window size */
 		SDL_DisplayMode dm;
 		if (SDL_GetCurrentDisplayMode(0, &dm) < 0) {
@@ -827,10 +660,6 @@ bool VideoDriver_SDL_Base::ToggleFullscreen(bool fullscreen)
 		} else {
 			SDL_SetWindowSize(this->sdl_window, dm.w, dm.h);
 		}
-	} else {
-#ifdef __EMSCRIPTEN__
-		EM_ASM( if (document.exitFullscreen) { document.exitFullscreen().then(() => {}).catch(err => {}); } );
-#endif
 	}
 
 	Debug(driver, 1, "SDL2: Setting {}", fullscreen ? "fullscreen" : "windowed");
@@ -857,9 +686,6 @@ bool VideoDriver_SDL_Base::AfterBlitterChange()
 
 Dimension VideoDriver_SDL_Base::GetScreenSize() const
 {
-#ifdef __EMSCRIPTEN__
-	return VideoDriver::GetScreenSize();
-#endif
 	SDL_DisplayMode mode;
 	if (SDL_GetCurrentDisplayMode(this->startup_display, &mode) != 0) return VideoDriver::GetScreenSize();
 
