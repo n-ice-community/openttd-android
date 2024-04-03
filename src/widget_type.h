@@ -1070,6 +1070,7 @@ struct NWidgetPart {
 		NWidgetPartAlignment align;      ///< Part with internal alignment.
 		NWidgetFunctionType *func_ptr;   ///< Part with a function call.
 		NWidContainerFlags cont_flags;   ///< Part with container flags.
+		NWidSizingType sizing_type;      ///< Part with sizing type.
 
 		/* Constructors for each NWidgetPartUnion data type. */
 		constexpr NWidgetPartUnion() : xy() {}
@@ -1083,6 +1084,7 @@ struct NWidgetPart {
 		constexpr NWidgetPartUnion(NWidgetPartAlignment align) : align(align) {}
 		constexpr NWidgetPartUnion(NWidgetFunctionType *func_ptr) : func_ptr(func_ptr) {}
 		constexpr NWidgetPartUnion(NWidContainerFlags cont_flags) : cont_flags(cont_flags) {}
+		constexpr NWidgetPartUnion(NWidSizingType sizing) : sizing_type(sizing) {}
 	} u;
 
 	/* Constructors for each NWidgetPart data type. */
@@ -1097,6 +1099,7 @@ struct NWidgetPart {
 	constexpr NWidgetPart(WidgetType type, NWidgetPartAlignment align) : type(type), u(align) {}
 	constexpr NWidgetPart(WidgetType type, NWidgetFunctionType *func_ptr) : type(type), u(func_ptr) {}
 	constexpr NWidgetPart(WidgetType type, NWidContainerFlags cont_flags) : type(type), u(cont_flags) {}
+	constexpr NWidgetPart(WidgetType type, NWidSizingType sizing) : type(type), u(sizing) {}
 };
 
 /**
@@ -1115,14 +1118,9 @@ constexpr NWidgetPart SetResize(int16_t dx, int16_t dy)
  * @param type How to decide the minimal size of the widget.
  * @ingroup NestedWidgetParts
  */
-static inline NWidgetPart SetSizingType(NWidSizingType type)
+constexpr NWidgetPart SetSizingType(NWidSizingType type)
 {
-	NWidgetPart part;
-
-	part.type = WPT_SIZINGTYPE;
-	part.u.sizing_type = type;
-
-	return part;
+	return NWidgetPart{WPT_SIZINGTYPE, type};
 }
 
 /**
