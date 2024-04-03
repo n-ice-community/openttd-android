@@ -28,7 +28,7 @@
  *                          loose some the data of the packet, so there you pass the maximum
  *                          size for the packet you expect from the network.
  */
-Packet::Packet(NetworkSocketHandler *cs, size_t limit, size_t initial_read_size) : next(nullptr), pos(0), limit(limit)
+Packet::Packet(NetworkSocketHandler *cs, size_t limit, size_t initial_read_size) : pos(0), limit(limit)
 {
 	assert(cs != nullptr);
 
@@ -44,36 +44,11 @@ Packet::Packet(NetworkSocketHandler *cs, size_t limit, size_t initial_read_size)
  *              the limit as it might break things if the other side is not expecting
  *              much larger packets than what they support.
  */
-Packet::Packet(PacketType type, size_t limit) : next(nullptr), pos(0), limit(limit), cs(nullptr)
+Packet::Packet(PacketType type, size_t limit) : pos(0), limit(limit), cs(nullptr)
 {
 	/* Allocate space for the the size so we can write that in just before sending the packet. */
 	this->Send_uint16(0);
 	this->Send_uint8(type);
-}
-
-/**
- * Add the given Packet to the end of the queue of packets.
- * @param queue  The pointer to the begin of the queue.
- * @param packet The packet to append to the queue.
- */
-/* static */ void Packet::AddToQueue(Packet **queue, Packet *packet)
-{
-	while (*queue != nullptr) queue = &(*queue)->next;
-	*queue = packet;
-}
-
-/**
- * Pop the packet from the begin of the queue and set the
- * begin of the queue to the second element in the queue.
- * @param queue  The pointer to the begin of the queue.
- * @return The Packet that used to be a the begin of the queue.
- */
-/* static */ Packet *Packet::PopFromQueue(Packet **queue)
-{
-	Packet *p = *queue;
-	*queue = p->next;
-	p->next = nullptr;
-	return p;
 }
 
 
@@ -82,7 +57,7 @@ Packet::Packet(PacketType type, size_t limit) : next(nullptr), pos(0), limit(lim
  */
 void Packet::PrepareToSend()
 {
-	assert(this->cs == nullptr && this->next == nullptr);
+	assert(this->cs == nullptr);
 
 	this->buffer[0] = GB(this->Size(), 0, 8);
 	this->buffer[1] = GB(this->Size(), 8, 8);
@@ -103,13 +78,13 @@ bool Packet::CanWriteToPacket(size_t bytes_to_write)
 
 /*
  * The next couple of functions make sure we can send
- *  uint8, uint16, uint32 and uint64 endian-safe
+ *  uint8_t, uint16_t, uint32_t and uint64_t endian-safe
  *  over the network. The least significant bytes are
  *  sent first.
  *
  *  So 0x01234567 would be sent as 67 45 23 01.
  *
- * A bool is sent as a uint8 where zero means false
+ * A bool is sent as a uint8_t where zero means false
  *  and non-zero means true.
  */
 
@@ -126,7 +101,7 @@ void Packet::Send_bool(bool data)
  * Package a 8 bits integer in the packet.
  * @param data The data to send.
  */
-void Packet::Send_uint8(uint8 data)
+void Packet::Send_uint8(uint8_t data)
 {
 	assert(this->CanWriteToPacket(sizeof(data)));
 	this->buffer.emplace_back(data);
@@ -136,7 +111,7 @@ void Packet::Send_uint8(uint8 data)
  * Package a 16 bits integer in the packet.
  * @param data The data to send.
  */
-void Packet::Send_uint16(uint16 data)
+void Packet::Send_uint16(uint16_t data)
 {
 	assert(this->CanWriteToPacket(sizeof(data)));
 	this->buffer.emplace_back(GB(data, 0, 8));
@@ -147,7 +122,7 @@ void Packet::Send_uint16(uint16 data)
  * Package a 32 bits integer in the packet.
  * @param data The data to send.
  */
-void Packet::Send_uint32(uint32 data)
+void Packet::Send_uint32(uint32_t data)
 {
 	assert(this->CanWriteToPacket(sizeof(data)));
 	this->buffer.emplace_back(GB(data,  0, 8));
@@ -160,7 +135,7 @@ void Packet::Send_uint32(uint32 data)
  * Package a 64 bits integer in the packet.
  * @param data The data to send.
  */
-void Packet::Send_uint64(uint64 data)
+void Packet::Send_uint64(uint64_t data)
 {
 	assert(this->CanWriteToPacket(sizeof(data)));
 	this->buffer.emplace_back(GB(data,  0, 8));
@@ -191,8 +166,8 @@ void Packet::Send_string(const std::string_view data)
  */
 void Packet::Send_buffer(const std::vector<byte> &data)
 {
-	assert(this->CanWriteToPacket(sizeof(uint16) + data.size()));
-	this->Send_uint16((uint16)data.size());
+	assert(this->CanWriteToPacket(sizeof(uint16_t) + data.size()));
+	this->Send_uint16((uint16_t)data.size());
 	this->buffer.insert(this->buffer.end(), data.begin(), data.end());
 }
 
@@ -268,7 +243,7 @@ size_t Packet::Size() const
  */
 bool Packet::ParsePacketSize()
 {
-	assert(this->cs != nullptr && this->next == nullptr);
+	assert(this->cs != nullptr);
 	size_t size = (size_t)this->buffer[0];
 	size       += (size_t)this->buffer[1] << 8;
 
@@ -314,9 +289,9 @@ bool Packet::Recv_bool()
  * Read a 8 bits integer from the packet.
  * @return The read data.
  */
-uint8 Packet::Recv_uint8()
+uint8_t Packet::Recv_uint8()
 {
-	uint8 n;
+	uint8_t n;
 
 	if (!this->CanReadFromPacket(sizeof(n), true)) return 0;
 
@@ -328,14 +303,14 @@ uint8 Packet::Recv_uint8()
  * Read a 16 bits integer from the packet.
  * @return The read data.
  */
-uint16 Packet::Recv_uint16()
+uint16_t Packet::Recv_uint16()
 {
-	uint16 n;
+	uint16_t n;
 
 	if (!this->CanReadFromPacket(sizeof(n), true)) return 0;
 
-	n  = (uint16)this->buffer[this->pos++];
-	n += (uint16)this->buffer[this->pos++] << 8;
+	n  = (uint16_t)this->buffer[this->pos++];
+	n += (uint16_t)this->buffer[this->pos++] << 8;
 	return n;
 }
 
@@ -343,16 +318,16 @@ uint16 Packet::Recv_uint16()
  * Read a 32 bits integer from the packet.
  * @return The read data.
  */
-uint32 Packet::Recv_uint32()
+uint32_t Packet::Recv_uint32()
 {
-	uint32 n;
+	uint32_t n;
 
 	if (!this->CanReadFromPacket(sizeof(n), true)) return 0;
 
-	n  = (uint32)this->buffer[this->pos++];
-	n += (uint32)this->buffer[this->pos++] << 8;
-	n += (uint32)this->buffer[this->pos++] << 16;
-	n += (uint32)this->buffer[this->pos++] << 24;
+	n  = (uint32_t)this->buffer[this->pos++];
+	n += (uint32_t)this->buffer[this->pos++] << 8;
+	n += (uint32_t)this->buffer[this->pos++] << 16;
+	n += (uint32_t)this->buffer[this->pos++] << 24;
 	return n;
 }
 
@@ -360,20 +335,20 @@ uint32 Packet::Recv_uint32()
  * Read a 64 bits integer from the packet.
  * @return The read data.
  */
-uint64 Packet::Recv_uint64()
+uint64_t Packet::Recv_uint64()
 {
-	uint64 n;
+	uint64_t n;
 
 	if (!this->CanReadFromPacket(sizeof(n), true)) return 0;
 
-	n  = (uint64)this->buffer[this->pos++];
-	n += (uint64)this->buffer[this->pos++] << 8;
-	n += (uint64)this->buffer[this->pos++] << 16;
-	n += (uint64)this->buffer[this->pos++] << 24;
-	n += (uint64)this->buffer[this->pos++] << 32;
-	n += (uint64)this->buffer[this->pos++] << 40;
-	n += (uint64)this->buffer[this->pos++] << 48;
-	n += (uint64)this->buffer[this->pos++] << 56;
+	n  = (uint64_t)this->buffer[this->pos++];
+	n += (uint64_t)this->buffer[this->pos++] << 8;
+	n += (uint64_t)this->buffer[this->pos++] << 16;
+	n += (uint64_t)this->buffer[this->pos++] << 24;
+	n += (uint64_t)this->buffer[this->pos++] << 32;
+	n += (uint64_t)this->buffer[this->pos++] << 40;
+	n += (uint64_t)this->buffer[this->pos++] << 48;
+	n += (uint64_t)this->buffer[this->pos++] << 56;
 	return n;
 }
 
@@ -383,7 +358,7 @@ uint64 Packet::Recv_uint64()
  */
 std::vector<byte> Packet::Recv_buffer()
 {
-	uint16 size = this->Recv_uint16();
+	uint16_t size = this->Recv_uint16();
 	if (size == 0 || !this->CanReadFromPacket(size, true)) return {};
 
 	std::vector<byte> data;

@@ -1,8 +1,8 @@
-Module.arguments.push('-d1');
+Module.arguments.push('-mnull', '-snull', '-vsdl');
 Module['websocket'] = { url: function(host, port, proto) {
     /* openttd.org hosts a WebSocket proxy for the content service. */
     if (host == "content.openttd.org" && port == 3978 && proto == "tcp") {
-        return "wss://content.openttd.org/";
+        return "wss://bananas-server.openttd.org/";
     }
 
     /* Everything else just tries to make a default WebSocket connection.
@@ -21,52 +21,56 @@ Module['websocket'] = { url: function(host, port, proto) {
 } };
 
 Module.preRun.push(function() {
-    const personal_dir = '/home/web_user/.local/share/openttd';
-    const content_download_dir = personal_dir + '/content_download'
+    personal_dir = '/home/web_user/.openttd';
+    content_download_dir = personal_dir + '/content_download'
 
     /* Because of the "-c" above, all user-data is stored in /user_data. */
-    FS.mount(IDBFS, {}, '/home/web_user');
+    FS.mkdir(personal_dir);
+    FS.mount(IDBFS, {}, personal_dir);
 
     Module.addRunDependency('syncfs');
     FS.syncfs(true, function (err) {
-        /* FS.mkdir() tends to fail if parent folders do not exist. */
-        if (!FS.analyzePath(personal_dir).exists) {
-            FS.mkdir('/home/web_user/.local');
-            FS.mkdir('/home/web_user/.local/share');
-            FS.mkdir(personal_dir);
-        }
-        if (!FS.analyzePath(content_download_dir).exists) {
-            FS.mkdir(content_download_dir);
-        }
-        if (!FS.analyzePath(content_download_dir + '/baseset').exists) {
-            FS.mkdir(content_download_dir + '/baseset');
-        }
-
-        /* Check if the OpenGFX baseset is already downloaded. */
-        if (false && !FS.analyzePath(content_download_dir + '/baseset/opengfx-0.6.0.tar').exists) {
-            window.openttd_downloaded_opengfx = true;
-            FS.createPreloadedFile(content_download_dir + '/baseset', 'opengfx-0.6.0.tar', 'https://installer.cdn.openttd.org/emscripten/opengfx-0.6.0.tar', true, true);
-        } else {
-            /* Fake dependency increase, so the counter is stable. */
-            Module.addRunDependency('opengfx');
-            Module.removeRunDependency('opengfx');
-        }
-
         Module.removeRunDependency('syncfs');
     });
 
     window.openttd_syncfs_shown_warning = false;
-    window.openttd_syncfs = function() {
+    window.openttd_syncfs = function(callback) {
         /* Copy the virtual FS to the persistent storage. */
-        FS.syncfs(false, function (err) { });
+        FS.syncfs(false, function (err) {
+            /* On first time, warn the user about the volatile behaviour of
+             * persistent storage. */
+            if (!window.openttd_syncfs_shown_warning) {
+                window.openttd_syncfs_shown_warning = true;
+                Module.onWarningFs();
+            }
+
+            if (callback) callback();
+        });
     }
 
     window.openttd_exit = function() {
-        Module.onExit();
+        window.openttd_syncfs(Module.onExit);
     }
 
     window.openttd_abort = function() {
-        Module.onAbort();
+        window.openttd_syncfs(Module.onAbort);
+    }
+
+    window.openttd_bootstrap = function(current, total) {
+        Module.onBootstrap(current, total);
+    }
+
+    window.openttd_bootstrap_failed = function() {
+        Module.onBootstrapFailed();
+    }
+
+    window.openttd_bootstrap_reload = function() {
+        window.openttd_syncfs(function() {
+            Module.onBootstrapReload();
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
+        });
     }
 
     window.openttd_server_list = function() {
@@ -119,12 +123,4 @@ Module.preRun.push(function() {
        Module['websocket']['url'] = func;
        return ret;
    }
-});
-
-Module.postRun.push(function() {
-    /* Check if we downloaded OpenGFX; if so, sync the virtual FS back to the
-     * IDBFS so OpenGFX is stored persistent. */
-    if (window['openttd_downloaded_opengfx']) {
-        FS.syncfs(false, function (err) { });
-    }
 });

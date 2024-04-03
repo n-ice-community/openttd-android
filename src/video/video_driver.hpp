@@ -21,8 +21,6 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
-#include <vector>
-#include <functional>
 
 extern std::string _ini_videodriver;
 extern std::vector<Dimension> _resolutions;
@@ -37,7 +35,7 @@ class VideoDriver : public Driver {
 	const uint DEFAULT_WINDOW_HEIGHT = 480u; ///< Default window height.
 
 public:
-	VideoDriver() : fast_forward_key_pressed(false), fast_forward_via_key(false), is_game_threaded(true) {}
+	VideoDriver(bool uses_hardware_acceleration = false) : fast_forward_key_pressed(false), fast_forward_via_key(false), is_game_threaded(true), uses_hardware_acceleration(uses_hardware_acceleration) {}
 
 	/**
 	 * Mark a particular area dirty.
@@ -72,7 +70,7 @@ public:
 	 * Change the vsync setting.
 	 * @param vsync The new setting.
 	 */
-	virtual void ToggleVsync(bool vsync) {}
+	virtual void ToggleVsync([[maybe_unused]] bool vsync) {}
 
 	/**
 	 * Callback invoked after the blitter was changed.
@@ -142,7 +140,7 @@ public:
 	 * Get a pointer to the animation buffer of the video back-end.
 	 * @return Pointer to the buffer or nullptr if no animation buffer is supported.
 	 */
-	virtual uint8 *GetAnimBuffer()
+	virtual uint8_t *GetAnimBuffer()
 	{
 		return nullptr;
 	}
@@ -207,9 +205,12 @@ public:
 	/**
 	 * Get the currently active instance of the video driver.
 	 */
-	static VideoDriver *GetInstance() {
+	static VideoDriver *GetInstance()
+	{
 		return static_cast<VideoDriver*>(*DriverFactoryBase::GetActiveDriver(Driver::DT_VIDEO));
 	}
+
+	static std::string GetCaption();
 
 	/**
 	 * Helper struct to ensure the video buffer is locked and ready for drawing. The destructor
@@ -268,7 +269,8 @@ protected:
 	 * Make sure the video buffer is ready for drawing.
 	 * @returns True if the video buffer has to be unlocked.
 	 */
-	virtual bool LockVideoBuffer() {
+	virtual bool LockVideoBuffer()
+	{
 		return false;
 	}
 
@@ -328,7 +330,7 @@ protected:
 	std::chrono::steady_clock::duration GetDrawInterval()
 	{
 		/* If vsync, draw interval is decided by the display driver */
-		if (_video_vsync && _video_hw_accel) return std::chrono::microseconds(0);
+		if (_video_vsync && this->uses_hardware_acceleration) return std::chrono::microseconds(0);
 		return std::chrono::microseconds(1000000 / _settings_client.gui.refresh_rate);
 	}
 
@@ -361,6 +363,8 @@ protected:
 	std::thread game_thread;
 	std::mutex game_state_mutex;
 	std::mutex game_thread_wait_mutex;
+
+	bool uses_hardware_acceleration;
 
 	static void GameThreadThunk(VideoDriver *drv);
 
