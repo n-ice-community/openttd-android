@@ -337,8 +337,8 @@ void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int 
 				SetDParam(6, CargoSpec::Get(order->GetRefitCargo())->name);
 			}
 
-			/* Do not show unbunching in the depot in the timetable window. */
-			if (!timetable && (order->GetDepotActionType() & ODATFB_UNBUNCH)) {
+			/* Show unbunching depot in both order and timetable windows. */
+			if (order->GetDepotActionType() & ODATFB_UNBUNCH) {
 				SetDParam(8, STR_ORDER_WAIT_TO_UNBUNCH);
 			}
 
@@ -399,16 +399,32 @@ static Order GetOrderCmdFromTile(const Vehicle *v, TileIndex tile)
 				(_settings_client.gui.new_nonstop && v->IsGroundVehicle()) ? ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS : ONSF_STOP_EVERYWHERE);
 
 		if (_ctrl_pressed) {
-			/* Don't allow a new unbunching order if we already have one. */
-			if (v->HasUnbunchingOrder()) {
-				ShowErrorMessage(STR_ERROR_CAN_T_INSERT_NEW_ORDER, STR_ERROR_UNBUNCHING_ONLY_ONE_ALLOWED, WL_ERROR);
-				/* Return an empty order to bail out. */
+			/* Check to see if we are allowed to make this an unbunching order. */
+			bool failed = false;
+			if (v->HasFullLoadOrder()) {
+				/* We don't allow unbunching if the vehicle has a full load order. */
+				ShowErrorMessage(STR_ERROR_CAN_T_INSERT_NEW_ORDER, STR_ERROR_UNBUNCHING_NO_UNBUNCHING_FULL_LOAD, WL_INFO);
+				failed = true;
+			} else if (v->HasUnbunchingOrder()) {
+				/* Don't allow a new unbunching order if we already have one. */
+				ShowErrorMessage(STR_ERROR_CAN_T_INSERT_NEW_ORDER, STR_ERROR_UNBUNCHING_ONLY_ONE_ALLOWED, WL_INFO);
+				failed = true;
+			} else if (v->HasConditionalOrder()) {
+				/* We don't allow unbunching if the vehicle has a conditional order. */
+				ShowErrorMessage(STR_ERROR_CAN_T_INSERT_NEW_ORDER, STR_ERROR_UNBUNCHING_NO_UNBUNCHING_CONDITIONAL, WL_INFO);
+				failed = true;
+			}
+
+			/* Return an empty order to bail out. */
+			if (failed) {
 				order.Free();
 				return order;
-			} else {
-				order.SetDepotActionType(ODATFB_UNBUNCH);
 			}
+
+			/* Now we are allowed to set the action type. */
+			order.SetDepotActionType(ODATFB_UNBUNCH);
 		}
+
 		return order;
 	}
 

@@ -16,7 +16,6 @@
  * \b 14.0
  *
  * API additions:
- * \li AITimeMode
  * \li AITown::ROAD_LAYOUT_RANDOM
  * \li AIVehicle::IsPrimaryVehicle
  * \li AITileList_StationCoverage
@@ -25,6 +24,7 @@
  * API removals:
  * \li AIError::ERR_PRECONDITION_TOO_MANY_PARAMETERS, that error is never returned anymore.
  * \li AIInfo::CONFIG_RANDOM, no longer used.
+ * \li AIInfo::AddSettings random_deviation is no longer used.
  *
  * Other changes:
  * \li AIGroupList accepts an optional filter function

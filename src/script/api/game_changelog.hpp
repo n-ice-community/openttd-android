@@ -20,7 +20,6 @@
  * \li GSAsyncMode
  * \li GSCompanyMode::IsValid
  * \li GSCompanyMode::IsDeity
- * \li GSTimeMode
  * \li GSTown::ROAD_LAYOUT_RANDOM
  * \li GSVehicle::IsPrimaryVehicle
  * \li GSOrder::SetOrderJumpTo
@@ -91,6 +90,7 @@
  * API removals:
  * \li GSError::ERR_PRECONDITION_TOO_MANY_PARAMETERS, that error is never returned anymore.
  * \li GSInfo::CONFIG_RANDOM, no longer used.
+ * \li GSInfo::AddSettings random_deviation is no longer used.
  *
  * Other changes:
  * \li GSGroupList accepts an optional filter function

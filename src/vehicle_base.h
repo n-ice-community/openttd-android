@@ -285,7 +285,8 @@ public:
 
 	/* Related to age and service time */
 	TimerGameCalendar::Year build_year;           ///< Year the vehicle has been built.
-	TimerGameCalendar::Date age;                  ///< Age in days
+	TimerGameCalendar::Date age;                  ///< Age in calendar days.
+	TimerGameEconomy::Date economy_age;           ///< Age in economy days.
 	TimerGameCalendar::Date max_age;              ///< Maximum age
 	TimerGameEconomy::Date date_of_last_service; ///< Last economy date the vehicle had a service at a depot.
 	TimerGameCalendar::Date date_of_last_service_newgrf; ///< Last calendar date the vehicle had a service at a depot, unchanged by the date cheat to protect against unsafe NewGRF behavior.
@@ -749,16 +750,19 @@ public:
 
 	void ResetRefitCaps();
 
+	void ReleaseUnitNumber();
+
 	/**
 	 * Copy certain configurations and statistics of a vehicle after successful autoreplace/renew
 	 * The function shall copy everything that cannot be copied by a command (like orders / group etc),
 	 * and that shall not be resetted for the new vehicle.
 	 * @param src The old vehicle
 	 */
-	inline void CopyVehicleConfigAndStatistics(const Vehicle *src)
+	inline void CopyVehicleConfigAndStatistics(Vehicle *src)
 	{
 		this->CopyConsistPropertiesFrom(src);
 
+		this->ReleaseUnitNumber();
 		this->unitnumber = src->unitnumber;
 
 		this->current_order = src->current_order;
@@ -766,6 +770,8 @@ public:
 
 		this->profit_this_year = src->profit_this_year;
 		this->profit_last_year = src->profit_last_year;
+
+		src->unitnumber = 0;
 	}
 
 
@@ -817,6 +823,8 @@ public:
 
 	inline void SetServiceIntervalIsPercent(bool on) { SB(this->vehicle_flags, VF_SERVINT_IS_PERCENT, 1, on); }
 
+	bool HasFullLoadOrder() const;
+	bool HasConditionalOrder() const;
 	bool HasUnbunchingOrder() const;
 	void LeaveUnbunchingDepot();
 	bool IsWaitingForUnbunching() const;
@@ -1268,19 +1276,6 @@ struct SpecializedVehicle : public Vehicle {
 	 * @return an iterable ensemble of all valid vehicles of type T
 	 */
 	static Pool::IterateWrapper<T> Iterate(size_t from = 0) { return Pool::IterateWrapper<T>(from); }
-};
-
-/** Generates sequence of free UnitID numbers */
-struct FreeUnitIDGenerator {
-	bool *cache;  ///< array of occupied unit id numbers
-	UnitID maxid; ///< maximum ID at the moment of constructor call
-	UnitID curid; ///< last ID returned; 0 if none
-
-	FreeUnitIDGenerator(VehicleType type, CompanyID owner);
-	UnitID NextID();
-
-	/** Releases allocated memory */
-	~FreeUnitIDGenerator() { free(this->cache); }
 };
 
 /** Sentinel for an invalid coordinate. */

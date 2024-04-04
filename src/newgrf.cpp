@@ -2746,7 +2746,8 @@ static ChangeInfoResult GlobalVarChangeInfo(uint gvid, int numinfo, int prop, By
 				uint16_t options = buf->ReadWord();
 
 				if (curidx < CURRENCY_END) {
-					/* Ignore the thousands separator, as this is a translated thing. */
+					_currency_specs[curidx].separator.clear();
+					_currency_specs[curidx].separator.push_back(GB(options, 0, 8));
 					/* By specifying only one bit, we prevent errors,
 					 * since newgrf specs said that only 0 and 1 can be set for symbol_pos */
 					_currency_specs[curidx].symbol_pos = GB(options, 8, 1);
@@ -9158,6 +9159,14 @@ static void CalculateRefitMasks()
 			if (!IsValidCargoID(ei->cargo_type)) {
 				/* Use first refittable cargo slot */
 				ei->cargo_type = (CargoID)FindFirstBit(ei->refit_mask);
+			}
+		}
+		if (!IsValidCargoID(ei->cargo_type) && e->type == VEH_TRAIN && e->u.rail.railveh_type != RAILVEH_WAGON && e->u.rail.capacity == 0) {
+			/* For train engines which do not carry cargo it does not matter if their cargo type is invalid.
+			 * Fallback to the first available instead, if the cargo type has not been changed (as indicated by
+			 * cargo_label not being CT_INVALID). */
+			if (GetActiveCargoLabel(ei->cargo_label) != CT_INVALID) {
+				ei->cargo_type = static_cast<CargoID>(FindFirstBit(_standard_cargo_mask));
 			}
 		}
 		if (!IsValidCargoID(ei->cargo_type)) ei->climates = 0;
