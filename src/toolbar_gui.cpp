@@ -2947,7 +2947,7 @@ static const NWidgetPart _nested_toolbar_vertical_left_widgets[] = {
 static WindowDesc _toolb_vertical_left_desc(__FILE__, __LINE__,
 	WDP_MANUAL, nullptr, 22, 480,
 	WC_MAIN_TOOLBAR, WC_NONE,
-	WDF_NO_FOCUS,
+	WDF_NO_FOCUS | WDF_NO_CLOSE,
 	std::begin(_nested_toolbar_vertical_left_widgets), std::end(_nested_toolbar_vertical_left_widgets),
 	&MainToolbarWindow::hotkeys
 );
@@ -2973,7 +2973,7 @@ static const NWidgetPart _nested_toolbar_vertical_right_widgets[] = {
 static WindowDesc _toolb_vertical_right_desc(__FILE__, __LINE__,
 	WDP_MANUAL, nullptr, 22, 480,
 	WC_MAIN_TOOLBAR_RIGHT, WC_NONE,
-	WDF_NO_FOCUS,
+	WDF_NO_FOCUS | WDF_NO_CLOSE,
 	std::begin(_nested_toolbar_vertical_right_widgets), std::end(_nested_toolbar_vertical_right_widgets),
 	&MainToolbarWindow::hotkeys
 );
