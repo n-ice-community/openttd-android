@@ -13,6 +13,7 @@
 #include "string_func.h"
 #include "strings_func.h"
 #include "window_func.h"
+#include "tile_type.h"
 #include "widget_type.h"
 #include "window_gui.h"
 #include "gfx_func.h"
@@ -34,11 +35,11 @@ static const NWidgetPart _nested_build_info_widgets[] = {
 	NWidget(WWT_PANEL, COLOUR_GREY, WID_TT_BACKGROUND), SetMinimalSize(200, 32), EndContainer(),
 };
 
-static WindowDesc _build_info_desc(
-	WDP_MANUAL, NULL, 0, 0, // Coordinates and sizes are not used,
+static WindowDesc _build_info_desc(__FILE__, __LINE__,
+	WDP_MANUAL, nullptr, 0, 0, // Coordinates and sizes are not used,
 	WC_TOOLTIPS, WC_NONE,
 	WDF_NO_FOCUS,
-	_nested_build_info_widgets, lengthof(_nested_build_info_widgets)
+	std::begin(_nested_build_info_widgets), std::end(_nested_build_info_widgets)
 );
 
 /** Window for displaying accepted goods for a station. */
@@ -68,7 +69,7 @@ struct BuildInfoWindow : public Window
 		CLRBITS(this->flags, WF_WHITE_BORDER);
 	}
 
-	Point OnInitialPosition(int16 sm_width, int16 sm_height, int window_number) override
+	Point OnInitialPosition(int16_t sm_width, int16_t sm_height, int window_number) override
 	{
 		Point pt;
 		pt.y = GetMainViewTop();
@@ -207,11 +208,11 @@ struct BuildConfirmationWindow : Window {
 		DrawFrameRect(x, y, x + w, y + h, COLOUR_GREY, FR_BORDERONLY);
 		Dimension d = GetStringBoundingBox(str);
 		DrawFrameRect(x + w / 2 - d.width / 2 - 1,
-						Center(y, h) - 2,
+						CenterBounds(y, h, d.height) - 2,
 						x + w / 2 + d.width / 2 + 1,
-						Center(y, h) + d.height,
+						CenterBounds(y, h, d.height) + d.height,
 						COLOUR_GREY, FR_NONE);
-		DrawString(x, x + w, Center(y, h), str, TC_FROMSTRING, SA_HOR_CENTER);
+		DrawString(x, x + w, CenterBounds(y, h, d.height), str, TC_FROMSTRING, SA_HOR_CENTER);
 	}
 };
 
@@ -224,11 +225,11 @@ static const NWidgetPart _nested_build_confirmation_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_confirmation_desc(
+static WindowDesc _build_confirmation_desc(__FILE__, __LINE__,
 	WDP_MANUAL, "build_confirmation", 0, 0,
 	WC_BUILD_CONFIRMATION, WC_NONE,
 	0,
-	_nested_build_confirmation_widgets, lengthof(_nested_build_confirmation_widgets)
+	std::begin(_nested_build_confirmation_widgets), std::end(_nested_build_confirmation_widgets)
 );
 
 /**

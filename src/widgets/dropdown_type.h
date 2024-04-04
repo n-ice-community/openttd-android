@@ -11,7 +11,6 @@
 #define WIDGETS_DROPDOWN_TYPE_H
 
 #include "../window_type.h"
-#include "../widget_type.h"
 #include "../gfx_func.h"
 #include "../gfx_type.h"
 #include "../palette_func.h"

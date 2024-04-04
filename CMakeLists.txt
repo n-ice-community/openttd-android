@@ -344,7 +344,6 @@ if(NOT OPTION_DEDICATED)
     link_package(FREETYPE TARGET Freetype::Freetype)
     link_package(Fontconfig TARGET Fontconfig::Fontconfig)
     link_package(Harfbuzz TARGET harfbuzz::harfbuzz)
-    link_package(ICU_uc)
     link_package(ICU_i18n)
 
     if(SDL2_FOUND AND OPENGL_FOUND AND UNIX)
@@ -386,9 +385,6 @@ endif()
 
 if(EMSCRIPTEN)
     add_library(WASM::WASM INTERFACE IMPORTED)
-    if(DEFINED WASM_LINKER_FLAGS)
-        target_link_libraries(WASM::WASM INTERFACE "${WASM_LINKER_FLAGS}")
-    endif()
 
     # Allow heap-growth, and start with a bigger memory size.
     target_link_libraries(WASM::WASM INTERFACE "-s ALLOW_MEMORY_GROWTH=1")
@@ -407,7 +403,7 @@ if(EMSCRIPTEN)
     # the more languages you add the slower downloading becomes, we decided to
     # only ship the English language.
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_BINARY_DIR}/baseset@/baseset")
-    target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_BINARY_DIR}/lang@/lang")
+    target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_BINARY_DIR}/lang/english.lng@/lang/english.lng")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/bin/ai@/ai")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/bin/game@/game")
     # Documentation files for the in-game text file viewer
@@ -430,9 +426,6 @@ if(EMSCRIPTEN)
 
     # We use IDBFS for persistent storage.
     target_link_libraries(WASM::WASM INTERFACE "-lidbfs.js")
-
-    # Socket proxy
-    target_link_libraries(WASM::WASM INTERFACE "-lwebsocket.js")
 
     # Use custom pre-js and shell.html.
     target_link_libraries(WASM::WASM INTERFACE "--pre-js ${CMAKE_SOURCE_DIR}/os/emscripten/pre.js")

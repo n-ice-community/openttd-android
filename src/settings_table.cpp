@@ -314,7 +314,7 @@ static void ZoomMinMaxChanged(int32_t)
 	}
 }
 
-static void VerticalToolbarChanged(int32 p1)
+static void VerticalToolbarChanged(int32_t p1)
 {
 	if (FindWindowByClass(WC_MAIN_TOOLBAR)) {
 		HideVitalWindows();

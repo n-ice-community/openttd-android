@@ -304,7 +304,7 @@ struct TerraformToolbarWindow : Window {
 	void SelectLastTool() override
 	{
 		// User misplaced something - activate last selected tool again
-		if (this->last_user_action == WIDGET_LIST_END)
+		if (this->last_user_action == INVALID_WID_TT)
 			return;
 		Point dummy = {0, 0};
 		this->RaiseWidget(this->last_user_action);

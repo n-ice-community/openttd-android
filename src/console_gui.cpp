@@ -33,9 +33,6 @@
 #ifdef __ANDROID__
 #include <SDL_screenkeyboard.h>
 #endif
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
 
 static const uint ICON_HISTORY_SIZE       = 20;
 static const uint ICON_RIGHT_BORDERWIDTH  = 10;
@@ -190,6 +187,8 @@ struct IConsoleWindow : Window
 		if (_focused_window == this && _iconsole_cmdline.caret) {
 			DrawString(this->line_offset + delta + _iconsole_cmdline.caretxoffs, right, this->height - this->line_height, "_", TC_WHITE, SA_LEFT | SA_FORCE);
 		}
+	}
+
 	void OnQueryTextFinished(char *str) override
 	{
 		_focused_window = this;

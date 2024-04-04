@@ -920,7 +920,7 @@ struct RefitWindow : public Window {
 
 			case WID_VR_INFO:
 				size->width = this->information_width + padding.height;
-				size->height = GetMinButtonSize(FONT_HEIGHT_NORMAL);
+				size->height = GetMinButtonSize();
 				break;
 		}
 	}

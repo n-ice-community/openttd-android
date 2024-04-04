@@ -1381,7 +1381,7 @@ static uint GetWindowZPriority(WindowClass wc)
 
 		case WC_STATUS_BAR:
 			++z_priority;
-			FALLTHROUGH;
+			[[fallthrough]];
 
 		case WC_NEWS_WINDOW:
 			++z_priority;
@@ -2376,9 +2376,9 @@ static EventState HandleWindowDragging()
 
 			w->SetDirty();
 			if (GetWindowDraggedOffScreen(w)) {
-				GuiShowTooltips(w, STR_TOOLTIP_CLOSE_WINDOW, 0, NULL, TCC_NONE);
+				GuiShowTooltips(w, STR_TOOLTIP_CLOSE_WINDOW, TCC_NONE);
 			} else {
-				GuiShowTooltips(w, STR_NULL, 0, NULL, TCC_NONE); // Hide tooltip
+				GuiShowTooltips(w, STR_NULL, TCC_NONE); // Hide tooltip
 			}
 
 			return ES_HANDLED;
@@ -2890,7 +2890,7 @@ static void HandleAutoscroll()
 
 	int x = _cursor.pos.x;
 	int y = _cursor.pos.y;
-	int border = RescaleFrom854x480(_settings_client.gui.min_button);
+	int border = GetMinButtonSize();
 	Window *w = FindWindowFromPt(x, y);
 	if (w == nullptr || w->flags & WF_DISABLE_VP_SCROLL) return;
 	if (_settings_client.gui.auto_scrolling != VA_EVERY_VIEWPORT && w->window_class != WC_MAIN_WINDOW) return;

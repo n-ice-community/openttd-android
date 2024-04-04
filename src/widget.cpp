@@ -1025,20 +1025,19 @@ void NWidgetResizeBase::SetMinimalTextLines(uint8_t min_lines, uint8_t spacing, 
 
 void NWidgetResizeBase::SetMinimalSizeForSizingType()
 {
-	uint min_size = 0;
+	uint32_t min_size = 0;
 	switch (this->sizing_type) {
 		case NWST_NONE:
 			min_size = 0;
 			break;
 		case NWST_BUTTON:
-			min_size = _settings_client.gui.min_button;
+			min_size = GetMinButtonSize();
 			break;
 		case NWST_VIEWPORT:
-			min_size = 3 * _settings_client.gui.min_button;
+			min_size = (5 * _gui_scale) / 2;
 			break;
 		default: NOT_REACHED();
 	}
-	min_size = RescaleFrom854x480(min_size);
 
 	this->min_x = std::max(this->min_x, min_size);
 	this->min_y = std::max(this->min_y, min_size);
@@ -3261,12 +3260,11 @@ static const NWidgetPart *MakeNWidget(const NWidgetPart *nwid_begin, const NWidg
 			}
 
 			case WPT_SIZINGTYPE: {
-				NWidgetResizeBase *nwrb = dynamic_cast<NWidgetResizeBase *>(*dest);
-				if (nwrb != NULL) {
-					assert(parts->u.sizing_type < NWST_END);
-					nwrb->sizing_type = parts->u.sizing_type;
-					nwrb->SetMinimalSize(0, 0);
-				}
+				NWidgetResizeBase *nwrb = dynamic_cast<NWidgetResizeBase *>(dest.get());
+				if (nwrb == nullptr)  [[unlikely]] throw std::runtime_error("WPT_SIZINGTYPE requires NWidgetResizeBase");
+				assert(nwid_begin->u.sizing_type < NWST_END);
+				nwrb->sizing_type = nwid_begin->u.sizing_type;
+				nwrb->SetMinimalSize(0, 0);
 				break;
 			}
 
@@ -3555,10 +3553,9 @@ std::unique_ptr<NWidgetBase> MakeCompanyButtonRows(WidgetID widget_first, Widget
  * @param min_1 Minimal passed value.
  * @return At least the passed value.
  */
-uint GetMinButtonSize(uint min_1)
+uint32_t GetMinButtonSize(uint32_t min_1)
 {
-	uint min_sizing = _settings_client.gui.min_button;
-	min_sizing = RescaleFrom854x480(min_sizing);
+	uint32_t min_sizing = _gui_scale / 4;
 
 	return std::max(min_sizing, min_1);
 }

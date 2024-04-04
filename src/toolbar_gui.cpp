@@ -1921,7 +1921,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_HELP
 		};
 		/* With 'Shift' button included */
-		static const byte arrange14shift[] = {
+		static const WidgetID arrange14shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_TRAINS,
@@ -1956,7 +1956,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SHIFT,
 			WID_TN_SWITCH_BAR,
 		};
-		static const byte arrange15shift[] = {
+		static const WidgetID arrange15shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_SMALL_MAP,
@@ -1993,7 +1993,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SHIFT,
 			WID_TN_SWITCH_BAR,
 		};
-		static const byte arrange16shift[] = {
+		static const WidgetID arrange16shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_SETTINGS,
@@ -2032,7 +2032,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SHIFT,
 			WID_TN_SWITCH_BAR,
 		};
-		static const byte arrange17shift[] = {
+		static const WidgetID arrange17shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_SETTINGS,
@@ -2073,7 +2073,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SHIFT,
 			WID_TN_SWITCH_BAR,
 		};
-		static const byte arrange18shift[] = {
+		static const WidgetID arrange18shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_SETTINGS,
@@ -2116,7 +2116,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SHIFT,
 			WID_TN_SWITCH_BAR,
 		};
-		static const byte arrange19shift[] = {
+		static const WidgetID arrange19shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_SETTINGS,
@@ -2161,7 +2161,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SHIFT,
 			WID_TN_SWITCH_BAR,
 		};
-		static const byte arrange20shift[] = {
+		static const WidgetID arrange20shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_SETTINGS,
@@ -2208,7 +2208,7 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SHIFT,
 			WID_TN_SWITCH_BAR,
 		};
-		static const byte arrange_all_shift[] = {
+		static const WidgetID arrange_all_shift[] = {
 			WID_TN_PAUSE,
 			WID_TN_FAST_FORWARD,
 			WID_TN_SETTINGS,
@@ -2265,18 +2265,23 @@ class NWidgetMainToolbarContainer : public NWidgetToolbarContainer {
 
 /** Container for the vertical main toolbar */
 class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
-	int side;
-
 	public:
-	NWidgetVerticalToolbarContainer(int side) : NWidgetToolbarContainer(NWID_VERTICAL), side(side)
+	enum class Side {
+		LEFT = 0,
+		RIGHT = 1
+	};
+private:
+	Side side;
+public:
+	NWidgetVerticalToolbarContainer(Side side) : NWidgetToolbarContainer(NWID_VERTICAL), side(side)
 	{
 	}
 
-	/* virtual */ const byte *GetButtonArrangement(uint &width, uint &arrangable_count, uint &button_count, uint &spacer_count) const
+	/* virtual */ const WidgetID *GetButtonArrangement(uint &width, uint &arrangable_count, uint &button_count, uint &spacer_count) const
 	{
 		// Ultra-compact arrangement, ultra-huge buttons.
 		// No WID_TN_SHIFT, WID_TN_STORY, WID_TN_GOAL, and WID_TN_LEAGUE buttons.
-		static const byte arrange_left_compact[] = {
+		static const WidgetID arrange_left_compact[] = {
 			WID_TN_DELETE,
 			WID_TN_CTRL,
 			WID_TN_ZOOM_IN,
@@ -2288,7 +2293,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_SMALL_MAP,
 			WID_TN_STATIONS,
 		};
-		static const byte arrange_right_compact[] = {
+		static const WidgetID arrange_right_compact[] = {
 			WID_TN_SWITCH_BAR,
 			WID_TN_RAILS,
 			WID_TN_ROADS,
@@ -2311,7 +2316,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_MESSAGES,
 			WID_TN_HELP,
 		};
-		static const byte arrange_right_compact_noswitch[] = {
+		static const WidgetID arrange_right_compact_noswitch[] = {
 			WID_TN_RAILS,
 			WID_TN_TRAINS,
 			WID_TN_ROADVEHS,
@@ -2325,7 +2330,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 		};
 
 		// Some rather artistic button arrangement, I'm proud of myself
-		static const byte arrange_left_classic[] = {
+		static const WidgetID arrange_left_classic[] = {
 			WID_TN_DELETE,
 			WID_TN_CTRL,
 			WID_TN_SHIFT,
@@ -2339,7 +2344,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_TOWNS,
 			WID_TN_SUBSIDIES,
 		};
-		static const byte arrange_right_classic[] = {
+		static const WidgetID arrange_right_classic[] = {
 			WID_TN_SWITCH_BAR,
 			WID_TN_RAILS,
 			WID_TN_ROADS,
@@ -2366,7 +2371,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_MESSAGES,
 			WID_TN_HELP,
 		};
-		static const byte arrange_right_classic_noswitch[] = {
+		static const WidgetID arrange_right_classic_noswitch[] = {
 			WID_TN_RAILS,
 			WID_TN_TRAINS,
 			WID_TN_ROADVEHS,
@@ -2383,7 +2388,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 
 		// Full-length toolbar without switch button.
 		// No WID_TN_SHIFT, WID_TN_STORY, WID_TN_GOAL, and WID_TN_LEAGUE buttons.
-		static const byte arrange_left_almost_all[] = {
+		static const WidgetID arrange_left_almost_all[] = {
 			WID_TN_DELETE,
 			WID_TN_CTRL,
 			WID_TN_ZOOM_IN,
@@ -2399,7 +2404,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_FINANCES,
 			WID_TN_COMPANIES,
 		};
-		static const byte arrange_right_almost_all[] = {
+		static const WidgetID arrange_right_almost_all[] = {
 			WID_TN_RAILS,
 			WID_TN_ROADS,
 			WID_TN_WATER,
@@ -2417,7 +2422,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 		};
 
 		// Full-length toolbar without switch button, all buttons are included.
-		static const byte arrange_left_all[] = {
+		static const WidgetID arrange_left_all[] = {
 			WID_TN_DELETE,
 			WID_TN_CTRL,
 			WID_TN_SHIFT,
@@ -2435,7 +2440,7 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 			WID_TN_COMPANIES,
 			WID_TN_STORY,
 		};
-		static const byte arrange_right_all[] = {
+		static const WidgetID arrange_right_all[] = {
 			WID_TN_RAILS,
 			WID_TN_ROADS,
 			WID_TN_WATER,
@@ -2459,27 +2464,27 @@ class NWidgetVerticalToolbarContainer : public NWidgetToolbarContainer {
 		if (_screen.height / this->smallest_y >= lengthof(arrange_left_all))
 		{
 			button_count = arrangable_count = lengthof(arrange_left_all);
-			if (side == 0) return arrange_left_all;
+			if (side == Side::LEFT) return arrange_left_all;
 			return arrange_right_all;
 		}
 
 		if (_screen.height / this->smallest_y >= lengthof(arrange_left_almost_all))
 		{
 			button_count = arrangable_count = lengthof(arrange_left_almost_all);
-			if (side == 0) return arrange_left_almost_all;
+			if (side == Side::LEFT) return arrange_left_almost_all;
 			return arrange_right_almost_all;
 		}
 
 		if (_screen.height / this->smallest_y >= lengthof(arrange_left_classic))
 		{
 			button_count = arrangable_count = lengthof(arrange_left_classic);
-			if (side == 0) return arrange_left_classic;
+			if (side == Side::LEFT) return arrange_left_classic;
 			if (_settings_client.gui.compact_vertical_toolbar) return arrange_right_classic_noswitch;
 			return &arrange_right_classic[((_toolbar_mode == TB_LOWER) ? button_count : 0)];
 		}
 
 		button_count = arrangable_count = lengthof(arrange_left_compact);
-		if (side == 0) return arrange_left_compact;
+		if (side == Side::LEFT) return arrange_left_compact;
 		if (_settings_client.gui.compact_vertical_toolbar) return arrange_right_compact_noswitch;
 		return &arrange_right_compact[((_toolbar_mode == TB_LOWER) ? button_count : 0)];
 	}
@@ -2649,7 +2654,7 @@ struct MainToolbarWindow : Window {
 	int *clickedFlag;
 	int clickedValue;
 
-	MainToolbarWindow(WindowDesc *desc, int *clickedFlag = NULL, int clickedValue = 0) : Window(desc), clickedFlag(clickedFlag), clickedValue(clickedValue)
+	MainToolbarWindow(WindowDesc *desc, int *clickedFlag = nullptr, int clickedValue = 0) : Window(desc), clickedFlag(clickedFlag), clickedValue(clickedValue)
 	{
 		this->InitNested(0);
 
@@ -2843,45 +2848,43 @@ struct MainToolbarWindow : Window {
 	}};
 };
 
+/** Sprites to use for the different toolbar buttons */
+static const SpriteID toolbar_button_sprites[] = {
+	SPR_IMG_PAUSE,           // WID_TN_PAUSE
+	SPR_IMG_FASTFORWARD,     // WID_TN_FAST_FORWARD
+	SPR_IMG_SETTINGS,        // WID_TN_SETTINGS
+	SPR_IMG_SAVE,            // WID_TN_SAVE
+	SPR_IMG_SMALLMAP,        // WID_TN_SMALL_MAP
+	SPR_IMG_TOWN,            // WID_TN_TOWNS
+	SPR_IMG_SUBSIDIES,       // WID_TN_SUBSIDIES
+	SPR_IMG_COMPANY_LIST,    // WID_TN_STATIONS
+	SPR_IMG_COMPANY_FINANCE, // WID_TN_FINANCES
+	SPR_IMG_COMPANY_GENERAL, // WID_TN_COMPANIES
+	SPR_IMG_STORY_BOOK,      // WID_TN_STORY
+	SPR_IMG_GOAL,            // WID_TN_GOAL
+	SPR_IMG_GRAPHS,          // WID_TN_GRAPHS
+	SPR_IMG_COMPANY_LEAGUE,  // WID_TN_LEAGUE
+	SPR_IMG_INDUSTRY,        // WID_TN_INDUSTRIES
+	SPR_IMG_TRAINLIST,       // WID_TN_TRAINS
+	SPR_IMG_TRUCKLIST,       // WID_TN_ROADVEHS
+	SPR_IMG_SHIPLIST,        // WID_TN_SHIPS
+	SPR_IMG_AIRPLANESLIST,   // WID_TN_AIRCRAFT
+	SPR_IMG_ZOOMIN,          // WID_TN_ZOOMIN
+	SPR_IMG_ZOOMOUT,         // WID_TN_ZOOMOUT
+	SPR_IMG_BUILDRAIL,       // WID_TN_RAILS
+	SPR_IMG_BUILDROAD,       // WID_TN_ROADS
+	SPR_IMG_BUILDTRAMS,      // WID_TN_TRAMS
+	SPR_IMG_BUILDWATER,      // WID_TN_WATER
+	SPR_IMG_BUILDAIR,        // WID_TN_AIR
+	SPR_IMG_LANDSCAPING,     // WID_TN_LANDSCAPE
+	SPR_IMG_MUSIC,           // WID_TN_MUSIC_SOUND
+	SPR_IMG_MESSAGES,        // WID_TN_MESSAGES
+	SPR_IMG_QUERY,           // WID_TN_HELP
+	SPR_IMG_SWITCH_TOOLBAR,  // WID_TN_SWITCH_BAR
+};
+
 static std::unique_ptr<NWidgetBase> MakeMainToolbar()
 {
-	/** Sprites to use for the different toolbar buttons */
-	static const SpriteID toolbar_button_sprites[] = {
-		SPR_IMG_PAUSE,           // WID_TN_PAUSE
-		SPR_IMG_FASTFORWARD,     // WID_TN_FAST_FORWARD
-		SPR_IMG_SETTINGS,        // WID_TN_SETTINGS
-		SPR_IMG_SAVE,            // WID_TN_SAVE
-		SPR_IMG_SMALLMAP,        // WID_TN_SMALL_MAP
-		SPR_IMG_TOWN,            // WID_TN_TOWNS
-		SPR_IMG_SUBSIDIES,       // WID_TN_SUBSIDIES
-		SPR_IMG_COMPANY_LIST,    // WID_TN_STATIONS
-		SPR_IMG_COMPANY_FINANCE, // WID_TN_FINANCES
-		SPR_IMG_COMPANY_GENERAL, // WID_TN_COMPANIES
-		SPR_IMG_STORY_BOOK,      // WID_TN_STORY
-		SPR_IMG_GOAL,            // WID_TN_GOAL
-		SPR_IMG_GRAPHS,          // WID_TN_GRAPHS
-		SPR_IMG_COMPANY_LEAGUE,  // WID_TN_LEAGUE
-		SPR_IMG_INDUSTRY,        // WID_TN_INDUSTRIES
-		SPR_IMG_TRAINLIST,       // WID_TN_TRAINS
-		SPR_IMG_TRUCKLIST,       // WID_TN_ROADVEHS
-		SPR_IMG_SHIPLIST,        // WID_TN_SHIPS
-		SPR_IMG_AIRPLANESLIST,   // WID_TN_AIRCRAFT
-		SPR_IMG_ZOOMIN,          // WID_TN_ZOOMIN
-		SPR_IMG_ZOOMOUT,         // WID_TN_ZOOMOUT
-		SPR_IMG_BUILDRAIL,       // WID_TN_RAILS
-		SPR_IMG_BUILDROAD,       // WID_TN_ROADS
-		SPR_IMG_BUILDTRAMS,      // WID_TN_TRAMS
-		SPR_IMG_BUILDWATER,      // WID_TN_WATER
-		SPR_IMG_BUILDAIR,        // WID_TN_AIR
-		SPR_IMG_LANDSCAPING,     // WID_TN_LANDSCAPE
-		SPR_IMG_MUSIC,           // WID_TN_MUSIC_SOUND
-		SPR_IMG_MESSAGES,        // WID_TN_MESSAGES
-		SPR_IMG_QUERY,           // WID_TN_HELP
-		SPR_IMG_SWITCH_TOOLBAR,  // WID_TN_SWITCH_BAR
-	};
-};
-using namespace tbs;
-
 	auto hor = std::make_unique<NWidgetMainToolbarContainer>();
 	for (WidgetID i = 0; i < WID_TN_END; i++) {
 		switch (i) {
@@ -2923,18 +2926,17 @@ static WindowDesc _toolb_normal_desc(__FILE__, __LINE__,
 	&MainToolbarWindow::hotkeys
 );
 
-static NWidgetBase *MakeVerticalLeftToolbar(int *biggest_index)
+static std::unique_ptr<NWidgetBase> MakeVerticalLeftToolbar()
 {
-	NWidgetVerticalToolbarContainer *tb = new NWidgetVerticalToolbarContainer(0);
+	auto tb = std::make_unique<NWidgetVerticalToolbarContainer>(NWidgetVerticalToolbarContainer::Side::LEFT);
 	for (uint i = 0; i <= WID_TN_SWITCH_BAR; i++) {
-		tb->Add(new NWidgetLeaf(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, toolbar_button_sprites[i], STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i));
+		tb->Add(std::make_unique<NWidgetLeaf>(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, toolbar_button_sprites[i], STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i));
 	}
 
-	tb->Add(new NWidgetLeaf(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, STR_TABLET_CTRL, STR_TABLET_CTRL_TOOLTIP));
-	tb->Add(new NWidgetLeaf(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, STR_TABLET_SHIFT, STR_TABLET_SHIFT_TOOLTIP));
-	tb->Add(new NWidgetLeaf(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, STR_TABLET_CLOSE, STR_TABLET_CLOSE_TOOLTIP));
+	tb->Add(std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, STR_TABLET_CTRL, STR_TABLET_CTRL_TOOLTIP));
+	tb->Add(std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, STR_TABLET_SHIFT, STR_TABLET_SHIFT_TOOLTIP));
+	tb->Add(std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, STR_TABLET_CLOSE, STR_TABLET_CLOSE_TOOLTIP));
 
-	*biggest_index = std::max<int>(*biggest_index, WID_TN_DELETE);
 	return tb;
 }
 
@@ -2942,26 +2944,25 @@ static const NWidgetPart _nested_toolbar_vertical_left_widgets[] = {
 	NWidgetFunction(MakeVerticalLeftToolbar),
 };
 
-static WindowDesc _toolb_vertical_left_desc(
-	WDP_MANUAL, NULL, 22, 480,
+static WindowDesc _toolb_vertical_left_desc(__FILE__, __LINE__,
+	WDP_MANUAL, nullptr, 22, 480,
 	WC_MAIN_TOOLBAR, WC_NONE,
 	WDF_NO_FOCUS,
-	_nested_toolbar_vertical_left_widgets, lengthof(_nested_toolbar_vertical_left_widgets),
+	std::begin(_nested_toolbar_vertical_left_widgets), std::end(_nested_toolbar_vertical_left_widgets),
 	&MainToolbarWindow::hotkeys
 );
 
-static NWidgetBase *MakeVerticalRightToolbar(int *biggest_index)
+static std::unique_ptr<NWidgetBase> MakeVerticalRightToolbar()
 {
-	NWidgetVerticalToolbarContainer *tb = new NWidgetVerticalToolbarContainer(1);
+	auto tb = std::make_unique<NWidgetVerticalToolbarContainer>(NWidgetVerticalToolbarContainer::Side::RIGHT);
 	for (uint i = 0; i <= WID_TN_SWITCH_BAR; i++) {
-		tb->Add(new NWidgetLeaf(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, toolbar_button_sprites[i], STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i));
+		tb->Add(std::make_unique<NWidgetLeaf>(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, toolbar_button_sprites[i], STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i));
 	}
 
-	tb->Add(new NWidgetLeaf(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, STR_TABLET_CTRL, STR_TABLET_CTRL_TOOLTIP));
-	tb->Add(new NWidgetLeaf(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, STR_TABLET_SHIFT, STR_TABLET_SHIFT_TOOLTIP));
-	tb->Add(new NWidgetLeaf(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, STR_TABLET_CLOSE, STR_TABLET_CLOSE_TOOLTIP));
+	tb->Add(std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, STR_TABLET_CTRL, STR_TABLET_CTRL_TOOLTIP));
+	tb->Add(std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, STR_TABLET_SHIFT, STR_TABLET_SHIFT_TOOLTIP));
+	tb->Add(std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, STR_TABLET_CLOSE, STR_TABLET_CLOSE_TOOLTIP));
 
-	*biggest_index = std::max<int>(*biggest_index, WID_TN_DELETE);
 	return tb;
 }
 
@@ -2969,11 +2970,11 @@ static const NWidgetPart _nested_toolbar_vertical_right_widgets[] = {
 	NWidgetFunction(MakeVerticalRightToolbar),
 };
 
-static WindowDesc _toolb_vertical_right_desc(
-	WDP_MANUAL, NULL, 22, 480,
+static WindowDesc _toolb_vertical_right_desc(__FILE__, __LINE__,
+	WDP_MANUAL, nullptr, 22, 480,
 	WC_MAIN_TOOLBAR_RIGHT, WC_NONE,
 	WDF_NO_FOCUS,
-	_nested_toolbar_vertical_right_widgets, lengthof(_nested_toolbar_vertical_right_widgets),
+	std::begin(_nested_toolbar_vertical_right_widgets), std::end(_nested_toolbar_vertical_right_widgets),
 	&MainToolbarWindow::hotkeys
 );
 

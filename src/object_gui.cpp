@@ -108,7 +108,7 @@ public:
 		this->FinishInitNested(number);
 
 		NWidgetMatrix *matrix = this->GetWidget<NWidgetMatrix>(WID_BO_SELECT_MATRIX);
-		matrix->SetScrollbar(this->GetScrollbar(WID_BO_SELECT_SCROLL));
+		matrix->SetScrollbar(this->GetScrollbar(WID_BO_SELECT_SCROLL), WID_BO_SELECT_SCROLL);
 		matrix->SetCount(ObjectClass::Get(_selected_object_class)->GetUISpecCount());
 
 		this->GetWidget<NWidgetMatrix>(WID_BO_OBJECT_MATRIX)->SetCount(4);

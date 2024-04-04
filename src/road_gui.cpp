@@ -634,7 +634,7 @@ struct BuildRoadToolbarWindow : Window {
 	void SelectLastTool() override
 	{
 		// User misplaced something - activate last selected tool again
-		if (this->last_started_action == WIDGET_LIST_END)
+		if (this->last_started_action == INVALID_WID_ROT)
 			return;
 		Point dummy = {0, 0};
 		this->RaiseWidget(this->last_started_action);
@@ -1257,7 +1257,7 @@ public:
 			this->SelectFirstAvailableTypeIfUnavailable();
 
 			NWidgetMatrix *matrix = this->GetWidget<NWidgetMatrix>(WID_BROS_MATRIX);
-			matrix->SetScrollbar(this->vscrollMatrix);
+			matrix->SetScrollbar(this->vscrollMatrix, WID_BROS_MATRIX);
 			matrix->SetCount(_roadstop_gui_settings.roadstop_count);
 			matrix->SetClicked(_roadstop_gui_settings.roadstop_type);
 

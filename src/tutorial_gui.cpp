@@ -128,11 +128,11 @@ static const NWidgetPart _nested_tutorial_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _tutorial_desc(
+static WindowDesc _tutorial_desc(__FILE__, __LINE__,
 	WDP_CENTER, NULL, 0, 0,
 	WC_GAME_OPTIONS, WC_NONE,
 	0,
-	_nested_tutorial_widgets, lengthof(_nested_tutorial_widgets)
+	std::begin(_nested_tutorial_widgets), std::end(_nested_tutorial_widgets)
 );
 
 

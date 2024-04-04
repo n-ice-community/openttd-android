@@ -832,7 +832,7 @@ struct BuildRailToolbarWindow : Window {
 	void SelectLastTool() override
 	{
 		// User misplaced something - activate last selected tool again
-		if (this->last_user_action == WIDGET_LIST_END) return;
+		if (this->last_user_action == INVALID_WID_RAT) return;
 
 		Point dummy = {0, 0};
 		this->RaiseWidget(this->last_user_action);
@@ -1120,7 +1120,7 @@ public:
 			_railstation.station_type = std::min<int>(_railstation.station_type, _railstation.station_count - 1);
 
 			NWidgetMatrix *matrix = this->GetWidget<NWidgetMatrix>(WID_BRAS_MATRIX);
-			matrix->SetScrollbar(this->vscroll2);
+			matrix->SetScrollbar(this->vscroll2, this->vscroll2 ? WID_BRAS_MATRIX_SCROLL : -1);
 			matrix->SetCount(_railstation.station_count);
 			matrix->SetClicked(_railstation.station_type);
 
@@ -2089,7 +2089,7 @@ struct BuildRailWaypointWindow : PickerWindowBase {
 		this->CreateNestedTree();
 
 		NWidgetMatrix *matrix = this->GetWidget<NWidgetMatrix>(WID_BRW_WAYPOINT_MATRIX);
-		matrix->SetScrollbar(this->GetScrollbar(WID_BRW_SCROLL));
+		matrix->SetScrollbar(this->GetScrollbar(WID_BRW_SCROLL), WID_BRW_SCROLL);
 
 		this->FinishInitNested(TRANSPORT_RAIL);
 

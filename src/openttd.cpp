@@ -1268,7 +1268,7 @@ void ProcessCloudSaveFromVideoThread()
 		}
 		MakeScreenshot(SC_VIEWPORT, NETWORK_SAVE_SCREENSHOT_FILE);
 		std::string screenshotFile = FioFindFullPath(SCREENSHOT_DIR, NETWORK_SAVE_SCREENSHOT_FILE_PNG);
-		uint64_t playedTime = abs(_date - DAYS_TILL(_settings_newgame.game_creation.starting_year)) * 1000;
+		uint64_t playedTime = Ticks::DAY_TICKS * MILLISECONDS_PER_TICK * static_cast<uint64_t>((TimerGameCalendar::date - TimerGameCalendar::DateAtStartOfYear(_settings_newgame.game_creation.starting_year)).base());
 		int status = 0;
 #ifdef __ANDROID__
 		status = SDL_ANDROID_CloudSave(_file_to_saveload.name.c_str(), lastPart, "OpenTTD", lastPart, screenshotFile.c_str(), playedTime);
@@ -1307,8 +1307,8 @@ void ProcessCloudSaveFromVideoThread()
 #endif
 		if (status) {
 			_file_to_saveload.SetMode(FIOS_TYPE_FILE);
-			_file_to_saveload.SetName(savePath.c_str());
-			_file_to_saveload.SetTitle("Network Save");
+			_file_to_saveload.name = savePath.c_str();
+			_file_to_saveload.title = "Network Save";
 			_switch_mode = SM_LOAD_GAME;
 		}
 #ifdef __EMSCRIPTEN__
