@@ -31,7 +31,7 @@
 #include "core/geometry_func.hpp"
 #include "genworld.h"
 #include "stringfilter_type.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_func.h"
 #include "town_kdtree.h"
 #include "town_cmd.h"
 #include "timer/timer.h"
@@ -73,8 +73,8 @@ struct TownAuthorityWindow : Window {
 private:
 	Town *town;    ///< Town being displayed.
 	int sel_index; ///< Currently selected town action, \c 0 to \c TACT_COUNT-1, \c -1 means no action selected.
-	uint actions_step;
-	uint displayed_actions_on_previous_painting; ///< Actions that were available on the previous call to OnPaint()
+	uint32_t actions_step;
+	uint32_t displayed_actions_on_previous_painting; ///< Actions that were available on the previous call to OnPaint()
 	TownActions enabled_actions; ///< Actions that are enabled in settings.
 	TownActions available_actions; ///< Actions that are available to execute for the current company.
 	StringID action_tooltips[TACT_COUNT];
@@ -340,7 +340,7 @@ public:
 	}
 };
 
-static WindowDesc _town_authority_desc(__FILE__, __LINE__,
+static WindowDesc _town_authority_desc(
 	WDP_AUTO, "view_town_authority", 317, 222,
 	WC_TOWN_AUTHORITY, WC_NONE,
 	0,
@@ -634,7 +634,7 @@ static constexpr NWidgetPart _nested_town_game_view_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _town_game_view_desc(__FILE__, __LINE__,
+static WindowDesc _town_game_view_desc(
 	WDP_AUTO, "view_town", 260, TownViewWindow::WID_TV_HEIGHT_NORMAL,
 	WC_TOWN_VIEW, WC_NONE,
 	0,
@@ -667,7 +667,7 @@ static constexpr NWidgetPart _nested_town_editor_view_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _town_editor_view_desc(__FILE__, __LINE__,
+static WindowDesc _town_editor_view_desc(
 	WDP_AUTO, "view_town_scen", 260, TownViewWindow::WID_TV_HEIGHT_NORMAL,
 	WC_TOWN_VIEW, WC_NONE,
 	0,
@@ -843,7 +843,6 @@ public:
 				break;
 
 			case WID_TD_LIST: {
-				int n = 0;
 				Rect tr = r.Shrink(WidgetDimensions::scaled.framerect);
 				if (this->towns.empty()) { // No towns available.
 					DrawString(tr, STR_TOWN_DIRECTORY_NONE);
@@ -856,8 +855,9 @@ public:
 				int icon_x = tr.WithWidth(icon_size.width, rtl).left;
 				tr = tr.Indent(icon_size.width + WidgetDimensions::scaled.hsep_normal, rtl);
 
-				for (uint i = this->vscroll->GetPosition(); i < this->towns.size(); i++) {
-					const Town *t = this->towns[i];
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->towns);
+				for (auto it = first; it != last; ++it) {
+					const Town *t = *it;
 					assert(t->xy != INVALID_TILE);
 
 					/* Draw rating icon. */
@@ -875,7 +875,6 @@ public:
 					DrawString(tr.left, tr.right, tr.top + (this->resize.step_height - GetCharacterHeight(FS_NORMAL)) / 2, GetTownString(t));
 
 					tr.top += this->resize.step_height;
-					if (++n == this->vscroll->GetCapacity()) break; // max number of towns in 1 window
 				}
 				break;
 			}
@@ -1065,7 +1064,7 @@ GUITownList::SortFunction * const TownDirectoryWindow::sorter_funcs[] = {
 	&TownRatingSorter,
 };
 
-static WindowDesc _town_directory_desc(__FILE__, __LINE__,
+static WindowDesc _town_directory_desc(
 	WDP_AUTO, "list_towns", 208, 202,
 	WC_TOWN_DIRECTORY, WC_NONE,
 	0,
@@ -1245,7 +1244,7 @@ public:
 				break;
 
 			case WID_TF_MANY_RANDOM_TOWNS: {
-				Backup<bool> old_generating_world(_generating_world, true, FILE_LINE);
+				Backup<bool> old_generating_world(_generating_world, true);
 				UpdateNearestTownForRoadTiles(true);
 				if (!GenerateTowns(this->town_layout)) {
 					ShowErrorMessage(STR_ERROR_CAN_T_GENERATE_TOWN, STR_ERROR_NO_SPACE_FOR_TOWN, WL_INFO);
@@ -1317,7 +1316,7 @@ public:
 	}
 };
 
-static WindowDesc _found_town_desc(__FILE__, __LINE__,
+static WindowDesc _found_town_desc(
 	WDP_ALIGN_TOOLBAR, "build_town", 160, 162,
 	WC_FOUND_TOWN, WC_NONE,
 	WDF_CONSTRUCTION,

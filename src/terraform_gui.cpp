@@ -59,7 +59,7 @@ static void GenerateDesertArea(TileIndex end, TileIndex start)
 {
 	if (_game_mode != GM_EDITOR) return;
 
-	Backup<bool> old_generating_world(_generating_world, true, FILE_LINE);
+	Backup<bool> old_generating_world(_generating_world, true);
 
 	TileArea ta(start, end);
 	for (TileIndex tile : ta) {
@@ -367,7 +367,7 @@ static constexpr NWidgetPart _nested_terraform_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _terraform_desc(__FILE__, __LINE__,
+static WindowDesc _terraform_desc(
 	WDP_MANUAL, "toolbar_landscape", 0, 0,
 	WC_SCEN_LAND_GEN, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -404,7 +404,7 @@ Window *ShowTerraformToolbar(Window *link)
 	return w;
 }
 
-static byte _terraform_size = 1;
+static uint8_t _terraform_size = 1;
 
 /**
  * Raise/Lower a bigger chunk of land at the same time in the editor. When
@@ -523,7 +523,7 @@ static void ResetLandscapeConfirmationCallback(Window *, bool confirmed)
 	if (confirmed) {
 		/* Set generating_world to true to get instant-green grass after removing
 		 * company property. */
-		Backup<bool> old_generating_world(_generating_world, true, FILE_LINE);
+		Backup<bool> old_generating_world(_generating_world, true);
 
 		/* Delete all companies */
 		for (Company *c : Company::Iterate()) {
@@ -751,7 +751,7 @@ struct ScenarioEditorLandscapeGenerationWindow : Window {
 	}, TerraformToolbarEditorGlobalHotkeys};
 };
 
-static WindowDesc _scen_edit_land_gen_desc(__FILE__, __LINE__,
+static WindowDesc _scen_edit_land_gen_desc(
 	WDP_AUTO, "toolbar_landscape_scen", 0, 0,
 	WC_SCEN_LAND_GEN, WC_NONE,
 	WDF_CONSTRUCTION,

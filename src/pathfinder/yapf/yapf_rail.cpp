@@ -77,7 +77,7 @@ private:
 			if (HasStationReservation(tile)) return false;
 			SetRailStationReservation(tile, true);
 			MarkTileDirtyByTile(tile);
-			tile = TILE_ADD(tile, diff);
+			tile = TileAdd(tile, diff);
 		} while (IsCompatibleTrainStationTile(tile, start) && tile != m_origin_tile);
 
 		TriggerStationRandomisation(nullptr, start, SRT_PATH_RESERVATION);
@@ -114,7 +114,7 @@ private:
 			TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(td)));
 			while ((tile != m_res_fail_tile || td != m_res_fail_td) && IsCompatibleTrainStationTile(tile, start)) {
 				SetRailStationReservation(tile, false);
-				tile = TILE_ADD(tile, diff);
+				tile = TileAdd(tile, diff);
 			}
 		} else if (tile != m_res_fail_tile || td != m_res_fail_td) {
 			UnreserveRailTrack(tile, TrackdirToTrack(td));
@@ -446,6 +446,11 @@ public:
 
 				this->FindSafePositionOnNode(pPrev);
 			}
+
+			/* If the best PF node has no parent, then there is no (valid) best next trackdir to return.
+			 * This occurs when the PF is called while the train is already at its destination. */
+			if (pPrev == nullptr) return INVALID_TRACKDIR;
+
 			/* return trackdir from the best origin node (one of start nodes) */
 			Node &best_next_node = *pPrev;
 			next_trackdir = best_next_node.GetTrackdir();

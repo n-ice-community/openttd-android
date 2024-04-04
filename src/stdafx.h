@@ -28,6 +28,12 @@
 
 #if defined(__APPLE__)
 #	include "os/macosx/osx_stdafx.h"
+#else
+/* It seems that we need to include stdint.h before anything else
+ * We need INT64_MAX, which for most systems comes from stdint.h.
+ * For OSX the inclusion is already done in osx_stdafx.h. */
+#	define __STDC_LIMIT_MACROS
+#	include <stdint.h>
 #endif /* __APPLE__ */
 
 #if defined(__HAIKU__)
@@ -35,15 +41,6 @@
 #	include <unistd.h>
 #	define _DEFAULT_SOURCE
 #	define _GNU_SOURCE
-#endif
-
-/* It seems that we need to include stdint.h before anything else
- * We need INT64_MAX, which for most systems comes from stdint.h. However, MSVC
- * does not have stdint.h.
- * For OSX the inclusion is already done in osx_stdafx.h. */
-#if !defined(__APPLE__) && (!defined(_MSC_VER) || _MSC_VER >= 1600)
-#	define __STDC_LIMIT_MACROS
-#	include <stdint.h>
 #endif
 
 #include <algorithm>
@@ -71,6 +68,7 @@
 #include <numeric>
 #include <optional>
 #include <set>
+#include <source_location>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -114,9 +112,6 @@
 #	pragma warning(disable: 4200)  // nonstandard extension used : zero-sized array in struct/union
 #	pragma warning(disable: 4355)  // 'this' : used in base member initializer list
 
-#	if (_MSC_VER < 1400)                   // MSVC 2005 safety checks
-#		error "Only MSVC 2005 or higher are supported. MSVC 2003 and earlier are not! Upgrade your compiler."
-#	endif /* (_MSC_VER < 1400) */
 #	pragma warning(disable: 4291)   // no matching operator delete found; memory will not be freed if initialization throws an exception (reason: our overloaded functions never throw an exception)
 #	pragma warning(disable: 4996)   // 'function': was declared deprecated
 #	pragma warning(disable: 6308)   // code analyzer: 'realloc' might return null pointer: assigning null pointer to 't_ptr', which is passed as an argument to 'realloc', will cause the original memory block to be leaked
@@ -124,15 +119,6 @@
 #	pragma warning(disable: 6326)   // code analyzer: potential comparison of a constant with another constant
 #	pragma warning(disable: 6031)   // code analyzer: Return value ignored: 'ReadFile'
 #	pragma warning(disable: 6246)   // code analyzer: Local declaration of 'statspec' hides declaration of the same name in outer scope. For additional information, see previous declaration at ...
-
-#	if (_MSC_VER == 1500)           // Addresses item #13 on http://blogs.msdn.com/b/vcblog/archive/2008/08/11/tr1-fixes-in-vc9-sp1.aspx, for Visual Studio 2008
-#		define _DO_NOT_DECLARE_INTERLOCKED_INTRINSICS_IN_MEMORY
-#		include <intrin.h>
-#	endif
-
-#	if (_MSC_VER < 1900)
-#		define inline __forceinline
-#	endif
 
 #	define CDECL _cdecl
 
@@ -261,8 +247,6 @@
 #define debug_inline inline
 #endif
 
-typedef uint8_t byte;
-
 /* This is already defined in unix, but not in QNX Neutrino (6.x) or Cygwin. */
 #if (!defined(UNIX) && !defined(__HAIKU__)) || defined(__QNXNTO__) || defined(__CYGWIN__)
 	typedef unsigned int uint;
@@ -348,14 +332,13 @@ static_assert(SIZE_MAX >= UINT32_MAX);
 /* For the FMT library we only want to use the headers, not link to some library. */
 #define FMT_HEADER_ONLY
 
-[[noreturn]] void NotReachedError(int line, const char *file);
-[[noreturn]] void AssertFailedError(int line, const char *file, const char *expression);
-#define NOT_REACHED() NotReachedError(__LINE__, __FILE__)
+[[noreturn]] void NOT_REACHED(const std::source_location location = std::source_location::current());
+[[noreturn]] void AssertFailedError(const char *expression, const std::source_location location = std::source_location::current());
 
 /* For non-debug builds with assertions enabled use the special assertion handler. */
 #if defined(NDEBUG) && defined(WITH_ASSERT)
 #	undef assert
-#	define assert(expression) do { if (!(expression)) [[unlikely]] AssertFailedError(__LINE__, __FILE__, #expression); } while (false)
+#	define assert(expression) do { if (!(expression)) [[unlikely]] AssertFailedError(#expression); } while (false)
 #endif
 
 /* Define JSON_ASSERT, which is used by nlohmann-json. Otherwise the header-file

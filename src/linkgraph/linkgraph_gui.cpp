@@ -312,7 +312,7 @@ void LinkGraphOverlay::DrawContent(Point pta, Point ptb, const LinkProperties &c
 		GfxDrawLine(pta.x, pta.y + offset_y, ptb.x, ptb.y + offset_y, colour, width, dash);
 	}
 
-	GfxDrawLine(pta.x, pta.y, ptb.x, ptb.y, _colour_gradient[COLOUR_GREY][1], width);
+	GfxDrawLine(pta.x, pta.y, ptb.x, ptb.y, GetColourGradient(COLOUR_GREY, SHADE_DARKEST), width);
 }
 
 /**
@@ -331,9 +331,9 @@ void LinkGraphOverlay::DrawStationDots(const DrawPixelInfo *dpi) const
 		uint r = width * 2 + width * 2 * std::min(200U, i.second) / 200;
 
 		LinkGraphOverlay::DrawVertex(pt.x, pt.y, r,
-				_colour_gradient[st->owner != OWNER_NONE ?
-						Company::Get(st->owner)->colour : COLOUR_GREY][5],
-				_colour_gradient[COLOUR_GREY][1]);
+				GetColourGradient(st->owner != OWNER_NONE ?
+						Company::Get(st->owner)->colour : COLOUR_GREY, SHADE_LIGHT),
+				GetColourGradient(COLOUR_GREY, SHADE_DARKEST));
 	}
 }
 
@@ -341,7 +341,7 @@ void LinkGraphOverlay::DrawStationDots(const DrawPixelInfo *dpi) const
  * Draw a square symbolizing a producer of cargo.
  * @param x X coordinate of the middle of the vertex.
  * @param y Y coordinate of the middle of the vertex.
- * @param size Y and y extend of the vertex.
+ * @param size x and y extent of the vertex.
  * @param colour Colour with which the vertex will be filled.
  * @param border_colour Colour for the border of the vertex.
  */
@@ -350,15 +350,10 @@ void LinkGraphOverlay::DrawStationDots(const DrawPixelInfo *dpi) const
 	size--;
 	int w1 = size / 2;
 	int w2 = size / 2 + size % 2;
+	int borderwidth = ScaleGUITrad(1);
 
+	GfxFillRect(x - w1 - borderwidth, y - w1 - borderwidth, x + w2 + borderwidth, y + w2 + borderwidth, border_colour);
 	GfxFillRect(x - w1, y - w1, x + w2, y + w2, colour);
-
-	w1++;
-	w2++;
-	GfxDrawLine(x - w1, y - w1, x + w2, y - w1, border_colour);
-	GfxDrawLine(x - w1, y + w2, x + w2, y + w2, border_colour);
-	GfxDrawLine(x - w1, y - w1, x - w1, y + w2, border_colour);
-	GfxDrawLine(x + w2, y - w1, x + w2, y + w2, border_colour);
 }
 
 bool LinkGraphOverlay::ShowTooltip(Point pt, TooltipCloseCondition close_cond)
@@ -542,7 +537,7 @@ static constexpr NWidgetPart _nested_linkgraph_legend_widgets[] = {
 static_assert(WID_LGL_SATURATION_LAST - WID_LGL_SATURATION_FIRST ==
 		lengthof(LinkGraphOverlay::LINK_COLOURS[0]) - 1);
 
-static WindowDesc _linkgraph_legend_desc(__FILE__, __LINE__,
+static WindowDesc _linkgraph_legend_desc(
 	WDP_AUTO, "toolbar_linkgraph", 0, 0,
 	WC_LINKGRAPH_LEGEND, WC_NONE,
 	0,

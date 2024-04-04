@@ -34,11 +34,12 @@
 #include "game/game.hpp"
 #include "goal_base.h"
 #include "story_base.h"
-#include "widgets/statusbar_widget.h"
 #include "company_cmd.h"
 #include "timer/timer.h"
 #include "timer/timer_game_economy.h"
 #include "timer/timer_game_tick.h"
+
+#include "widgets/statusbar_widget.h"
 
 #include "table/strings.h"
 
@@ -146,8 +147,8 @@ void SetLocalCompany(CompanyID new_company)
  */
 TextColour GetDrawStringCompanyColour(CompanyID company)
 {
-	if (!Company::IsValidID(company)) return (TextColour)_colour_gradient[COLOUR_WHITE][4] | TC_IS_PALETTE_COLOUR;
-	return (TextColour)_colour_gradient[_company_colours[company]][4] | TC_IS_PALETTE_COLOUR;
+	if (!Company::IsValidID(company)) return (TextColour)GetColourGradient(COLOUR_WHITE, SHADE_NORMAL) | TC_IS_PALETTE_COLOUR;
+	return (TextColour)GetColourGradient(_company_colours[company], SHADE_NORMAL) | TC_IS_PALETTE_COLOUR;
 }
 
 /**
@@ -298,10 +299,10 @@ void SubtractMoneyFromCompany(const CommandCost &cost)
 void SubtractMoneyFromCompanyFract(CompanyID company, const CommandCost &cst)
 {
 	Company *c = Company::Get(company);
-	byte m = c->money_fraction;
+	uint8_t m = c->money_fraction;
 	Money cost = cst.GetCost();
 
-	c->money_fraction = m - (byte)cost;
+	c->money_fraction = m - (uint8_t)cost;
 	cost >>= 8;
 	if (c->money_fraction > m) cost++;
 	if (cost != 0) SubtractMoneyFromAnyCompany(c, CommandCost(cst.GetExpensesType(), cost));
@@ -447,7 +448,7 @@ bad_town_name:;
 }
 
 /** Sorting weights for the company colours. */
-static const byte _colour_sort[COLOUR_END] = {2, 2, 3, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 1, 1, 1};
+static const uint8_t _colour_sort[COLOUR_END] = {2, 2, 3, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 1, 1, 1};
 /** Similar colours, so we can try to prevent same coloured companies. */
 static const Colours _similar_colour[COLOUR_END][2] = {
 	{ COLOUR_BLUE,       COLOUR_LIGHT_BLUE }, // COLOUR_DARK_BLUE
@@ -477,7 +478,7 @@ static Colours GenerateCompanyColour()
 	Colours colours[COLOUR_END];
 
 	/* Initialize array */
-	for (uint i = 0; i < COLOUR_END; i++) colours[i] = (Colours)i;
+	for (uint i = 0; i < COLOUR_END; i++) colours[i] = static_cast<Colours>(i);
 
 	/* And randomize it */
 	for (uint i = 0; i < 100; i++) {
@@ -1255,7 +1256,7 @@ CommandCost CmdGiveMoney(DoCommandFlag flags, Money money, CompanyID dest_compan
 
 	if (flags & DC_EXEC) {
 		/* Add money to company */
-		Backup<CompanyID> cur_company(_current_company, dest_company, FILE_LINE);
+		Backup<CompanyID> cur_company(_current_company, dest_company);
 		SubtractMoneyFromCompany(CommandCost(EXPENSES_OTHER, -amount.GetCost()));
 		cur_company.Restore();
 

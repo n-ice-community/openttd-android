@@ -49,13 +49,13 @@
  */
 struct IntroGameViewportCommand {
 	/** Horizontal alignment value. */
-	enum AlignmentH : byte {
+	enum AlignmentH : uint8_t {
 		LEFT,
 		CENTRE,
 		RIGHT,
 	};
 	/** Vertical alignment value. */
-	enum AlignmentV : byte {
+	enum AlignmentV : uint8_t {
 		TOP,
 		MIDDLE,
 		BOTTOM,
@@ -455,7 +455,7 @@ static constexpr NWidgetPart _nested_select_game_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _select_game_desc(__FILE__, __LINE__,
+static WindowDesc _select_game_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_SELECT_GAME, WC_NONE,
 	WDF_NO_CLOSE,

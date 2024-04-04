@@ -241,15 +241,15 @@ std::vector<int> VideoDriver_SDL_Base::GetListOfMonitorRefreshRates()
 
 struct SDLVkMapping {
 	SDL_Keycode vk_from;
-	byte vk_count;
-	byte map_to;
+	uint8_t vk_count;
+	uint8_t map_to;
 	bool unprintable;
 };
 
 #define AS(x, z) {x, 0, z, false}
-#define AM(x, y, z, w) {x, (byte)(y - x), z, false}
+#define AM(x, y, z, w) {x, (uint8_t)(y - x), z, false}
 #define AS_UP(x, z) {x, 0, z, true}
-#define AM_UP(x, y, z, w) {x, (byte)(y - x), z, true}
+#define AM_UP(x, y, z, w) {x, (uint8_t)(y - x), z, true}
 
 static const SDLVkMapping _vk_mapping[] = {
 	/* Pageup stuff + up/down */
@@ -533,6 +533,15 @@ const char *VideoDriver_SDL_Base::Start(const StringList &param)
 
 	const char *error = this->Initialize();
 	if (error != nullptr) return error;
+
+#ifdef SDL_HINT_MOUSE_AUTO_CAPTURE
+	if (GetDriverParamBool(param, "no_mouse_capture")) {
+		/* By default SDL captures the mouse, while a button is pressed.
+		 * This is annoying during debugging, when OpenTTD is suspended while the button was pressed.
+		 */
+		if (!SDL_SetHint(SDL_HINT_MOUSE_AUTO_CAPTURE, "0")) return SDL_GetError();
+	}
+#endif
 
 	this->startup_display = FindStartupDisplay(GetDriverParamInt(param, "display", -1));
 

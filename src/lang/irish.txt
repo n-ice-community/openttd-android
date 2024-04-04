@@ -3,8 +3,8 @@
 ##isocode ga_IE
 ##plural 4
 ##textdir ltr
-##numberformat 00,000,000,000,000,000,000
-##numberabbreviations 3=00,000,000,000,000,000{NBSP}k|6=00,000,000,000,000{NBSP}m|9=00,000,000,000{NBSP}bn|12=00,000,000{NBSP}tn|15=00,000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep ,
+##digitsepcur ,
 ##decimalsep .
 ##winlangid 0x083c
 ##grflangid 0x08
@@ -880,7 +880,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Aonaid a
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Aonaid airgeadra a roghnú
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Punt na Breataine
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dollar Mheiriceá
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -989,6 +989,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Ráta m
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Laghdaigh méid d'airgeadra ar Euro (€) amháin
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Méadaigh méid d'airgeadra ar Euro (€) amháin
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Socraigh ráta malairte d'airgeadra ar Euro (€) amháin
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Réimír: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Socraigh an teaghrán réimíre dod' airgeadra
@@ -2348,7 +2349,7 @@ STR_NETWORK_ERROR_INVALID_CLIENT_NAME                           :{WHITE}Níl d'a
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Seans gur cailleadh an nasc
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Le {NUM} {P sh sh s s s} ní bhfuarthas aon sonraí ón bhfreastalaí
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :earráid ghinearálta
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :earráid dísioncronaithe
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :níorbh fhéidir an léarscáil a lódáil
@@ -2821,7 +2822,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Úinéir
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Úinéir an iarnróid: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Údarás áitiúil: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Ceann ar bith
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Comhordanáidí: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Tógtha: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Aicme an stáisiúin: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Cineál stáisiúin: {LTBLUE}{STRING}
@@ -4494,9 +4494,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Ioncam M
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Fós ag sábháil,{}fan go mbeidh sé críochnaithe!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Theip ar uathshábháil
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Ní féidir an tiomántán a léamh
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Theip ar Shábháil Cluiche{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Ní féidir comhad a scriosadh
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Theip ar Lódáil Cluiche{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Earráid inmheánach: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Cluiche sábháilte briste - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Rinneadh an cluiche sábháilte le leagan níos nuaí
@@ -5379,6 +5377,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

@@ -23,8 +23,8 @@
 #include "network_udp.h"
 #include "../window_func.h"
 #include "../gfx_func.h"
-#include "../widgets/dropdown_type.h"
-#include "../widgets/dropdown_func.h"
+#include "../dropdown_type.h"
+#include "../dropdown_func.h"
 #include "../querystring_gui.h"
 #include "../sortlist_type.h"
 #include "../company_func.h"
@@ -74,9 +74,9 @@ static DropDownList BuildVisibilityDropDownList()
 {
 	DropDownList list;
 
-	list.push_back(std::make_unique<DropDownListStringItem>(STR_NETWORK_SERVER_VISIBILITY_LOCAL, SERVER_GAME_TYPE_LOCAL, false));
-	list.push_back(std::make_unique<DropDownListStringItem>(STR_NETWORK_SERVER_VISIBILITY_INVITE_ONLY, SERVER_GAME_TYPE_INVITE_ONLY, false));
-	list.push_back(std::make_unique<DropDownListStringItem>(STR_NETWORK_SERVER_VISIBILITY_PUBLIC, SERVER_GAME_TYPE_PUBLIC, false));
+	list.push_back(MakeDropDownListStringItem(STR_NETWORK_SERVER_VISIBILITY_LOCAL, SERVER_GAME_TYPE_LOCAL));
+	list.push_back(MakeDropDownListStringItem(STR_NETWORK_SERVER_VISIBILITY_INVITE_ONLY, SERVER_GAME_TYPE_INVITE_ONLY));
+	list.push_back(MakeDropDownListStringItem(STR_NETWORK_SERVER_VISIBILITY_PUBLIC, SERVER_GAME_TYPE_PUBLIC));
 
 	return list;
 }
@@ -529,10 +529,9 @@ public:
 			case WID_NG_MATRIX: {
 				uint16_t y = r.top;
 
-				const int max = std::min(this->vscroll->GetPosition() + this->vscroll->GetCapacity(), (int)this->servers.size());
-
-				for (int i = this->vscroll->GetPosition(); i < max; ++i) {
-					const NetworkGameList *ngl = this->servers[i];
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->servers);
+				for (auto it = first; it != last; ++it) {
+					const NetworkGameList *ngl = *it;
 					this->DrawServerLine(ngl, y, ngl == this->server);
 					y += this->resize.step_height;
 				}
@@ -958,7 +957,7 @@ static constexpr NWidgetPart _nested_network_game_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _network_game_window_desc(__FILE__, __LINE__,
+static WindowDesc _network_game_window_desc(
 	WDP_CENTER, "list_servers", 1000, 730,
 	WC_NETWORK_WINDOW, WC_NONE,
 	0,
@@ -1225,7 +1224,7 @@ static constexpr NWidgetPart _nested_network_start_server_window_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _network_start_server_window_desc(__FILE__, __LINE__,
+static WindowDesc _network_start_server_window_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_NETWORK_WINDOW, WC_NONE,
 	0,
@@ -1306,7 +1305,7 @@ static constexpr NWidgetPart _nested_client_list_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _client_list_desc(__FILE__, __LINE__,
+static WindowDesc _client_list_desc(
 	WDP_AUTO, "list_clients", 220, 300,
 	WC_CLIENT_LIST, WC_NONE,
 	0,
@@ -1501,8 +1500,8 @@ private:
 	static void OnClickClientAdmin([[maybe_unused]] NetworkClientListWindow *w, [[maybe_unused]] Point pt, ClientID client_id)
 	{
 		DropDownList list;
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_KICK, DD_CLIENT_ADMIN_KICK, false));
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_BAN, DD_CLIENT_ADMIN_BAN, false));
+		list.push_back(MakeDropDownListStringItem(STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_KICK, DD_CLIENT_ADMIN_KICK));
+		list.push_back(MakeDropDownListStringItem(STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_BAN, DD_CLIENT_ADMIN_BAN));
 
 		Rect wi_rect;
 		wi_rect.left   = pt.x;
@@ -1523,8 +1522,8 @@ private:
 	static void OnClickCompanyAdmin([[maybe_unused]] NetworkClientListWindow *w, [[maybe_unused]] Point pt, CompanyID company_id)
 	{
 		DropDownList list;
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_RESET, DD_COMPANY_ADMIN_RESET, NetworkCompanyHasClients(company_id)));
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_UNLOCK, DD_COMPANY_ADMIN_UNLOCK, !NetworkCompanyIsPassworded(company_id)));
+		list.push_back(MakeDropDownListStringItem(STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_RESET, DD_COMPANY_ADMIN_RESET, NetworkCompanyHasClients(company_id)));
+		list.push_back(MakeDropDownListStringItem(STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_UNLOCK, DD_COMPANY_ADMIN_UNLOCK, !NetworkCompanyIsPassworded(company_id)));
 
 		Rect wi_rect;
 		wi_rect.left   = pt.x;
@@ -1954,7 +1953,7 @@ public:
 			DrawFrameRect(r, button->colour, FR_NONE);
 			DrawSprite(button->sprite, PAL_NONE, r.left + WidgetDimensions::scaled.framerect.left, r.top + WidgetDimensions::scaled.framerect.top);
 			if (button->disabled) {
-				GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), _colour_gradient[button->colour & 0xF][2], FILLRECT_CHECKER);
+				GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(button->colour, SHADE_DARKER), FILLRECT_CHECKER);
 			}
 
 			int width = button->width + WidgetDimensions::scaled.hsep_normal;
@@ -2112,7 +2111,7 @@ uint32_t _network_join_bytes;             ///< The number of bytes we already do
 uint32_t _network_join_bytes_total;       ///< The total number of bytes to download.
 
 struct NetworkJoinStatusWindow : Window {
-	NetworkPasswordType password_type;
+	std::shared_ptr<NetworkAuthenticationPasswordRequest> request;
 
 	NetworkJoinStatusWindow(WindowDesc *desc) : Window(desc)
 	{
@@ -2208,16 +2207,12 @@ struct NetworkJoinStatusWindow : Window {
 
 	void OnQueryTextFinished(char *str) override
 	{
-		if (StrEmpty(str)) {
+		if (StrEmpty(str) || this->request == nullptr) {
 			NetworkDisconnect();
 			return;
 		}
 
-		switch (this->password_type) {
-			case NETWORK_GAME_PASSWORD:    MyClient::SendGamePassword   (str); break;
-			case NETWORK_COMPANY_PASSWORD: MyClient::SendCompanyPassword(str); break;
-			default: NOT_REACHED();
-		}
+		this->request->Reply(str);
 	}
 };
 
@@ -2232,7 +2227,7 @@ static constexpr NWidgetPart _nested_network_join_status_window_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _network_join_status_window_desc(__FILE__, __LINE__,
+static WindowDesc _network_join_status_window_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_NETWORK_STATUS_WINDOW, WC_NONE,
 	WDF_MODAL,
@@ -2245,11 +2240,11 @@ void ShowJoinStatusWindow()
 	new NetworkJoinStatusWindow(&_network_join_status_window_desc);
 }
 
-void ShowNetworkNeedPassword(NetworkPasswordType npt)
+void ShowNetworkNeedPassword(NetworkPasswordType npt, std::shared_ptr<NetworkAuthenticationPasswordRequest> request)
 {
 	NetworkJoinStatusWindow *w = (NetworkJoinStatusWindow *)FindWindowById(WC_NETWORK_STATUS_WINDOW, WN_NETWORK_STATUS_WINDOW_JOIN);
 	if (w == nullptr) return;
-	w->password_type = npt;
+	w->request = request;
 
 	StringID caption;
 	switch (npt) {
@@ -2354,7 +2349,7 @@ static constexpr NWidgetPart _nested_network_company_password_window_widgets[] =
 	EndContainer(),
 };
 
-static WindowDesc _network_company_password_window_desc(__FILE__, __LINE__,
+static WindowDesc _network_company_password_window_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_COMPANY_PASSWORD_WINDOW, WC_NONE,
 	0,
@@ -2463,7 +2458,7 @@ static constexpr NWidgetPart _nested_network_ask_relay_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _network_ask_relay_desc(__FILE__, __LINE__,
+static WindowDesc _network_ask_relay_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_NETWORK_ASK_RELAY, WC_NONE,
 	WDF_MODAL,
@@ -2561,7 +2556,7 @@ static constexpr NWidgetPart _nested_network_ask_survey_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _network_ask_survey_desc(__FILE__, __LINE__,
+static WindowDesc _network_ask_survey_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_NETWORK_ASK_SURVEY, WC_NONE,
 	WDF_MODAL,

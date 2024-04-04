@@ -3,8 +3,8 @@
 ##isocode ja_JP
 ##plural 1
 ##textdir ltr
-##numberformat 0000京0000兆0000億0000万0000
-##numberabbreviations 4=0000京0000兆0000億0000万|8=0000京0000兆0000億|12=0000京0000兆|16=0000京
+##digitsep ,
+##digitsepcur ,
 ##decimalsep .
 ##winlangid 0x0411
 ##grflangid 0x39
@@ -906,7 +906,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}通貨�
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}通貨単位の選択
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :英ポンド
 STR_GAME_OPTIONS_CURRENCY_USD                                   :米ドル
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :欧州連合・ユーロ
@@ -1031,6 +1031,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}為替�
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}英ポンドに対するお使いの通貨の為替レートを減らします
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}英ポンドに対するお使いの通貨の為替レートを増やします
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}英ポンドに対するお使いの通貨の為替レートを設定します
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}接頭文字: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}通貨の接頭文字を入力します
@@ -2420,7 +2421,7 @@ STR_NETWORK_ERROR_INVALID_CLIENT_NAME                           :{WHITE}プレ�
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}接続切断の可能性
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}過去{NUM}秒間にわたりサーバーからデータを受信できていません
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :一般エラー
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :同期エラー
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :マップロード失敗
@@ -2901,7 +2902,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}軌道�
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}線路所有者: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}所属街域: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :なし
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}座標: {LTBLUE}{NUM}x{NUM}x{NUM}({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}建設年: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}駅の種類: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}駅の種類: {LTBLUE}{STRING}
@@ -4612,9 +4612,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}収益(�
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}ゲームを保存しています{}完了までしばらくお待ちください!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}自動保存に失敗しました
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}ドライブを読み込めません
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}ゲームの保存に失敗しました{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}ファイルを削除できません
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}ゲームの読み込みに失敗しました{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :内部エラー: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :破損したセーブゲーム: {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :このファイルは上位のバージョンによって保存されたものです
@@ -5517,6 +5515,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

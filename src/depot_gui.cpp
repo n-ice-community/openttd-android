@@ -85,28 +85,28 @@ static constexpr NWidgetPart _nested_train_depot_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _train_depot_desc(__FILE__, __LINE__,
+static WindowDesc _train_depot_desc(
 	WDP_AUTO, "depot_train", 362, 123,
 	WC_VEHICLE_DEPOT, WC_NONE,
 	0,
 	std::begin(_nested_train_depot_widgets), std::end(_nested_train_depot_widgets)
 );
 
-static WindowDesc _road_depot_desc(__FILE__, __LINE__,
+static WindowDesc _road_depot_desc(
 	WDP_AUTO, "depot_roadveh", 316, 97,
 	WC_VEHICLE_DEPOT, WC_NONE,
 	0,
 	std::begin(_nested_train_depot_widgets), std::end(_nested_train_depot_widgets)
 );
 
-static WindowDesc _ship_depot_desc(__FILE__, __LINE__,
+static WindowDesc _ship_depot_desc(
 	WDP_AUTO, "depot_ship", 306, 99,
 	WC_VEHICLE_DEPOT, WC_NONE,
 	0,
 	std::begin(_nested_train_depot_widgets), std::end(_nested_train_depot_widgets)
 );
 
-static WindowDesc _aircraft_depot_desc(__FILE__, __LINE__,
+static WindowDesc _aircraft_depot_desc(
 	WDP_AUTO, "depot_aircraft", 332, 99,
 	WC_VEHICLE_DEPOT, WC_NONE,
 	0,
@@ -384,7 +384,7 @@ struct DepotWindow : Window {
 		 */
 		if (this->type == VEH_TRAIN && _consistent_train_width != 0) {
 			int w = ScaleSpriteTrad(2 * _consistent_train_width);
-			int col = _colour_gradient[wid->colour][4];
+			int col = GetColourGradient(wid->colour, SHADE_NORMAL);
 			Rect image = ir.Indent(this->header_width, rtl).Indent(this->count_width, !rtl);
 			int first_line = w + (-this->hscroll->GetPosition()) % w;
 			if (rtl) {
@@ -459,10 +459,10 @@ struct DepotWindow : Window {
 		}
 		ym = (y - matrix_widget->pos_y) % this->resize.step_height;
 
-		int row = this->vscroll->GetScrolledRowFromWidget(y, this, WID_D_MATRIX);
+		int32_t row = this->vscroll->GetScrolledRowFromWidget(y, this, WID_D_MATRIX);
 		uint pos = (row * this->num_columns) + xt;
 
-		if (row == INT_MAX || this->vehicle_list.size() + this->wagon_list.size() <= pos) {
+		if (row == INT32_MAX || this->vehicle_list.size() + this->wagon_list.size() <= pos) {
 			/* Clicking on 'line' / 'block' without a vehicle */
 			if (this->type == VEH_TRAIN) {
 				/* End the dragging */

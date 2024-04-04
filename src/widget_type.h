@@ -698,12 +698,16 @@ public:
  * Scrollbar data structure
  */
 class Scrollbar {
+public:
+	using size_type = int32_t;
+	static constexpr size_type max_size_type = std::numeric_limits<size_type>::max();
+	static constexpr size_type npos = max_size_type;
 private:
 	const bool is_vertical; ///< Scrollbar has vertical orientation.
-	uint16_t count;           ///< Number of elements in the list.
-	uint16_t cap;             ///< Number of visible elements of the scroll bar.
-	uint16_t pos;             ///< Index of first visible item of the list.
-	uint16_t stepsize;        ///< Distance to scroll, when pressing the buttons or using the wheel.
+	size_type count; ///< Number of elements in the list.
+	size_type cap; ///< Number of visible elements of the scroll bar.
+	size_type pos; ///< Index of first visible item of the list.
+	size_type stepsize; ///< Distance to scroll, when pressing the buttons or using the wheel.
 
 public:
 	/** Stepping sizes when scrolling */
@@ -721,7 +725,7 @@ public:
 	 * Gets the number of elements in the list
 	 * @return the number of elements
 	 */
-	inline uint16_t GetCount() const
+	inline size_type GetCount() const
 	{
 		return this->count;
 	}
@@ -730,7 +734,7 @@ public:
 	 * Gets the number of visible elements of the scrollbar
 	 * @return the number of visible elements
 	 */
-	inline uint16_t GetCapacity() const
+	inline size_type GetCapacity() const
 	{
 		return this->cap;
 	}
@@ -739,7 +743,7 @@ public:
 	 * Gets the position of the first visible element in the list
 	 * @return the position of the element
 	 */
-	inline uint16_t GetPosition() const
+	inline size_type GetPosition() const
 	{
 		return this->pos;
 	}
@@ -749,7 +753,7 @@ public:
 	 * @param item to check
 	 * @return true iff the item is visible
 	 */
-	inline bool IsVisible(uint16_t item) const
+	inline bool IsVisible(size_type item) const
 	{
 		return IsInsideBS(item, this->GetPosition(), this->GetCapacity());
 	}
@@ -771,7 +775,7 @@ public:
 	{
 		assert(stepsize > 0);
 
-		this->stepsize = ClampTo<uint16_t>(stepsize);
+		this->stepsize = ClampTo<size_type>(stepsize);
 	}
 
 	/**
@@ -781,9 +785,9 @@ public:
 	 */
 	void SetCount(size_t num)
 	{
-		assert(num <= MAX_UVALUE(uint16_t));
+		assert(num < Scrollbar::max_size_type);
 
-		this->count = ClampTo<uint16_t>(num);
+		this->count = ClampTo<size_type>(num);
 		/* Ensure position is within bounds */
 		this->SetPosition(this->pos);
 	}
@@ -795,9 +799,9 @@ public:
 	 */
 	void SetCapacity(size_t capacity)
 	{
-		assert(capacity <= MAX_UVALUE(uint16_t));
+		assert(capacity < Scrollbar::max_size_type);
 
-		this->cap = ClampTo<uint16_t>(capacity);
+		this->cap = ClampTo<size_type>(capacity);
 		/* Ensure position is within bounds */
 		this->SetPosition(this->pos);
 	}
@@ -809,9 +813,9 @@ public:
 	 * @param position the position of the element
 	 * @return true iff the position has changed
 	 */
-	bool SetPosition(int position)
+	bool SetPosition(size_type position)
 	{
-		uint16_t old_pos = this->pos;
+		size_type old_pos = this->pos;
 		this->pos = Clamp(position, 0, std::max(this->count - this->cap, 0));
 		return this->pos != old_pos;
 	}
@@ -840,7 +844,7 @@ public:
 	 * the window depending on where in the list it was.
 	 * @param position the position to scroll towards.
 	 */
-	void ScrollTowards(int position)
+	void ScrollTowards(size_type position)
 	{
 		if (position < this->GetPosition()) {
 			/* scroll up to the item */
@@ -851,7 +855,21 @@ public:
 		}
 	}
 
-	int GetScrolledRowFromWidget(int clickpos, const Window * const w, WidgetID widget, int padding = 0, int line_height = -1) const;
+	size_type GetScrolledRowFromWidget(int clickpos, const Window * const w, WidgetID widget, int padding = 0, int line_height = -1) const;
+
+	/**
+	 * Get a pair of iterators for the range of visible elements in a container.
+	 * @param container Container of elements represented by the scrollbar.
+	 * @returns Pair of iterators of visible elements.
+	 */
+	template <typename Tcontainer>
+	auto GetVisibleRangeIterators(Tcontainer &container) const
+	{
+		assert((size_t)this->GetCount() == container.size()); // Scrollbar and container size must match.
+		auto first = std::next(std::begin(container), this->GetPosition());
+		auto last = std::next(first, std::min<size_t>(this->GetCapacity(), this->GetCount() - this->GetPosition()));
+		return std::make_pair(first, last);
+	}
 
 	/**
 	 * Return an iterator pointing to the element of a scrolled widget that a user clicked in.
@@ -866,9 +884,9 @@ public:
 	template <typename Tcontainer>
 	typename Tcontainer::iterator GetScrolledItemFromWidget(Tcontainer &container, int clickpos, const Window * const w, WidgetID widget, int padding = 0, int line_height = -1) const
 	{
-		assert(this->GetCount() == container.size()); // Scrollbar and container size must match.
-		int row = this->GetScrolledRowFromWidget(clickpos, w, widget, padding, line_height);
-		if (row == INT_MAX) return std::end(container);
+		assert((size_t)this->GetCount() == container.size()); // Scrollbar and container size must match.
+		size_type row = this->GetScrolledRowFromWidget(clickpos, w, widget, padding, line_height);
+		if (row == Scrollbar::npos) return std::end(container);
 
 		typename Tcontainer::iterator it = std::begin(container);
 		std::advance(it, row);

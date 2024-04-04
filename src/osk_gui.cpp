@@ -32,7 +32,7 @@ enum KeyStateBits {
 	KEYS_SHIFT,
 	KEYS_CAPS
 };
-static byte _keystate = KEYS_NONE;
+static uint8_t _keystate = KEYS_NONE;
 
 struct OskWindow : public Window {
 	StringID caption;      ///< the caption for this window.
@@ -333,7 +333,7 @@ static constexpr NWidgetPart _nested_osk_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _osk_desc(__FILE__, __LINE__,
+static WindowDesc _osk_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_OSK, WC_NONE,
 	0,

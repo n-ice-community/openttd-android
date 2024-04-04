@@ -33,7 +33,7 @@ extern StringList _network_bind_list;
 extern StringList _network_host_list;
 extern StringList _network_ban_list;
 
-byte NetworkSpectatorCount();
+uint8_t NetworkSpectatorCount();
 bool NetworkIsValidClientName(const std::string_view client_name);
 bool NetworkValidateOurClientName();
 bool NetworkValidateClientName(std::string &client_name);
@@ -61,6 +61,7 @@ bool NetworkCompanyIsPassworded(CompanyID company_id);
 uint NetworkMaxCompaniesAllowed();
 bool NetworkMaxCompaniesReached();
 void NetworkPrintClients();
+std::string_view NetworkGetPublicKeyOfClient(ClientID client_id);
 void NetworkHandlePauseChange(PauseMode prev_mode, PauseMode changed_mode);
 
 /*** Commands ran by the server ***/

@@ -1005,7 +1005,7 @@ found_best_track:;
 }
 
 struct RoadDriveEntry {
-	byte x, y;
+	uint8_t x, y;
 };
 
 #include "table/roadveh_movement.h"
@@ -1066,7 +1066,7 @@ static Trackdir FollowPreviousRoadVehicle(const RoadVehicle *v, const RoadVehicl
 		return _road_reverse_table[entry_dir];
 	}
 
-	byte prev_state = prev->state;
+	uint8_t prev_state = prev->state;
 	Trackdir dir;
 
 	if (prev_state == RVSB_WORMHOLE || prev_state == RVSB_IN_DEPOT) {
@@ -1135,7 +1135,7 @@ static Trackdir FollowPreviousRoadVehicle(const RoadVehicle *v, const RoadVehicl
 static bool CanBuildTramTrackOnTile(CompanyID c, TileIndex t, RoadType rt, RoadBits r)
 {
 	/* The 'current' company is not necessarily the owner of the vehicle. */
-	Backup<CompanyID> cur_company(_current_company, c, FILE_LINE);
+	Backup<CompanyID> cur_company(_current_company, c);
 
 	CommandCost ret = Command<CMD_BUILD_ROAD>::Do(DC_NO_WATER, t, r, rt, DRD_NONE, 0);
 
@@ -1338,7 +1338,7 @@ again:
 			TileIndex old_tile = v->tile;
 
 			v->tile = tile;
-			v->state = (byte)dir;
+			v->state = (uint8_t)dir;
 			v->frame = start_frame;
 			RoadTramType rtt = GetRoadTramType(v->roadtype);
 			if (GetRoadType(old_tile, rtt) != GetRoadType(tile, rtt)) {
@@ -1728,6 +1728,7 @@ void RoadVehicle::OnNewCalendarDay()
 void RoadVehicle::OnNewEconomyDay()
 {
 	if (!this->IsFrontEngine()) return;
+	EconomyAgeVehicle(this);
 
 	if ((++this->day_counter & 7) == 0) DecreaseVehicleValue(this);
 	if (this->blocked_ctr == 0) CheckVehicleBreakdown(this);

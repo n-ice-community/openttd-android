@@ -73,7 +73,6 @@ struct NetworkCompanyStats {
 /** Some state information of a company, especially for servers */
 struct NetworkCompanyState {
 	std::string password; ///< The password for the company
-	uint16_t months_empty;  ///< How many months the company is empty
 };
 
 struct NetworkClientInfo;
@@ -88,7 +87,7 @@ enum NetworkPasswordType {
  * Destination of our chat messages.
  * @warning The values of the enum items are part of the admin network API. Only append at the end.
  */
-enum DestType : byte {
+enum DestType : uint8_t {
 	DESTTYPE_BROADCAST, ///< Send message/notice to all clients (All)
 	DESTTYPE_TEAM,      ///< Send message/notice to everyone playing the same company (Team)
 	DESTTYPE_CLIENT,    ///< Send message/notice to only a certain client (Private)
@@ -145,8 +144,22 @@ enum NetworkErrorCode {
 	NETWORK_ERROR_TIMEOUT_MAP,
 	NETWORK_ERROR_TIMEOUT_JOIN,
 	NETWORK_ERROR_INVALID_CLIENT_NAME,
+	NETWORK_ERROR_NOT_ON_ALLOW_LIST,
 
 	NETWORK_ERROR_END,
+};
+
+/**
+ * Simple helper to (more easily) manage authorized keys.
+ *
+ * The authorized keys are hexadecimal representations of their binary form.
+ * The authorized keys are case insensitive.
+ */
+class NetworkAuthorizedKeys : public std::vector<std::string> {
+public:
+	bool Contains(std::string_view key) const;
+	bool Add(std::string_view key);
+	bool Remove(std::string_view key);
 };
 
 #endif /* NETWORK_TYPE_H */

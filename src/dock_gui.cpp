@@ -68,14 +68,14 @@ void CcPlaySound_CONSTRUCTION_WATER(Commands, const CommandCost &result, TileInd
  */
 static TileIndex GetOtherAqueductEnd(TileIndex tile_from, TileIndex *tile_to = nullptr)
 {
-	int z;
-	DiagDirection dir = GetInclinedSlopeDirection(GetTileSlope(tile_from, &z));
+	auto [slope, z] = GetTileSlopeZ(tile_from);
+	DiagDirection dir = GetInclinedSlopeDirection(slope);
 
 	/* If the direction isn't right, just return the next tile so the command
 	 * complains about the wrong slope instead of the ends not matching up.
 	 * Make sure the coordinate is always a valid tile within the map, so we
 	 * don't go "off" the map. That would cause the wrong error message. */
-	if (!IsValidDiagDirection(dir)) return TILE_ADDXY(tile_from, TileX(tile_from) > 2 ? -1 : 1, 0);
+	if (!IsValidDiagDirection(dir)) return TileAddXY(tile_from, TileX(tile_from) > 2 ? -1 : 1, 0);
 
 	/* Direction the aqueduct is built to. */
 	TileIndexDiff offset = TileOffsByDiagDir(ReverseDiagDir(dir));
@@ -84,7 +84,7 @@ static TileIndex GetOtherAqueductEnd(TileIndex tile_from, TileIndex *tile_to = n
 
 	TileIndex endtile = tile_from;
 	for (int length = 0; IsValidTile(endtile) && TileX(endtile) != 0 && TileY(endtile) != 0; length++) {
-		endtile = TILE_ADD(endtile, offset);
+		endtile = TileAdd(endtile, offset);
 
 		if (length > max_length) break;
 
@@ -388,7 +388,7 @@ static constexpr NWidgetPart _nested_build_docks_toolbar_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_docks_toolbar_desc(__FILE__, __LINE__,
+static WindowDesc _build_docks_toolbar_desc(
 	WDP_ALIGN_TOOLBAR, "toolbar_water", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -432,7 +432,7 @@ static constexpr NWidgetPart _nested_build_docks_scen_toolbar_widgets[] = {
 };
 
 /** Window definition for the build docks in scenario editor window. */
-static WindowDesc _build_docks_scen_toolbar_desc(__FILE__, __LINE__,
+static WindowDesc _build_docks_scen_toolbar_desc(
 	WDP_ALIGN_TOOLBAR, "toolbar_water_scen", 0, 0,
 	WC_SCEN_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -543,7 +543,7 @@ static constexpr NWidgetPart _nested_build_dock_station_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_dock_station_desc(__FILE__, __LINE__,
+static WindowDesc _build_dock_station_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_BUILD_STATION, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -638,7 +638,7 @@ static constexpr NWidgetPart _nested_build_docks_depot_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_docks_depot_desc(__FILE__, __LINE__,
+static WindowDesc _build_docks_depot_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_BUILD_DEPOT, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,

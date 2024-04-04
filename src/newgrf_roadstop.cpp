@@ -27,8 +27,8 @@
 
 #include "safeguards.h"
 
-template <typename Tspec, typename Tid, Tid Tmax>
-void NewGRFClass<Tspec, Tid, Tmax>::InsertDefaults()
+template <>
+void RoadStopClass::InsertDefaults()
 {
 	/* Set up initial data */
 	RoadStopClass::Get(RoadStopClass::Allocate('DFLT'))->name = STR_STATION_CLASS_DFLT;
@@ -37,13 +37,14 @@ void NewGRFClass<Tspec, Tid, Tmax>::InsertDefaults()
 	RoadStopClass::Get(RoadStopClass::Allocate('WAYP'))->Insert(nullptr);
 }
 
-template <typename Tspec, typename Tid, Tid Tmax>
-bool NewGRFClass<Tspec, Tid, Tmax>::IsUIAvailable(uint) const
+template <>
+bool RoadStopClass::IsUIAvailable(uint) const
 {
 	return true;
 }
 
-INSTANTIATE_NEWGRF_CLASS_METHODS(RoadStopClass, RoadStopSpec, RoadStopClassID, ROADSTOP_CLASS_MAX)
+/* Instantiate RoadStopClass. */
+template class NewGRFClass<RoadStopSpec, RoadStopClassID, ROADSTOP_CLASS_MAX>;
 
 static const uint NUM_ROADSTOPSPECS_PER_STATION = 63; ///< Maximum number of parts per station.
 
@@ -63,7 +64,7 @@ uint32_t RoadStopScopeResolver::GetTriggers() const
 	return this->st == nullptr ? 0 : this->st->waiting_triggers;
 }
 
-uint32_t RoadStopScopeResolver::GetVariable(byte variable, [[maybe_unused]] uint32_t parameter, bool *available) const
+uint32_t RoadStopScopeResolver::GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const
 {
 	auto get_road_type_variable = [&](RoadTramType rtt) -> uint32_t {
 		RoadType rt;
@@ -153,8 +154,8 @@ uint32_t RoadStopScopeResolver::GetVariable(byte variable, [[maybe_unused]] uint
 			if (type == this->type) SetBit(res, 20);
 
 			if (IsCustomRoadStopSpecIndex(nearby_tile)) {
-				const RoadStopSpecList ssl = BaseStation::GetByTile(nearby_tile)->roadstop_speclist[GetCustomRoadStopSpecIndex(nearby_tile)];
-				res |= 1 << (ssl.grfid != grfid ? 9 : 8) | ClampTo<uint8_t>(ssl.localidx);
+				const auto &sm = BaseStation::GetByTile(nearby_tile)->roadstop_speclist[GetCustomRoadStopSpecIndex(nearby_tile)];
+				res |= 1 << (sm.grfid != grfid ? 9 : 8) | ClampTo<uint8_t>(sm.localidx);
 			}
 			return res;
 		}
@@ -167,8 +168,8 @@ uint32_t RoadStopScopeResolver::GetVariable(byte variable, [[maybe_unused]] uint
 			if (!IsRoadStopTile(nearby_tile)) return 0xFFFFFFFF;
 			if (!IsCustomRoadStopSpecIndex(nearby_tile)) return 0;
 
-			const RoadStopSpecList ssl = BaseStation::GetByTile(nearby_tile)->roadstop_speclist[GetCustomRoadStopSpecIndex(nearby_tile)];
-			return ssl.grfid;
+			const auto &sm = BaseStation::GetByTile(nearby_tile)->roadstop_speclist[GetCustomRoadStopSpecIndex(nearby_tile)];
+			return sm.grfid;
 		}
 
 		/* 16 bit road stop ID of nearby tiles */
@@ -180,9 +181,9 @@ uint32_t RoadStopScopeResolver::GetVariable(byte variable, [[maybe_unused]] uint
 
 			uint32_t grfid = this->st->roadstop_speclist[GetCustomRoadStopSpecIndex(this->tile)].grfid;
 
-			const RoadStopSpecList ssl = BaseStation::GetByTile(nearby_tile)->roadstop_speclist[GetCustomRoadStopSpecIndex(nearby_tile)];
-			if (ssl.grfid == grfid) {
-				return ssl.localidx;
+			const auto &sm = BaseStation::GetByTile(nearby_tile)->roadstop_speclist[GetCustomRoadStopSpecIndex(nearby_tile)];
+			if (sm.grfid == grfid) {
+				return sm.localidx;
 			}
 
 			return 0xFFFE;
@@ -328,8 +329,8 @@ uint16_t GetAnimRoadStopCallback(CallbackID callback, uint32_t param1, uint32_t 
 }
 
 struct RoadStopAnimationFrameAnimationHelper {
-	static byte Get(BaseStation *st, TileIndex tile) { return st->GetRoadStopAnimationFrame(tile); }
-	static void Set(BaseStation *st, TileIndex tile, byte frame) { st->SetRoadStopAnimationFrame(tile, frame); }
+	static uint8_t Get(BaseStation *st, TileIndex tile) { return st->GetRoadStopAnimationFrame(tile); }
+	static void Set(BaseStation *st, TileIndex tile, uint8_t frame) { st->SetRoadStopAnimationFrame(tile, frame); }
 };
 
 /** Helper class for animation control. */
@@ -564,7 +565,7 @@ int AllocateSpecToRoadStop(const RoadStopSpec *statspec, BaseStation *st, bool e
 	return i;
 }
 
-void DeallocateSpecFromRoadStop(BaseStation *st, byte specindex)
+void DeallocateSpecFromRoadStop(BaseStation *st, uint8_t specindex)
 {
 	/* specindex of 0 (default) is never freeable */
 	if (specindex == 0) return;
@@ -612,11 +613,9 @@ void RoadStopUpdateCachedTriggers(BaseStation *st)
 
 	/* Combine animation trigger bitmask for all road stop specs
 	 * of this station. */
-	for (uint i = 0; i < st->roadstop_speclist.size(); i++) {
-		const RoadStopSpec *ss = st->roadstop_speclist[i].spec;
-		if (ss != nullptr) {
-			st->cached_roadstop_anim_triggers |= ss->animation.triggers;
-			st->cached_roadstop_cargo_triggers |= ss->cargo_triggers;
-		}
+	for (const auto &sm : GetStationSpecList<RoadStopSpec>(st)) {
+		if (sm.spec == nullptr) continue;
+		st->cached_roadstop_anim_triggers |= sm.spec->animation.triggers;
+		st->cached_roadstop_cargo_triggers |= sm.spec->cargo_triggers;
 	}
 }

@@ -3,8 +3,8 @@
 ##isocode af_ZA
 ##plural 0
 ##textdir ltr
-##numberformat 00.000.000.000.000.000.000
-##numberabbreviations 3=00.000.000.000.000.000{NBSP}k|6=00.000.000.000.000{NBSP}m|9=00.000.000.000{NBSP}bn|12=00.000.000{NBSP}tn|15=00.000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep .
+##digitsepcur .
 ##decimalsep ,
 ##winlangid 0x0436
 ##grflangid 0x1b
@@ -869,7 +869,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Geldeenh
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Geld eendheid keuse
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Britse Pond
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Amerikaanse Dollar
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -963,6 +963,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Wissel 
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Verlaag die hoeveelheid van jou koers vir een Pond (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Verhoog die hoeveelheid van jou koers vir een Pond (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Stel die wissel koers vir jou koers vir een Pond (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Voorvoegsel: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Stel die voorvoegsel teks vir jou koers
@@ -2202,7 +2203,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Jou reke
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Moontlike verbinding verlore
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Die laaste {NUM} seconde{P "" s} geen data het van die bediener gekom nie
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :algemeen fout
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :desync fout
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :kan nie kaart laai nie
@@ -2650,7 +2651,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Tremweg 
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Spoorweg eienaar: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Plaaslike raad: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Geen
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Koördinate: {LTBLUE}{NUM}x{NUM}x{NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Gebou: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Stasie klas: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Stasie tiepe: {LTBLUE}{STRING}
@@ -4258,9 +4258,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Beraamde
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Stoor van speletjie is nog besig,{}wag asb tot dit klaar is!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Outostoor het misluk
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Kan nie skyf lees nie
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Speletjie Spaar Misluk{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Kan nie lêer uitvee nie
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Speletjie Laai Misluk{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Interne fout: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Gebreekte gespaarde spel - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Spaarspeletjie is gemaak met nuwer uitgawe
@@ -5137,6 +5135,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

@@ -20,7 +20,9 @@
 #include "string_func.h"
 #include "window_func.h"
 #include "viewport_func.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_type.h"
+#include "dropdown_common_type.h"
+#include "dropdown_func.h"
 #include "station_base.h"
 #include "waypoint_base.h"
 #include "tilehighlight_func.h"
@@ -91,6 +93,15 @@ void FindStationsAroundSelection()
 
 	/* Tile area for TileHighlightData */
 	TileArea location(TileVirtXY(_thd.pos.x, _thd.pos.y), _thd.size.x / TILE_SIZE - 1, _thd.size.y / TILE_SIZE - 1);
+
+	/* If the current tile is already a station, then it must be the nearest station. */
+	if (IsTileType(location.tile, MP_STATION) && GetTileOwner(location.tile) == _local_company) {
+		T *st = T::GetByTile(location.tile);
+		if (st != nullptr) {
+			SetViewportCatchmentSpecializedStation<T>(st, true);
+			return;
+		}
+	}
 
 	/* Extended area by one tile */
 	uint x = TileX(location.tile);
@@ -172,7 +183,7 @@ void CheckRedrawWaypointCoverage(const Window *)
  * @param amount Cargo amount
  * @param rating ratings data for that particular cargo
  */
-static void StationsWndShowStationRating(int left, int right, int y, CargoID type, uint amount, byte rating)
+static void StationsWndShowStationRating(int left, int right, int y, CargoID type, uint amount, uint8_t rating)
 {
 	static const uint units_full  = 576; ///< number of units to show station as 'full'
 	static const uint rating_full = 224; ///< rating needed so it is shown as 'full'
@@ -220,7 +231,7 @@ protected:
 	/* Runtime saved values */
 	struct FilterState {
 		Listing last_sorting;
-		byte facilities; ///< types of stations of interest
+		uint8_t facilities; ///< types of stations of interest
 		bool include_no_rating; ///< Whether we should include stations with no cargo rating.
 		CargoTypes cargoes; ///< bitmap of cargo types to include
 	};
@@ -260,8 +271,8 @@ protected:
 		this->stations_per_cargo_type_no_rating = 0;
 
 		for (const Station *st : Station::Iterate()) {
-			if (st->owner == owner || (st->owner == OWNER_NONE && HasStationInUse(st->index, true, owner))) {
-				if (this->filter.facilities & st->facilities) { // only stations with selected facilities
+			if ((this->filter.facilities & st->facilities) != 0) { // only stations with selected facilities
+				if (st->owner == owner || (st->owner == OWNER_NONE && HasStationInUse(st->index, true, owner))) {
 					bool has_rating = false;
 					/* Add to the station/cargo counts. */
 					for (CargoID j = 0; j < NUM_CARGO; j++) {
@@ -332,8 +343,8 @@ protected:
 	/** Sort stations by their rating */
 	static bool StationRatingMaxSorter(const Station * const &a, const Station * const &b, const CargoTypes &cargo_filter)
 	{
-		byte maxr1 = 0;
-		byte maxr2 = 0;
+		uint8_t maxr1 = 0;
+		uint8_t maxr2 = 0;
 
 		for (CargoID j : SetCargoBitIterator(cargo_filter)) {
 			if (a->goods[j].HasRating()) maxr1 = std::max(maxr1, a->goods[j].rating);
@@ -346,8 +357,8 @@ protected:
 	/** Sort stations by their rating */
 	static bool StationRatingMinSorter(const Station * const &a, const Station * const &b, const CargoTypes &cargo_filter)
 	{
-		byte minr1 = 255;
-		byte minr2 = 255;
+		uint8_t minr1 = 255;
+		uint8_t minr2 = 255;
 
 		for (CargoID j : SetCargoBitIterator(cargo_filter)) {
 			if (a->goods[j].HasRating()) minr1 = std::min(minr1, a->goods[j].rating);
@@ -455,7 +466,6 @@ public:
 
 			case WID_STL_LIST: {
 				bool rtl = _current_text_dir == TD_RTL;
-				size_t max = std::min<size_t>(this->vscroll->GetPosition() + this->vscroll->GetCapacity(), this->stations.size());
 				Rect tr = r.Shrink(WidgetDimensions::scaled.framerect);
 				uint line_height = this->GetWidget<NWidgetBase>(widget)->resize_y;
 				/* Spacing between station name and first rating graph. */
@@ -463,8 +473,9 @@ public:
 				/* Spacing between additional rating graphs. */
 				int rating_spacing = WidgetDimensions::scaled.hsep_normal;
 
-				for (size_t i = this->vscroll->GetPosition(); i < max; ++i) { // do until max number of stations of owner
-					const Station *st = this->stations[i];
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->stations);
+				for (auto it = first; it != last; ++it) {
+					const Station *st = *it;
 					assert(st->xy != INVALID_TILE);
 
 					/* Do not do the complex check HasStationInUse here, it may be even false
@@ -533,8 +544,8 @@ public:
 		using DropDownListCargoItem = DropDownCheck<DropDownString<DropDownListIconItem, FS_SMALL, true>>;
 
 		DropDownList list;
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_STATION_LIST_CARGO_FILTER_SELECT_ALL, CargoFilterCriteria::CF_SELECT_ALL));
-		list.push_back(std::make_unique<DropDownListDividerItem>(-1));
+		list.push_back(MakeDropDownListStringItem(STR_STATION_LIST_CARGO_FILTER_SELECT_ALL, CargoFilterCriteria::CF_SELECT_ALL));
+		list.push_back(MakeDropDownListDividerItem());
 
 		bool any_hidden = false;
 
@@ -556,8 +567,8 @@ public:
 		}
 
 		if (!expanded && any_hidden) {
-			if (list.size() > 2) list.push_back(std::make_unique<DropDownListDividerItem>(-1));
-			list.push_back(std::make_unique<DropDownListStringItem>(STR_STATION_LIST_CARGO_FILTER_EXPAND, CargoFilterCriteria::CF_EXPAND_LIST));
+			if (list.size() > 2) list.push_back(MakeDropDownListDividerItem());
+			list.push_back(MakeDropDownListStringItem(STR_STATION_LIST_CARGO_FILTER_EXPAND, CargoFilterCriteria::CF_EXPAND_LIST));
 		}
 
 		return list;
@@ -762,7 +773,7 @@ static constexpr NWidgetPart _nested_company_stations_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _company_stations_desc(__FILE__, __LINE__,
+static WindowDesc _company_stations_desc(
 	WDP_AUTO, "list_stations", 358, 162,
 	WC_STATION_LIST, WC_NONE,
 	0,
@@ -849,7 +860,7 @@ enum SortOrder {
 
 class CargoDataEntry;
 
-enum class CargoSortType : byte {
+enum class CargoSortType : uint8_t {
 	AsGrouping,    ///< by the same principle the entries are being grouped
 	Count,         ///< by amount of cargo
 	StationString, ///< by station name
@@ -2136,7 +2147,7 @@ const StringID StationViewWindow::_group_names[] = {
 	INVALID_STRING_ID
 };
 
-static WindowDesc _station_view_desc(__FILE__, __LINE__,
+static WindowDesc _station_view_desc(
 	WDP_AUTO, "view_station", 249, 117,
 	WC_STATION_VIEW, WC_NONE,
 	0,
@@ -2229,7 +2240,7 @@ static const T *FindStationsNearby(TileArea ta, bool distant_join)
 	for (const BaseStation *st : BaseStation::Iterate()) {
 		if (T::IsExpected(st) && !st->IsInUse() && st->owner == _local_company) {
 			/* Include only within station spread (yes, it is strictly less than) */
-			if (std::max(DistanceMax(ta.tile, st->xy), DistanceMax(TILE_ADDXY(ta.tile, ta.w - 1, ta.h - 1), st->xy)) < _settings_game.station.station_spread) {
+			if (std::max(DistanceMax(ta.tile, st->xy), DistanceMax(TileAddXY(ta.tile, ta.w - 1, ta.h - 1), st->xy)) < _settings_game.station.station_spread) {
 				_deleted_stations_nearby.push_back({st->xy, st->index});
 
 				/* Add the station when it's within where we're going to build */
@@ -2326,11 +2337,12 @@ struct SelectStationWindow : Window {
 		if (widget != WID_JS_PANEL) return;
 
 		Rect tr = r.Shrink(WidgetDimensions::scaled.framerect);
-		for (uint i = this->vscroll->GetPosition(); i < _stations_nearby_list.size(); ++i, tr.top += this->resize.step_height) {
-			if (_stations_nearby_list[i] == NEW_STATION) {
+		auto [first, last] = this->vscroll->GetVisibleRangeIterators(_stations_nearby_list);
+		for (auto it = first; it != last; ++it, tr.top += this->resize.step_height) {
+			if (*it == NEW_STATION) {
 				DrawString(tr, T::EXPECTED_FACIL == FACIL_WAYPOINT ? STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT : STR_JOIN_STATION_CREATE_SPLITTED_STATION);
 			} else {
-				const T *st = T::Get(_stations_nearby_list[i]);
+				const T *st = T::Get(*it);
 				SetDParam(0, st->index);
 				SetDParam(1, st->facilities);
 				DrawString(tr, T::EXPECTED_FACIL == FACIL_WAYPOINT ? STR_STATION_LIST_WAYPOINT : STR_STATION_LIST_STATION);
@@ -2393,7 +2405,7 @@ struct SelectStationWindow : Window {
 	}
 };
 
-static WindowDesc _select_station_desc(__FILE__, __LINE__,
+static WindowDesc _select_station_desc(
 	WDP_AUTO, "build_station_join", 200, 180,
 	WC_SELECT_STATION, WC_NONE,
 	WDF_CONSTRUCTION,

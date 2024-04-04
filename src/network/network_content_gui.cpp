@@ -94,7 +94,7 @@ static constexpr NWidgetPart _nested_network_content_download_status_window_widg
 };
 
 /** Window description for the download window */
-static WindowDesc _network_content_download_status_window_desc(__FILE__, __LINE__,
+static WindowDesc _network_content_download_status_window_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_NETWORK_STATUS_WINDOW, WC_NONE,
 	WDF_MODAL,
@@ -466,6 +466,8 @@ class NetworkContentListWindow : public Window, ContentCallback {
 	/** Filter content by tags/name */
 	static bool CDECL TagNameFilter(const ContentInfo * const *a, ContentListFilterData &filter)
 	{
+		if ((*a)->state == ContentInfo::SELECTED || (*a)->state == ContentInfo::AUTOSELECTED) return true;
+
 		filter.string_filter.ResetState();
 		for (auto &tag : (*a)->tags) filter.string_filter.AddLine(tag);
 
@@ -652,11 +654,8 @@ public:
 		int text_y_offset   = (this->resize.step_height - GetCharacterHeight(FS_NORMAL)) / 2;
 
 		Rect mr = r.WithHeight(this->resize.step_height);
-		auto iter = this->content.begin() + this->vscroll->GetPosition();
-		size_t last = this->vscroll->GetPosition() + this->vscroll->GetCapacity();
-		auto end = (last < this->content.size()) ? this->content.begin() + last : this->content.end();
-
-		for (/**/; iter != end; iter++) {
+		auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->content);
+		for (auto iter = first; iter != last; iter++) {
 			const ContentInfo *ci = *iter;
 
 			if (ci == this->selected) GfxFillRect(mr.Shrink(WidgetDimensions::scaled.bevel), PC_GREY);
@@ -811,6 +810,7 @@ public:
 				if (click_count > 1 || IsInsideBS(pt.x, checkbox->pos_x, checkbox->current_x)) {
 					_network_content_client.ToggleSelectedState(this->selected);
 					this->content.ForceResort();
+					this->content.ForceRebuild();
 				}
 
 				if (this->filter_data.types.any()) {
@@ -997,7 +997,7 @@ public:
 		this->SetWidgetDisabledState(WID_NCL_DOWNLOAD, this->filesize_sum == 0 || (FindWindowById(WC_NETWORK_STATUS_WINDOW, WN_NETWORK_STATUS_WINDOW_CONTENT_DOWNLOAD) != nullptr && data != 2));
 		this->SetWidgetDisabledState(WID_NCL_UNSELECT, this->filesize_sum == 0);
 		this->SetWidgetDisabledState(WID_NCL_SELECT_ALL, !show_select_all);
-		this->SetWidgetDisabledState(WID_NCL_SELECT_UPDATE, !show_select_upgrade);
+		this->SetWidgetDisabledState(WID_NCL_SELECT_UPDATE, !show_select_upgrade || !this->filter_data.string_filter.IsEmpty());
 		this->SetWidgetDisabledState(WID_NCL_OPEN_URL, this->selected == nullptr || this->selected->url.empty());
 		for (TextfileType tft = TFT_CONTENT_BEGIN; tft < TFT_CONTENT_END; tft++) {
 			this->SetWidgetDisabledState(WID_NCL_TEXTFILE + tft, this->selected == nullptr || this->selected->state != ContentInfo::ALREADY_HERE || !this->selected->GetTextfile(tft).has_value());
@@ -1111,7 +1111,7 @@ static constexpr NWidgetPart _nested_network_content_list_widgets[] = {
 };
 
 /** Window description of the content list */
-static WindowDesc _network_content_list_desc(__FILE__, __LINE__,
+static WindowDesc _network_content_list_desc(
 	WDP_CENTER, "list_content", 630, 460,
 	WC_NETWORK_WINDOW, WC_NONE,
 	0,

@@ -7,16 +7,16 @@
 
 /** @file slider_type.h Types related to the horizontal slider widget. */
 
-#ifndef WIDGETS_SLIDER_TYPE_H
-#define WIDGETS_SLIDER_TYPE_H
+#ifndef SLIDER_TYPE_H
+#define SLIDER_TYPE_H
 
-#include "../window_type.h"
-#include "../gfx_func.h"
+#include "core/geometry_type.hpp"
+#include "strings_type.h"
 
 void DrawSliderWidget(Rect r, int min_value, int max_value, int value, const std::map<int, StringID> &labels);
 bool ClickSliderWidget(Rect r, Point pt, int min_value, int max_value, int &value);
 
-inline bool ClickSliderWidget(Rect r, Point pt, int min_value, int max_value, byte &value)
+inline bool ClickSliderWidget(Rect r, Point pt, int min_value, int max_value, uint8_t &value)
 {
 	int tmp_value = value;
 	if (!ClickSliderWidget(r, pt, min_value, max_value, tmp_value)) return false;
@@ -24,4 +24,4 @@ inline bool ClickSliderWidget(Rect r, Point pt, int min_value, int max_value, by
 	return true;
 }
 
-#endif /* WIDGETS_SLIDER_TYPE_H */
+#endif /* SLIDER_TYPE_H */

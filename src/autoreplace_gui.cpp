@@ -25,7 +25,8 @@
 #include "core/geometry_func.hpp"
 #include "rail_gui.h"
 #include "road_gui.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "autoreplace_cmd.h"
 #include "group_cmd.h"
 #include "settings_cmd.h"
@@ -34,7 +35,7 @@
 
 #include "safeguards.h"
 
-void DrawEngineList(VehicleType type, const Rect &r, const GUIEngineList &eng_list, uint16_t min, uint16_t max, EngineID selected_id, bool show_count, GroupID selected_group);
+void DrawEngineList(VehicleType type, const Rect &r, const GUIEngineList &eng_list, const Scrollbar &sb, EngineID selected_id, bool show_count, GroupID selected_group);
 
 static bool EngineNumberSorter(const GUIEngineListItem &a, const GUIEngineListItem &b)
 {
@@ -86,7 +87,7 @@ class ReplaceVehicleWindow : public Window {
 	bool reset_sel_engine;        ///< Also reset #sel_engine while updating left and/or right and no valid engine selected.
 	GroupID sel_group;            ///< Group selected to replace.
 	int details_height;           ///< Minimal needed height of the details panels, in text lines (found so far).
-	byte sort_criteria;           ///< Criteria of sorting vehicles.
+	uint8_t sort_criteria;           ///< Criteria of sorting vehicles.
 	bool descending_sort_order;   ///< Order of sorting vehicles.
 	bool show_hidden_engines;     ///< Whether to show the hidden engines.
 	RailType sel_railtype;        ///< Type of rail tracks selected. #INVALID_RAILTYPE to show all.
@@ -144,7 +145,7 @@ class ReplaceVehicleWindow : public Window {
 		std::vector<EngineID> variants;
 		EngineID selected_engine = INVALID_ENGINE;
 		VehicleType type = (VehicleType)this->window_number;
-		byte side = draw_left ? 0 : 1;
+		uint8_t side = draw_left ? 0 : 1;
 
 		GUIEngineList list;
 
@@ -490,11 +491,9 @@ public:
 			case WID_RV_LEFT_MATRIX:
 			case WID_RV_RIGHT_MATRIX: {
 				int side = (widget == WID_RV_LEFT_MATRIX) ? 0 : 1;
-				EngineID start  = static_cast<EngineID>(this->vscroll[side]->GetPosition()); // what is the offset for the start (scrolling)
-				EngineID end    = static_cast<EngineID>(std::min<size_t>(this->vscroll[side]->GetCapacity() + start, this->engines[side].size()));
 
 				/* Do the actual drawing */
-				DrawEngineList((VehicleType)this->window_number, r, this->engines[side], start, end, this->sel_engine[side], side == 0, this->sel_group);
+				DrawEngineList((VehicleType)this->window_number, r, this->engines[side], *this->vscroll[side], this->sel_engine[side], side == 0, this->sel_group);
 				break;
 			}
 		}
@@ -568,8 +567,8 @@ public:
 
 			case WID_RV_TRAIN_ENGINEWAGON_DROPDOWN: {
 				DropDownList list;
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_REPLACE_ENGINES, 1, false));
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_REPLACE_WAGONS, 0, false));
+				list.push_back(MakeDropDownListStringItem(STR_REPLACE_ENGINES, 1));
+				list.push_back(MakeDropDownListStringItem(STR_REPLACE_WAGONS, 0));
 				ShowDropDownList(this, std::move(list), this->replace_engines ? 1 : 0, WID_RV_TRAIN_ENGINEWAGON_DROPDOWN);
 				break;
 			}
@@ -612,7 +611,7 @@ public:
 
 			case WID_RV_LEFT_MATRIX:
 			case WID_RV_RIGHT_MATRIX: {
-				byte click_side;
+				uint8_t click_side;
 				if (widget == WID_RV_LEFT_MATRIX) {
 					click_side = 0;
 				} else {
@@ -788,7 +787,7 @@ static constexpr NWidgetPart _nested_replace_rail_vehicle_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _replace_rail_vehicle_desc(__FILE__, __LINE__,
+static WindowDesc _replace_rail_vehicle_desc(
 	WDP_AUTO, "replace_vehicle_train", 500, 140,
 	WC_REPLACE_VEHICLE, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -846,7 +845,7 @@ static constexpr NWidgetPart _nested_replace_road_vehicle_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _replace_road_vehicle_desc(__FILE__, __LINE__,
+static WindowDesc _replace_road_vehicle_desc(
 	WDP_AUTO, "replace_vehicle_road", 500, 140,
 	WC_REPLACE_VEHICLE, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -898,7 +897,7 @@ static constexpr NWidgetPart _nested_replace_vehicle_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _replace_vehicle_desc(__FILE__, __LINE__,
+static WindowDesc _replace_vehicle_desc(
 	WDP_AUTO, "replace_vehicle", 456, 118,
 	WC_REPLACE_VEHICLE, WC_NONE,
 	WDF_CONSTRUCTION,

@@ -26,10 +26,11 @@
 #include "strings_func.h"
 #include "blitter/factory.hpp"
 #include "linkgraph/linkgraph_gui.h"
-#include "widgets/smallmap_widget.h"
 #include "timer/timer.h"
 #include "timer/timer_window.h"
 #include "smallmap_gui.h"
+
+#include "widgets/smallmap_widget.h"
 
 #include "table/strings.h"
 
@@ -346,7 +347,7 @@ void BuildOwnerLegend()
 
 	int i = NUM_NO_COMPANY_ENTRIES;
 	for (const Company *c : Company::Iterate()) {
-		_legend_land_owners[i].colour = _colour_gradient[c->colour][5];
+		_legend_land_owners[i].colour = GetColourGradient(c->colour, SHADE_LIGHT);
 		_legend_land_owners[i].company = c->index;
 		_legend_land_owners[i].show_on_map = true;
 		_legend_land_owners[i].col_break = false;
@@ -406,7 +407,7 @@ static const AndOr _smallmap_vehicles_andor[] = {
 };
 
 /** Mapping of tile type to importance of the tile (higher number means more interesting to show). */
-static const byte _tiletype_importance[] = {
+static const uint8_t _tiletype_importance[] = {
 	2, // MP_CLEAR
 	8, // MP_RAILWAY
 	7, // MP_ROAD
@@ -607,12 +608,12 @@ uint32_t GetSmallMapOwnerPixels(TileIndex tile, TileType t, IncludeHeightmap inc
 }
 
 /** Vehicle colours in #SMT_VEHICLES mode. Indexed by #VehicleType. */
-static const byte _vehicle_type_colours[6] = {
+static const uint8_t _vehicle_type_colours[6] = {
 	PC_RED, PC_YELLOW, PC_LIGHT_BLUE, PC_WHITE, PC_BLACK, PC_RED
 };
 
 /** Types of legends in the #WID_SM_LEGEND widget. */
-enum SmallMapType : byte {
+enum SmallMapType : uint8_t {
 	SMT_CONTOUR,
 	SMT_VEHICLES,
 	SMT_INDUSTRY,
@@ -972,7 +973,7 @@ protected:
 			}
 
 			/* Calculate pointer to pixel and the colour */
-			byte colour = (this->map_type == SMT_VEHICLES) ? _vehicle_type_colours[v->type] : PC_WHITE;
+			uint8_t colour = (this->map_type == SMT_VEHICLES) ? _vehicle_type_colours[v->type] : PC_WHITE;
 
 			/* And draw either one or two pixels depending on clipping */
 			blitter->SetPixel(dpi->dst_ptr, x, y, colour);
@@ -1981,7 +1982,7 @@ static constexpr NWidgetPart _nested_smallmap_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _smallmap_desc(__FILE__, __LINE__,
+static WindowDesc _smallmap_desc(
 	WDP_AUTO, "smallmap", 484, 314,
 	WC_SMALLMAP, WC_NONE,
 	0,

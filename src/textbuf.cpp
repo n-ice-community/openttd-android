@@ -177,7 +177,7 @@ bool Textbuf::InsertString(const char *str, bool marked, const char *caret, cons
 	for (const char *ptr = str; (c = Utf8Consume(&ptr)) != '\0';) {
 		if (!IsValidChar(c, this->afilter)) break;
 
-		byte len = Utf8CharLen(c);
+		uint8_t len = Utf8CharLen(c);
 		if (this->bytes + bytes + len > this->max_bytes) break;
 		if (this->chars + chars + 1   > this->max_chars) break;
 
@@ -413,9 +413,11 @@ void Textbuf::Assign(StringID string)
  */
 void Textbuf::Assign(const std::string_view text)
 {
-	const char *last_of = &this->buf[this->max_bytes - 1];
-	strecpy(this->buf, text.data(), last_of);
-	StrMakeValidInPlace(this->buf, last_of, SVS_NONE);
+	size_t bytes = std::min<size_t>(this->max_bytes - 1, text.size());
+	memcpy(this->buf, text.data(), bytes);
+	this->buf[bytes] = '\0';
+
+	StrMakeValidInPlace(this->buf, &this->buf[bytes], SVS_NONE);
 
 	/* Make sure the name isn't too long for the text buffer in the number of
 	 * characters (not bytes). max_chars also counts the '\0' characters. */

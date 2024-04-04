@@ -19,7 +19,7 @@
 
 char *strecpy(char *dst, const char *src, const char *last) NOACCESS(3);
 
-std::string FormatArrayAsHex(std::span<const byte> data);
+std::string FormatArrayAsHex(std::span<const uint8_t> data);
 
 void StrMakeValidInPlace(char *str, const char *last, StringValidationSettings settings = SVS_REPLACE_WITH_QUESTION_MARK) NOACCESS(2);
 [[nodiscard]] std::string StrMakeValid(std::string_view str, StringValidationSettings settings = SVS_REPLACE_WITH_QUESTION_MARK);
@@ -29,6 +29,7 @@ bool strtolower(std::string &str, std::string::size_type offs = 0);
 
 [[nodiscard]] bool StrValid(const char *str, const char *last) NOACCESS(2);
 void StrTrimInPlace(std::string &str);
+std::string_view StrTrimView(std::string_view str);
 
 [[nodiscard]] bool StrStartsWithIgnoreCase(std::string_view str, const std::string_view prefix);
 [[nodiscard]] bool StrEndsWithIgnoreCase(std::string_view str, const std::string_view suffix);

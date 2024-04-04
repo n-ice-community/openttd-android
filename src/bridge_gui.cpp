@@ -18,7 +18,7 @@
 #include "gfx_func.h"
 #include "tunnelbridge.h"
 #include "sortlist_type.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_func.h"
 #include "core/geometry_func.hpp"
 #include "tunnelbridge_map.h"
 #include "road_gui.h"
@@ -55,7 +55,7 @@ typedef GUIList<BuildBridgeData> GUIBridgeList; ///< List of bridges, used in #B
  * @param tile_start start tile
  * @param transport_type transport type.
  */
-void CcBuildBridge(Commands, const CommandCost &result, TileIndex end_tile, TileIndex tile_start, TransportType transport_type, BridgeType, byte)
+void CcBuildBridge(Commands, const CommandCost &result, TileIndex end_tile, TileIndex tile_start, TransportType transport_type, BridgeType, uint8_t)
 {
 	if (result.Failed()) return;
 	if (_settings_client.sound.confirm) SndPlayTileFx(SND_27_CONSTRUCTION_BRIDGE, end_tile);
@@ -83,7 +83,7 @@ private:
 	TileIndex start_tile;
 	TileIndex end_tile;
 	TransportType transport_type;
-	byte road_rail_type;
+	uint8_t road_rail_type;
 	GUIBridgeList bridges;
 	int icon_width; ///< Scaled width of the the bridge icon sprite.
 	Scrollbar *vscroll;
@@ -148,7 +148,7 @@ private:
 	}
 
 public:
-	BuildBridgeWindow(WindowDesc *desc, TileIndex start, TileIndex end, TransportType transport_type, byte road_rail_type, GUIBridgeList &&bl) : Window(desc),
+	BuildBridgeWindow(WindowDesc *desc, TileIndex start, TileIndex end, TransportType transport_type, uint8_t road_rail_type, GUIBridgeList &&bl) : Window(desc),
 		start_tile(start),
 		end_tile(end),
 		transport_type(transport_type),
@@ -233,11 +233,11 @@ public:
 			case WID_BBS_BRIDGE_LIST: {
 				Rect tr = r.WithHeight(this->resize.step_height).Shrink(WidgetDimensions::scaled.matrix);
 				bool rtl = _current_text_dir == TD_RTL;
-				for (int i = this->vscroll->GetPosition(); this->vscroll->IsVisible(i) && i < (int)this->bridges.size(); i++) {
-					const BuildBridgeData &bridge_data = this->bridges.at(i);
-					const BridgeSpec *b = bridge_data.spec;
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->bridges);
+				for (auto it = first; it != last; ++it) {
+					const BridgeSpec *b = it->spec;
 					DrawSpriteIgnorePadding(b->sprite, b->pal, tr.WithWidth(this->icon_width, rtl), SA_HOR_CENTER | SA_BOTTOM);
-					DrawStringMultiLine(tr.Indent(this->icon_width + WidgetDimensions::scaled.hsep_normal, rtl), GetBridgeSelectString(bridge_data));
+					DrawStringMultiLine(tr.Indent(this->icon_width + WidgetDimensions::scaled.hsep_normal, rtl), GetBridgeSelectString(*it));
 					tr = tr.Translate(0, this->resize.step_height);
 				}
 				break;
@@ -343,7 +343,7 @@ static constexpr NWidgetPart _nested_build_bridge_widgets[] = {
 };
 
 /** Window definition for the rail bridge selection window. */
-static WindowDesc _build_bridge_desc(__FILE__, __LINE__,
+static WindowDesc _build_bridge_desc(
 	WDP_AUTO, "build_bridge", 200, 114,
 	WC_BUILD_BRIDGE, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -360,7 +360,7 @@ static WindowDesc _build_bridge_desc(__FILE__, __LINE__,
  * @param transport_type The transport type
  * @param road_rail_type The road/rail type
  */
-void ShowBuildBridgeWindow(TileIndex start, TileIndex end, TransportType transport_type, byte road_rail_type)
+void ShowBuildBridgeWindow(TileIndex start, TileIndex end, TransportType transport_type, uint8_t road_rail_type)
 {
 	CloseWindowByClass(WC_BUILD_BRIDGE);
 

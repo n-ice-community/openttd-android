@@ -90,7 +90,7 @@ Point _cursorpos_drag_start;
 int _scrollbar_start_pos;
 int _scrollbar_size;
 bool _scrollbar_finger_drag;
-byte _scroller_click_timeout = 0;
+uint8_t _scroller_click_timeout = 0;
 
 bool _scrolling_viewport;  ///< A viewport is being scrolled with the mouse.
 bool _mouse_hovering;      ///< The mouse is hovering over the same point.
@@ -108,11 +108,11 @@ std::vector<WindowDesc*> *_window_descs = nullptr;
 std::string _windows_file;
 
 /** Window description constructor. */
-WindowDesc::WindowDesc(const char * const file, const int line, WindowPosition def_pos, const char *ini_key, int16_t def_width_trad, int16_t def_height_trad,
+WindowDesc::WindowDesc(WindowPosition def_pos, const char *ini_key, int16_t def_width_trad, int16_t def_height_trad,
 			WindowClass window_class, WindowClass parent_class, uint32_t flags,
-			const NWidgetPart *nwid_begin, const NWidgetPart *nwid_end, HotkeyList *hotkeys) :
-	file(file),
-	line(line),
+			const NWidgetPart *nwid_begin, const NWidgetPart *nwid_end, HotkeyList *hotkeys,
+			const std::source_location location) :
+	source_location(location),
 	default_pos(def_pos),
 	cls(window_class),
 	parent_cls(parent_class),
@@ -1035,7 +1035,7 @@ void Window::ReInit(int rx, int ry, bool reposition)
 		this->FindWindowPlacementAndResize(this->window_desc->GetDefaultWidth(), this->window_desc->GetDefaultHeight());
 	}
 
-	ResizeWindow(this, dx, dy);
+	ResizeWindow(this, dx, dy, true, false);
 	/* ResizeWindow() does this->SetDirty() already, no need to do it again here. */
 }
 
@@ -1515,8 +1515,8 @@ void Window::FindWindowPlacementAndResize(int def_width, int def_height)
 		ResizeWindow(this, enlarge_x, enlarge_y);
 		/* ResizeWindow() calls this->OnResize(). */
 	} else {
-		/* Schedule OnResize; that way the scrollbars and matrices get initialized. */
-		this->ScheduleResize();
+		/* Always call OnResize; that way the scrollbars and matrices get initialized. */
+		this->OnResize();
 	}
 
 	int nx = this->left;
@@ -2087,9 +2087,6 @@ static void HandleMouseOver()
 	}
 }
 
-/** The minimum number of pixels of the title bar must be visible in both the X or Y direction */
-static const int MIN_VISIBLE_TITLE_BAR = 13;
-
 /** Direction for moving the window. */
 enum PreventHideDirection {
 	PHD_UP,   ///< Above v is a safe position.
@@ -2101,7 +2098,7 @@ enum PreventHideDirection {
  * If needed, move the window base coordinates to keep it visible.
  * @param nx   Base horizontal coordinate of the rectangle.
  * @param ny   Base vertical coordinate of the rectangle.
- * @param rect Rectangle that must stay visible for #MIN_VISIBLE_TITLE_BAR pixels (horizontally, vertically, or both)
+ * @param rect Rectangle that must stay visible (horizontally, vertically, or both)
  * @param v    Window lying in front of the rectangle.
  * @param px   Previous horizontal base coordinate.
  * @param dir  If no room horizontally, move the rectangle to the indicated position.
@@ -2110,10 +2107,10 @@ static void PreventHiding(int *nx, int *ny, const Rect &rect, const Window *v, i
 {
 	if (v == nullptr) return;
 
-	const int min_visible = ScaleGUITrad(MIN_VISIBLE_TITLE_BAR);
+	const int min_visible = rect.Height();
 
-	int v_bottom = v->top + v->height;
-	int v_right = v->left + v->width;
+	int v_bottom = v->top + v->height - 1;
+	int v_right = v->left + v->width - 1;
 	int safe_y = (dir == PHD_UP) ? (v->top - min_visible - rect.top) : (v_bottom + min_visible - rect.bottom); // Compute safe vertical position.
 
 	if (*ny + rect.top <= v->top - min_visible) return; // Above v is enough space
@@ -2149,12 +2146,11 @@ static void PreventHiding(int *nx, int *ny, const Rect &rect, const Window *v, i
 static void EnsureVisibleCaption(Window *w, int nx, int ny)
 {
 	/* Search for the title bar rectangle. */
-	Rect caption_rect;
 	const NWidgetBase *caption = w->nested_root->GetWidgetOfType(WWT_CAPTION);
 	if (caption != nullptr && _settings_client.gui.windows_titlebars) {
-		caption_rect = caption->GetCurrentRect();
+		const Rect caption_rect = caption->GetCurrentRect();
 
-		const int min_visible = ScaleGUITrad(MIN_VISIBLE_TITLE_BAR);
+		const int min_visible = caption_rect.Height();
 
 		/* Make sure the window doesn't leave the screen */
 		nx = Clamp(nx, min_visible - caption_rect.right, _screen.width - min_visible - caption_rect.left);
@@ -2186,7 +2182,7 @@ static void EnsureVisibleCaption(Window *w, int nx, int ny)
  * @param delta_y Delta y-size of changed window
  * @param clamp_to_screen Whether to make sure the whole window stays visible
  */
-void ResizeWindow(Window *w, int delta_x, int delta_y, bool clamp_to_screen)
+void ResizeWindow(Window *w, int delta_x, int delta_y, bool clamp_to_screen, bool schedule_resize)
 {
 	if (delta_x != 0 || delta_y != 0) {
 		if (clamp_to_screen) {
@@ -2213,7 +2209,11 @@ void ResizeWindow(Window *w, int delta_x, int delta_y, bool clamp_to_screen)
 	EnsureVisibleCaption(w, w->left, w->top);
 
 	/* Schedule OnResize to make sure everything is initialised correctly if it needs to be. */
-	w->ScheduleResize();
+	if (schedule_resize) {
+		w->ScheduleResize();
+	} else {
+		w->OnResize();
+	}
 	w->SetDirty();
 }
 
@@ -3734,6 +3734,18 @@ void RelocateAllWindows(int neww, int newh)
 {
 	CloseWindowByClass(WC_DROPDOWN_MENU);
 
+	/* Reposition toolbar then status bar before other all windows. */
+	if (Window *wt = FindWindowById(WC_MAIN_TOOLBAR, 0); wt != nullptr) {
+		ResizeWindow(wt, std::min<uint>(neww, _toolbar_width) - wt->width, 0, false);
+		wt->left = PositionMainToolbar(wt);
+	}
+
+	if (Window *ws = FindWindowById(WC_STATUS_BAR, 0); ws != nullptr) {
+		ResizeWindow(ws, std::min<uint>(neww, _toolbar_width) - ws->width, 0, false);
+		ws->top = newh - ws->height;
+		ws->left = PositionStatusbar(ws);
+	}
+
 	for (Window *w : Window::Iterate()) {
 		int left, top;
 		/* XXX - this probably needs something more sane. For example specifying
@@ -3745,11 +3757,8 @@ void RelocateAllWindows(int neww, int newh)
 				continue;
 
 			case WC_MAIN_TOOLBAR:
-				ResizeWindow(w, std::min<uint>(neww, _toolbar_width) - w->width, 0, false);
-
-				top = w->top;
-				left = PositionMainToolbar(w); // changes toolbar orientation
-				break;
+			case WC_STATUS_BAR:
+				continue;
 
 			case WC_MAIN_TOOLBAR_RIGHT:
 				ResizeWindow(w, std::min<uint>(neww, _toolbar_width) - w->width, 0, false);
@@ -3761,13 +3770,6 @@ void RelocateAllWindows(int neww, int newh)
 			case WC_NEWS_WINDOW:
 				top = newh - w->height;
 				left = PositionNewsMessage(w);
-				break;
-
-			case WC_STATUS_BAR:
-				ResizeWindow(w, std::min<uint>(neww, std::min<int>(_toolbar_width, _screen.width * 2 / 3 - GetMinButtonSize() * 2)) - w->width, 0, false);
-
-				top = newh - w->height;
-				left = PositionStatusbar(w);
 				break;
 
 			case WC_SEND_NETWORK_MSG:

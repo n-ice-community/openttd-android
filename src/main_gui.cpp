@@ -337,7 +337,7 @@ struct MainWindow : Window
 			case GHK_REFRESH_SCREEN: MarkWholeScreenDirty(); break;
 
 			case GHK_CRASH: // Crash the game
-				*(volatile byte *)nullptr = 0;
+				*(volatile uint8_t *)nullptr = 0;
 				break;
 
 			case GHK_MONEY: // Gimme money
@@ -515,7 +515,7 @@ struct MainWindow : Window
 	}};
 };
 
-static WindowDesc _main_window_desc(__FILE__, __LINE__,
+static WindowDesc _main_window_desc(
 	WDP_MANUAL, nullptr, 0, 0,
 	WC_MAIN_WINDOW, WC_NONE,
 	WDF_NO_CLOSE,
@@ -542,11 +542,12 @@ void ShowSelectGameWindow();
  */
 void SetupColoursAndInitialWindow()
 {
-	for (uint i = 0; i != 16; i++) {
-		const byte *b = GetNonSprite(GENERAL_SPRITE_COLOUR(i), SpriteType::Recolour);
-
-		assert(b);
-		memcpy(_colour_gradient[i], b + 0xC6, sizeof(_colour_gradient[i]));
+	for (Colours i = COLOUR_BEGIN; i != COLOUR_END; i++) {
+		const uint8_t *b = GetNonSprite(GENERAL_SPRITE_COLOUR(i), SpriteType::Recolour) + 1;
+		assert(b != nullptr);
+		for (ColourShade j = SHADE_BEGIN; j < SHADE_END; j++) {
+			SetColourGradient(i, j, b[0xC6 + j]);
+		}
 	}
 
 	new MainWindow(&_main_window_desc);

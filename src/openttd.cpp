@@ -233,7 +233,7 @@ static void WriteSavegameInfo(const std::string &name)
 {
 	extern SaveLoadVersion _sl_version;
 	uint32_t last_ottd_rev = 0;
-	byte ever_modified = 0;
+	uint8_t ever_modified = 0;
 	bool removed_newgrfs = false;
 
 	_gamelog.Info(&last_ottd_rev, &ever_modified, &removed_newgrfs);
@@ -252,7 +252,7 @@ static void WriteSavegameInfo(const std::string &name)
 	message += "NewGRFs:\n";
 	if (_load_check_data.HasNewGrfs()) {
 		for (GRFConfig *c = _load_check_data.grfconfig; c != nullptr; c = c->next) {
-			fmt::format_to(std::back_inserter(message), "{:08X} {} {}\n", c->ident.grfid,
+			fmt::format_to(std::back_inserter(message), "{:08X} {} {}\n", BSWAP32(c->ident.grfid),
 				FormatArrayAsHex(HasBit(c->flags, GCF_COMPATIBLE) ? c->original_md5sum : c->ident.md5sum), c->filename);
 		}
 	}
@@ -523,6 +523,9 @@ static const OptionData _options[] = {
  */
 int openttd_main(int argc, char *argv[])
 {
+	_game_session_stats.start_time = std::chrono::steady_clock::now();
+	_game_session_stats.savegame_size = std::nullopt;
+
 	std::string musicdriver;
 	std::string sounddriver;
 	std::string videodriver;
@@ -631,7 +634,8 @@ int openttd_main(int argc, char *argv[])
 				return ret;
 			}
 
-			auto [_, title] = FiosGetSavegameListCallback(SLO_LOAD, mgo.opt, strrchr(mgo.opt, '.'));
+			std::string extension = std::filesystem::path(_file_to_saveload.name).extension().string();
+			auto [_, title] = FiosGetSavegameListCallback(SLO_LOAD, mgo.opt, extension);
 
 			_load_check_data.Clear();
 			SaveOrLoadResult res = SaveOrLoad(mgo.opt, SLO_CHECK, DFT_GAME_FILE, SAVE_DIR, false);
@@ -1101,7 +1105,10 @@ void SwitchToMode(SwitchMode new_mode)
 	if (_game_mode == GM_NORMAL && new_mode != SM_SAVE_GAME) _survey.Transmit(NetworkSurveyHandler::Reason::LEAVE);
 
 	/* Keep track when we last switch mode. Used for survey, to know how long someone was in a game. */
-	if (new_mode != SM_SAVE_GAME) _switch_mode_time = std::chrono::steady_clock::now();
+	if (new_mode != SM_SAVE_GAME) {
+		_game_session_stats.start_time = std::chrono::steady_clock::now();
+		_game_session_stats.savegame_size = std::nullopt;
+	}
 
 	switch (new_mode) {
 		case SM_EDITOR: // Switch to scenario editor
@@ -1143,8 +1150,7 @@ void SwitchToMode(SwitchMode new_mode)
 			ResetWindowSystem();
 
 			if (!SafeLoad(_file_to_saveload.name, _file_to_saveload.file_op, _file_to_saveload.detail_ftype, GM_NORMAL, NO_DIRECTORY)) {
-				SetDParamStr(0, GetSaveLoadErrorString());
-				ShowErrorMessage(STR_JUST_RAW_STRING, INVALID_STRING_ID, WL_CRITICAL);
+				ShowErrorMessage(GetSaveLoadErrorType(), GetSaveLoadErrorMessage(), WL_CRITICAL);
 			} else {
 				if (_file_to_saveload.abstract_ftype == FT_SCENARIO) {
 					OnStartScenario();
@@ -1186,8 +1192,7 @@ void SwitchToMode(SwitchMode new_mode)
 				/* Cancel the saveload pausing */
 				Command<CMD_PAUSE>::Post(PM_PAUSED_SAVELOAD, false);
 			} else {
-				SetDParamStr(0, GetSaveLoadErrorString());
-				ShowErrorMessage(STR_JUST_RAW_STRING, INVALID_STRING_ID, WL_CRITICAL);
+				ShowErrorMessage(GetSaveLoadErrorType(), GetSaveLoadErrorMessage(), WL_CRITICAL);
 			}
 
 			UpdateSocialIntegration(GM_EDITOR);
@@ -1222,8 +1227,7 @@ void SwitchToMode(SwitchMode new_mode)
 		case SM_SAVE_GAME: // Save game.
 			/* Make network saved games on pause compatible to singleplayer mode */
 			if (SaveOrLoad(_file_to_saveload.name, SLO_SAVE, DFT_GAME_FILE, NO_DIRECTORY) != SL_OK) {
-				SetDParamStr(0, GetSaveLoadErrorString());
-				ShowErrorMessage(STR_JUST_RAW_STRING, INVALID_STRING_ID, WL_ERROR);
+				ShowErrorMessage(GetSaveLoadErrorType(), GetSaveLoadErrorMessage(), WL_ERROR);
 			} else {
 				CloseWindowById(WC_SAVELOAD, 0);
 				if (_settings_client.gui.save_to_network) {
@@ -1479,7 +1483,7 @@ static void CheckCaches()
 
 	/* Check whether the caches are still valid */
 	for (Vehicle *v : Vehicle::Iterate()) {
-		byte buff[sizeof(VehicleCargoList)];
+		uint8_t buff[sizeof(VehicleCargoList)];
 		memcpy(buff, &v->cargo, sizeof(VehicleCargoList));
 		v->cargo.InvalidateCache();
 		assert(memcmp(&v->cargo, buff, sizeof(VehicleCargoList)) == 0);
@@ -1494,7 +1498,7 @@ static void CheckCaches()
 
 	for (Station *st : Station::Iterate()) {
 		for (GoodsEntry &ge : st->goods) {
-			byte buff[sizeof(StationCargoList)];
+			uint8_t buff[sizeof(StationCargoList)];
 			memcpy(buff, &ge.cargo, sizeof(StationCargoList));
 			ge.cargo.InvalidateCache();
 			assert(memcmp(&ge.cargo, buff, sizeof(StationCargoList)) == 0);
@@ -1596,7 +1600,7 @@ void StateGameLoop()
 
 		/* All these actions has to be done from OWNER_NONE
 		 *  for multiplayer compatibility */
-		Backup<CompanyID> cur_company(_current_company, OWNER_NONE, FILE_LINE);
+		Backup<CompanyID> cur_company(_current_company, OWNER_NONE);
 
 		BasePersistentStorageArray::SwitchMode(PSM_ENTER_GAMELOOP);
 		AnimateAnimatedTiles();

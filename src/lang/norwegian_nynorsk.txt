@@ -3,8 +3,8 @@
 ##isocode nn_NO
 ##plural 0
 ##textdir ltr
-##numberformat 00{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}000
-##numberabbreviations 3=00{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}k|6=00{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}m|9=00{NBSP}000{NBSP}000{NBSP}000{NBSP}bn|12=00{NBSP}000{NBSP}000{NBSP}tn|15=00{NBSP}000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep {NBSP}
+##digitsepcur {NBSP}
 ##decimalsep ,
 ##winlangid 0x0814
 ##grflangid 0x0e
@@ -855,7 +855,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Valutaei
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Vel valutaeining
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Pund
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dollar
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -944,6 +944,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Valutak
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Reduser verdien av din valuta sett opp mot eitt pund (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Auk verdien av din valuta sett opp mot eitt pund (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Sett valutakursen for eitt pund (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Prefiks: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Vel prefiks for din valuta
@@ -2094,7 +2095,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Datamask
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Mogleg tilkoblingsbrot
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Dei siste {NUM} sekund er ingen data mottatt frå serveren
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :generell feil
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :synkroniseringsfeil
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :klarte ikkje å laste inn kartet
@@ -2536,7 +2537,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Trikkesp
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Jernbaneskjene-eigar: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Bystyret: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Ingen
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Koordinatar: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Byggd: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Stasjonsklasse: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Stasjontype: {LTBLUE}{STRING}
@@ -4036,9 +4036,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Berekna 
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Lagring foregår framleis,{}ver venleg å vente til det er ferdig!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Autolagring gjekk gale
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Kan ikkje lese frå disk
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Lagring av spelet mislukkast{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Kan ikkje slette fil
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Feil ved henting av spel{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Intern feil: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Øydelagd lagra spel - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Spelet er lagra i ein nyare versjon
@@ -4907,6 +4905,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

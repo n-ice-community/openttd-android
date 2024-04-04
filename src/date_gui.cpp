@@ -14,8 +14,9 @@
 #include "window_gui.h"
 #include "date_gui.h"
 #include "core/geometry_func.hpp"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 
-#include "widgets/dropdown_type.h"
 #include "widgets/date_widget.h"
 
 #include "safeguards.h"
@@ -75,14 +76,14 @@ struct SetDateWindow : Window {
 
 			case WID_SD_DAY:
 				for (uint i = 0; i < 31; i++) {
-					list.push_back(std::make_unique<DropDownListStringItem>(STR_DAY_NUMBER_1ST + i, i + 1, false));
+					list.push_back(MakeDropDownListStringItem(STR_DAY_NUMBER_1ST + i, i + 1));
 				}
 				selected = this->date.day;
 				break;
 
 			case WID_SD_MONTH:
 				for (uint i = 0; i < 12; i++) {
-					list.push_back(std::make_unique<DropDownListStringItem>(STR_MONTH_JAN + i, i, false));
+					list.push_back(MakeDropDownListStringItem(STR_MONTH_JAN + i, i));
 				}
 				selected = this->date.month;
 				break;
@@ -90,7 +91,7 @@ struct SetDateWindow : Window {
 			case WID_SD_YEAR:
 				for (TimerGameEconomy::Year i = this->min_year; i <= this->max_year; i++) {
 					SetDParam(0, i);
-					list.push_back(std::make_unique<DropDownListStringItem>(STR_JUST_INT, i.base(), false));
+					list.push_back(MakeDropDownListStringItem(STR_JUST_INT, i.base()));
 				}
 				selected = this->date.year.base();
 				break;
@@ -195,7 +196,7 @@ static constexpr NWidgetPart _nested_set_date_widgets[] = {
 };
 
 /** Description of the date setting window. */
-static WindowDesc _set_date_desc(__FILE__, __LINE__,
+static WindowDesc _set_date_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_SET_DATE, WC_NONE,
 	0,

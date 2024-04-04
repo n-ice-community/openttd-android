@@ -3,8 +3,8 @@
 ##isocode fo_FO
 ##plural 0
 ##textdir ltr
-##numberformat 00.000.000.000.000.000.000
-##numberabbreviations 3=00.000.000.000.000.000{NBSP}k|6=00.000.000.000.000{NBSP}m|9=00.000.000.000{NBSP}bn|12=00.000.000{NBSP}tn|15=00.000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep .
+##digitsepcur .
 ##decimalsep ,
 ##winlangid 0x0438
 ##grflangid 0x12
@@ -825,7 +825,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Gjaldsoy
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Úrval av gjaldsoyra eindum
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Bretsk Pund
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dollarar
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Evrir
@@ -913,6 +913,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Gjaldso
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Minka um hvussu nógv av tínum gjaldoyra skal til fyri at keypa eitt pund (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Vaks um hvussu nógv av tínum gjaldoyra skal til fyri at keypa eitt pund (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Set gjaldsoyra kursin av tínum gjaldsoyra fyri eitt pund (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Prefiks: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Set prefiksi fyri títt gjaldsoyra
@@ -1999,7 +2000,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Tín tel
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Møguligt sambands slit
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Tey síðstu {NUM} sekundini eru eingin dáta komin fram frá seraranum
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :almenn villa
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :desync villa
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :eydnaðist ikki at heinta kort
@@ -2364,7 +2365,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Sporvogn
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Jarnbreyta eigari: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Mynduleikar á staðnum: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Eingin
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Koordinatar: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Bygt: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Støð klassi: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Støð slag: {LTBLUE}{STRING}
@@ -3673,9 +3673,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Inntøku
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Goyming er enn í gongd,{}vinarliga bíða til ta er liðugt!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Sjálvgoymsla eydnaðist ikki
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Ikki ført fyri at lesa drev
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Eydnaðist ikki at goyma spæl{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Ikki ført fyri at strika fílu
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Eydnaðist ikki at heinta spæl{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Innanhýsis villa: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Goymda spæli er broti - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Goymda spæli er frá nýggjari útgávu
@@ -4526,6 +4524,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

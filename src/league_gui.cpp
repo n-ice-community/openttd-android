@@ -9,7 +9,6 @@
 
 #include "stdafx.h"
 #include "league_gui.h"
-
 #include "company_base.h"
 #include "company_gui.h"
 #include "gui.h"
@@ -22,7 +21,9 @@
 #include "town.h"
 #include "viewport_func.h"
 #include "window_gui.h"
+
 #include "widgets/league_widget.h"
+
 #include "table/strings.h"
 #include "table/sprites.h"
 
@@ -199,7 +200,7 @@ static constexpr NWidgetPart _nested_performance_league_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _performance_league_desc(__FILE__, __LINE__,
+static WindowDesc _performance_league_desc(
 	WDP_AUTO, "performance_league", 0, 0,
 	WC_COMPANY_LEAGUE, WC_NONE,
 	0,
@@ -434,7 +435,7 @@ static constexpr NWidgetPart _nested_script_league_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _script_league_desc(__FILE__, __LINE__,
+static WindowDesc _script_league_desc(
 	WDP_AUTO, "script_league", 0, 0,
 	WC_COMPANY_LEAGUE, WC_NONE,
 	0,

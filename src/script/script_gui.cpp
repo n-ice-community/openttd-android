@@ -15,9 +15,10 @@
 #include "../stringfilter_type.h"
 #include "../company_base.h"
 #include "../company_gui.h"
+#include "../dropdown_type.h"
+#include "../dropdown_func.h"
 #include "../window_func.h"
 #include "../network/network.h"
-#include "../widgets/dropdown_func.h"
 #include "../hotkeys.h"
 #include "../company_cmd.h"
 #include "../misc_cmd.h"
@@ -261,7 +262,7 @@ static constexpr NWidgetPart _nested_script_list_widgets[] = {
 };
 
 /** Window definition for the ai list window. */
-static WindowDesc _script_list_desc(__FILE__, __LINE__,
+static WindowDesc _script_list_desc(
 	WDP_CENTER, "settings_script_list", 200, 234,
 	WC_SCRIPT_LIST, WC_NONE,
 	0,
@@ -377,18 +378,10 @@ struct ScriptSettingsWindow : public Window {
 			TextColour colour;
 			uint idx = 0;
 			if (config_item.description.empty()) {
-				if (this->slot != OWNER_DEITY && !Company::IsValidID(this->slot) && config_item.random_deviation != 0) {
-					str = STR_AI_SETTINGS_JUST_DEVIATION;
-				} else {
-					str = STR_JUST_STRING1;
-				}
+				str = STR_JUST_STRING1;
 				colour = TC_ORANGE;
 			} else {
-				if (this->slot != OWNER_DEITY && !Company::IsValidID(this->slot) && config_item.random_deviation != 0) {
-					str = STR_AI_SETTINGS_SETTING_DEVIATION;
-				} else {
-					str = STR_AI_SETTINGS_SETTING;
-				}
+				str = STR_AI_SETTINGS_SETTING;
 				colour = TC_LIGHT_BLUE;
 				SetDParamStr(idx++, config_item.description);
 			}
@@ -403,35 +396,13 @@ struct ScriptSettingsWindow : public Window {
 					DrawArrowButtons(br.left, y + button_y_offset, COLOUR_YELLOW, (this->clicked_button == i) ? 1 + (this->clicked_increase != rtl) : 0, editable && current_value > config_item.min_value, editable && current_value < config_item.max_value);
 				}
 
-				if (this->slot == OWNER_DEITY || Company::IsValidID(this->slot) || config_item.random_deviation == 0) {
-					auto config_iterator = config_item.labels.find(current_value);
-					if (config_iterator != config_item.labels.end()) {
-						SetDParam(idx++, STR_JUST_RAW_STRING);
-						SetDParamStr(idx++, config_iterator->second);
-					} else {
-						SetDParam(idx++, STR_JUST_INT);
-						SetDParam(idx++, current_value);
-					}
+				auto config_iterator = config_item.labels.find(current_value);
+				if (config_iterator != config_item.labels.end()) {
+					SetDParam(idx++, STR_JUST_RAW_STRING);
+					SetDParamStr(idx++, config_iterator->second);
 				} else {
-					int min_deviated = std::max(config_item.min_value, current_value - config_item.random_deviation);
-					auto config_iterator = config_item.labels.find(min_deviated);
-					if (config_iterator != config_item.labels.end()) {
-						SetDParam(idx++, STR_JUST_RAW_STRING);
-						SetDParamStr(idx++, config_iterator->second);
-					} else {
-						SetDParam(idx++, STR_JUST_INT);
-						SetDParam(idx++, min_deviated);
-					}
-
-					int max_deviated = std::min(config_item.max_value, current_value + config_item.random_deviation);
-					config_iterator = config_item.labels.find(max_deviated);
-					if (config_iterator != config_item.labels.end()) {
-						SetDParam(idx++, STR_JUST_RAW_STRING);
-						SetDParamStr(idx++, config_iterator->second);
-					} else {
-						SetDParam(idx++, STR_JUST_INT);
-						SetDParam(idx++, max_deviated);
-					}
+					SetDParam(idx++, STR_JUST_INT);
+					SetDParam(idx++, current_value);
 				}
 			}
 
@@ -497,7 +468,7 @@ struct ScriptSettingsWindow : public Window {
 
 							DropDownList list;
 							for (int i = config_item.min_value; i <= config_item.max_value; i++) {
-								list.push_back(std::make_unique<DropDownListStringItem>(config_item.labels.find(i)->second, i, false));
+								list.push_back(MakeDropDownListStringItem(config_item.labels.find(i)->second, i));
 							}
 
 							ShowDropDownListAt(this, std::move(list), old_val, WID_SCRS_SETTING_DROPDOWN, wi_rect, COLOUR_ORANGE);
@@ -636,7 +607,7 @@ static constexpr NWidgetPart _nested_script_settings_widgets[] = {
 };
 
 /** Window definition for the Script settings window. */
-static WindowDesc _script_settings_desc(__FILE__, __LINE__,
+static WindowDesc _script_settings_desc(
 	WDP_CENTER, "settings_script", 500, 208,
 	WC_SCRIPT_SETTINGS, WC_NONE,
 	0,
@@ -927,7 +898,7 @@ struct ScriptDebugWindow : public Window {
 	{
 		if (this->filter.script_debug_company == INVALID_COMPANY) return;
 
-		ScriptLogTypes::LogData &log = this->GetLogData();
+		const ScriptLogTypes::LogData &log = this->GetLogData();
 		if (log.empty()) return;
 
 		Rect fr = r.Shrink(WidgetDimensions::scaled.framerect);
@@ -943,8 +914,9 @@ struct ScriptDebugWindow : public Window {
 
 		fr.left -= this->hscroll->GetPosition();
 
-		for (int i = this->vscroll->GetPosition(); this->vscroll->IsVisible(i) && (size_t)i < log.size(); i++) {
-			const ScriptLogTypes::LogLine &line = log[i];
+		auto [first, last] = this->vscroll->GetVisibleRangeIterators(log);
+		for (auto it = first; it != last; ++it) {
+			const ScriptLogTypes::LogLine &line = *it;
 
 			TextColour colour;
 			switch (line.type) {
@@ -957,7 +929,7 @@ struct ScriptDebugWindow : public Window {
 			}
 
 			/* Check if the current line should be highlighted */
-			if (i == this->highlight_row) {
+			if (std::distance(std::begin(log), it) == this->highlight_row) {
 				fr.bottom = fr.top + this->resize.step_height - 1;
 				GfxFillRect(fr, PC_BLACK);
 				if (colour == TC_BLACK) colour = TC_WHITE; // Make black text readable by inverting it to white.
@@ -1317,7 +1289,7 @@ EndContainer(),
 };
 
 /** Window definition for the Script debug window. */
-static WindowDesc _script_debug_desc(__FILE__, __LINE__,
+static WindowDesc _script_debug_desc(
 	WDP_AUTO, "script_debug", 600, 450,
 	WC_SCRIPT_DEBUG, WC_NONE,
 	0,

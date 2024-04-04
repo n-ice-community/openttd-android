@@ -23,7 +23,7 @@
 TransparencyOptionBits _transparency_opt;  ///< The bits that should be transparent.
 TransparencyOptionBits _transparency_lock; ///< Prevent these bits from flipping with X.
 TransparencyOptionBits _invisibility_opt;  ///< The bits that should be invisible.
-byte _display_opt; ///< What do we want to draw/do?
+uint8_t _display_opt; ///< What do we want to draw/do?
 
 class TransparenciesWindow : public Window
 {
@@ -148,7 +148,7 @@ static constexpr NWidgetPart _nested_transparency_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _transparency_desc(__FILE__, __LINE__,
+static WindowDesc _transparency_desc(
 	WDP_MANUAL, "toolbar_transparency", 0, 0,
 	WC_TRANSPARENCY_TOOLBAR, WC_NONE,
 	0,

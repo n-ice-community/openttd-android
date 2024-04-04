@@ -152,14 +152,14 @@ struct HotkeyList;
  */
 struct WindowDesc : ZeroedMemoryAllocator {
 
-	WindowDesc(const char * const file, const int line, WindowPosition default_pos, const char *ini_key, int16_t def_width_trad, int16_t def_height_trad,
+	WindowDesc(WindowPosition default_pos, const char *ini_key, int16_t def_width_trad, int16_t def_height_trad,
 			WindowClass window_class, WindowClass parent_class, uint32_t flags,
-			const NWidgetPart *nwid_begin, const NWidgetPart *nwid_end, HotkeyList *hotkeys = nullptr);
+			const NWidgetPart *nwid_begin, const NWidgetPart *nwid_end, HotkeyList *hotkeys = nullptr,
+			const std::source_location location = std::source_location::current());
 
 	~WindowDesc();
 
-	const char * const file; ///< Source file of this definition
-	const int line; ///< Source line of this definition
+	const std::source_location source_location; ///< Source location of this definition
 	WindowPosition default_pos;    ///< Preferred position of the window. @see WindowPosition()
 	WindowClass cls;               ///< Class of the window, @see WindowClass.
 	WindowClass parent_cls;        ///< Class of the parent window. @see WindowClass
@@ -184,10 +184,11 @@ private:
 	int16_t default_height_trad;     ///< Preferred initial height of the window (pixels at 1x zoom).
 
 	/**
-	 * Dummy private copy constructor to prevent compilers from
+	 * Delete copy constructor to prevent compilers from
 	 * copying the structure, which fails due to _window_descs.
 	 */
-	WindowDesc(const WindowDesc &other);
+	WindowDesc(const WindowDesc &) = delete;
+	WindowDesc& operator=(const WindowDesc &) = delete;
 };
 
 /**
@@ -475,7 +476,7 @@ public:
 	 * Marks a widget as raised and dirty (redraw), when it is marked as lowered.
 	 * @param widget_index index of this widget in the window
 	 */
-	inline void RaiseWidgetWhenLowered(byte widget_index)
+	inline void RaiseWidgetWhenLowered(WidgetID widget_index)
 	{
 		if (this->IsWidgetLowered(widget_index)) {
 			this->RaiseWidget(widget_index);
@@ -1031,7 +1032,7 @@ extern Point _cursorpos_drag_start;
 extern int _scrollbar_start_pos;
 extern int _scrollbar_size;
 extern bool _scrollbar_finger_drag;
-extern byte _scroller_click_timeout;
+extern uint8_t _scroller_click_timeout;
 enum {
 	SCROLLER_CLICK_DELAY = 6 ///< Delay in video frames between scrollbar doing scroll, we don't want to get to the bottom of the list in an instant
 };

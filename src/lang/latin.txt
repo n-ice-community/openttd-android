@@ -3,8 +3,8 @@
 ##isocode la_VA
 ##plural 0
 ##textdir ltr
-##numberformat 00{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}000
-##numberabbreviations 3=00{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}k|6=00{NBSP}000{NBSP}000{NBSP}000{NBSP}000{NBSP}m|9=00{NBSP}000{NBSP}000{NBSP}000{NBSP}bn|12=00{NBSP}000{NBSP}000{NBSP}tn|15=00{NBSP}000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep {NBSP}
+##digitsepcur {NBSP}
 ##decimalsep .
 ##winlangid 0x0476
 ##grflangid 0x66
@@ -1049,7 +1049,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Unitates
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Electio unitatum nummi
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Libra Britannica
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dollarium CFA
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -1139,6 +1139,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Collybu
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Minuere copiam nummi tui quae aequa est uni Librae Brittanicae (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Augere copiam nummi tui quae aequa est uni Librae Brittanicae (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Eligere collybum nummi tui
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Praefixum: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Eligere praefixum nummi tui
@@ -2375,7 +2376,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Computat
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Connexus forsitan amissus
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}In {NUM} prior{P e ibus} secund{P o is} nulla data e servatro accipitur
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :error generalis
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :error desync
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :non potuit legere tabulam
@@ -2832,7 +2833,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Possesso
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Possessor ferriviae: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Auctoritas vicinalis: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Nulla
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Coordinatae: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Dies struendi: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Classis stationis: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Typus stationis: {LTBLUE}{STRING}
@@ -4392,9 +4392,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Reditus 
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Adhuc in servando,{}maneas usque ad terminum!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Autoservare defecit
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Non poterat discum legere
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Servare Ludum Defecit{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Non poterat fasciculum delere
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Legere Ludum Defecit{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Mendum internum: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Ludus corruptus - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Ludus servatus est in editione noviore
@@ -5380,6 +5378,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

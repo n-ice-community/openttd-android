@@ -441,6 +441,8 @@ public:
 
 		if (_selected_object_index != -1) {
 			SetObjectToPlaceWnd(SPR_CURSOR_TRANSMITTER, PAL_NONE, HT_RECT | HT_DIAGONAL, this);
+		} else {
+			ResetObjectToPlace();
 		}
 
 		this->UpdateButtons(_selected_object_class, _selected_object_index, _selected_object_view);
@@ -709,7 +711,7 @@ static constexpr NWidgetPart _nested_build_object_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_object_desc(__FILE__, __LINE__,
+static WindowDesc _build_object_desc(
 	WDP_AUTO, "build_object", 0, 0,
 	WC_BUILD_OBJECT, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,

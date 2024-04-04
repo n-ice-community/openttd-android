@@ -84,7 +84,7 @@ CompanyMask _network_company_passworded; ///< Bitmask of the password status of 
 static_assert((int)NETWORK_COMPANY_NAME_LENGTH == MAX_LENGTH_COMPANY_NAME_CHARS * MAX_CHAR_LENGTH);
 
 /** The amount of clients connected */
-byte _network_clients_connected = 0;
+uint8_t _network_clients_connected = 0;
 
 extern std::string GenerateUid(std::string_view subject);
 
@@ -134,9 +134,60 @@ NetworkClientInfo::~NetworkClientInfo()
 	return nullptr;
 }
 
-byte NetworkSpectatorCount()
+
+/**
+ * Simple helper to find the location of the given authorized key in the authorized keys.
+ * @param authorized_keys The keys to look through.
+ * @param authorized_key The key to look for.
+ * @return The iterator to the location of the authorized key, or \c authorized_keys.end().
+ */
+static auto FindKey(auto *authorized_keys, std::string_view authorized_key)
 {
-	byte count = 0;
+	return std::find_if(authorized_keys->begin(), authorized_keys->end(), [authorized_key](auto &value) { return StrEqualsIgnoreCase(value, authorized_key); });
+}
+
+/**
+ * Check whether the given key is contains in these authorized keys.
+ * @param key The key to look for.
+ * @return \c true when the key has been found, otherwise \c false.
+ */
+bool NetworkAuthorizedKeys::Contains(std::string_view key) const
+{
+	return FindKey(this, key) != this->end();
+}
+
+/**
+ * Add the given key to the authorized keys, when it is not already contained.
+ * @param key The key to add.
+ * @return \c true when the key was added, \c false when the key already existed.
+ */
+bool NetworkAuthorizedKeys::Add(std::string_view key)
+{
+	auto iter = FindKey(this, key);
+	if (iter != this->end()) return false;
+
+	this->emplace_back(key);
+	return true;
+}
+
+/**
+ * Remove the given key from the authorized keys, when it is exists.
+ * @param key The key to remove.
+ * @return \c true when the key was removed, \c false when the key did not exist.
+ */
+bool NetworkAuthorizedKeys::Remove(std::string_view key)
+{
+	auto iter = FindKey(this, key);
+	if (iter == this->end()) return false;
+
+	this->erase(iter);
+	return true;
+}
+
+
+uint8_t NetworkSpectatorCount()
+{
+	uint8_t count = 0;
 
 	for (const NetworkClientInfo *ci : NetworkClientInfo::Iterate()) {
 		if (ci->client_playas == COMPANY_SPECTATOR) count++;
@@ -321,6 +372,7 @@ StringID GetNetworkErrorMsg(NetworkErrorCode err)
 		STR_NETWORK_ERROR_CLIENT_TIMEOUT_MAP,
 		STR_NETWORK_ERROR_CLIENT_TIMEOUT_JOIN,
 		STR_NETWORK_ERROR_CLIENT_INVALID_CLIENT_NAME,
+		STR_NETWORK_ERROR_CLIENT_NOT_ON_ALLOW_LIST,
 	};
 	static_assert(lengthof(network_error_strings) == NETWORK_ERROR_END);
 
@@ -746,6 +798,7 @@ public:
 		Debug(net, 9, "Client::OnConnect(): connection_string={}", this->connection_string);
 
 		_networking = true;
+		_network_own_client_id = ClientID{};
 		new ClientNetworkGameSocketHandler(s, this->connection_string);
 		IConsoleCmdExec("exec scripts/on_client.scr 0");
 		NetworkClient_Connected();
@@ -1130,10 +1183,10 @@ void NetworkGameLoop()
 				cp->cmd = (Commands)cmd;
 
 				/* Parse command data. */
-				std::vector<byte> args;
+				std::vector<uint8_t> args;
 				size_t arg_len = strlen(buffer);
 				for (size_t i = 0; i + 1 < arg_len; i += 2) {
-					byte e = 0;
+					uint8_t e = 0;
 					std::from_chars(buffer + i, buffer + i + 2, e, 16);
 					args.emplace_back(e);
 				}

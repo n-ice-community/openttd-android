@@ -297,17 +297,17 @@ WidgetID GetWidgetFromPos(const Window *w, int x, int y)
  * @param top    Top edge of the frame
  * @param right  Right edge of the frame
  * @param bottom Bottom edge of the frame
- * @param colour Colour table to use. @see _colour_gradient
+ * @param colour Colour table to use. @see Colours
  * @param flags  Flags controlling how to draw the frame. @see FrameFlags
  */
 void DrawFrameRect(int left, int top, int right, int bottom, Colours colour, FrameFlags flags)
 {
 	assert(colour < COLOUR_END);
 
-	uint dark         = _colour_gradient[colour][3];
-	uint medium_dark  = _colour_gradient[colour][5];
-	uint medium_light = _colour_gradient[colour][6];
-	uint light        = _colour_gradient[colour][7];
+	uint dark         = GetColourGradient(colour, SHADE_DARK);
+	uint medium_dark  = GetColourGradient(colour, SHADE_LIGHT);
+	uint medium_light = GetColourGradient(colour, SHADE_LIGHTER);
+	uint light        = GetColourGradient(colour, SHADE_LIGHTEST);
 
 	if (flags & FR_TRANSPARENT) {
 		GfxFillRect(left, top, right, bottom, PALETTE_TO_TRANSPARENT, FILLRECT_RECOLOUR);
@@ -445,7 +445,7 @@ static inline void DrawMatrix(const Rect &r, Colours colour, bool clicked, uint1
 		row_height = r.Height() / num_rows;
 	}
 
-	int col = _colour_gradient[colour & 0xF][6];
+	int col = GetColourGradient(colour, SHADE_LIGHTER);
 
 	int x = r.left;
 	for (int ctr = num_columns; ctr > 1; ctr--) {
@@ -459,7 +459,7 @@ static inline void DrawMatrix(const Rect &r, Colours colour, bool clicked, uint1
 		GfxFillRect(r.left + WidgetDimensions::scaled.bevel.left, x, r.right - WidgetDimensions::scaled.bevel.right, x + WidgetDimensions::scaled.bevel.top - 1, col);
 	}
 
-	col = _colour_gradient[colour & 0xF][4];
+	col = GetColourGradient(colour, SHADE_NORMAL);
 
 	x = r.left - 1;
 	for (int ctr = num_columns; ctr > 1; ctr--) {
@@ -491,8 +491,8 @@ static inline void DrawVerticalScrollbar(const Rect &r, Colours colour, bool up_
 	DrawImageButtons(r.WithHeight(height, false),  NWID_VSCROLLBAR, colour, up_clicked,   SPR_ARROW_UP,   SA_CENTER);
 	DrawImageButtons(r.WithHeight(height, true),   NWID_VSCROLLBAR, colour, down_clicked, SPR_ARROW_DOWN, SA_CENTER);
 
-	int c1 = _colour_gradient[colour & 0xF][3];
-	int c2 = _colour_gradient[colour & 0xF][7];
+	int c1 = GetColourGradient(colour, SHADE_DARK);
+	int c2 = GetColourGradient(colour, SHADE_LIGHTEST);
 
 	/* draw "shaded" background */
 	GfxFillRect(r.left, r.top + height, r.right, r.bottom - height, c2);
@@ -531,8 +531,8 @@ static inline void DrawHorizontalScrollbar(const Rect &r, Colours colour, bool l
 	DrawImageButtons(r.WithWidth(width, false), NWID_HSCROLLBAR, colour, left_clicked,  SPR_ARROW_LEFT,  SA_CENTER);
 	DrawImageButtons(r.WithWidth(width, true),  NWID_HSCROLLBAR, colour, right_clicked, SPR_ARROW_RIGHT, SA_CENTER);
 
-	int c1 = _colour_gradient[colour & 0xF][3];
-	int c2 = _colour_gradient[colour & 0xF][7];
+	int c1 = GetColourGradient(colour, SHADE_DARK);
+	int c2 = GetColourGradient(colour, SHADE_LIGHTEST);
 
 	/* draw "shaded" background */
 	GfxFillRect(r.left + width, r.top, r.right - width, r.bottom, c2);
@@ -570,8 +570,8 @@ static inline void DrawFrame(const Rect &r, Colours colour, TextColour text_colo
 
 	if (str != STR_NULL) x2 = DrawString(r.left + WidgetDimensions::scaled.frametext.left, r.right - WidgetDimensions::scaled.frametext.right, r.top, str, text_colour, align, false, fs);
 
-	int c1 = _colour_gradient[colour][3];
-	int c2 = _colour_gradient[colour][7];
+	int c1 = GetColourGradient(colour, SHADE_DARK);
+	int c2 = GetColourGradient(colour, SHADE_LIGHTEST);
 
 	/* If the frame has text, adjust the top bar to fit half-way through */
 	Rect inner = r.Shrink(ScaleGUITrad(1));
@@ -668,7 +668,7 @@ static inline void DrawResizeBox(const Rect &r, Colours colour, bool at_left, bo
 	if (bevel) {
 		DrawFrameRect(r.left, r.top, r.right, r.bottom, colour, (clicked) ? FR_LOWERED : FR_NONE);
 	} else if (clicked) {
-		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), _colour_gradient[colour][6]);
+		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(colour, SHADE_LIGHTER));
 	}
 	DrawSpriteIgnorePadding(at_left ? SPR_WINDOW_RESIZE_LEFT : SPR_WINDOW_RESIZE_RIGHT, PAL_NONE, r.Shrink(ScaleGUITrad(2)), at_left ? (SA_LEFT | SA_BOTTOM | SA_FORCE) : (SA_RIGHT | SA_BOTTOM | SA_FORCE));
 }
@@ -708,7 +708,7 @@ void DrawCaption(const Rect &r, Colours colour, Owner owner, TextColour text_col
 	DrawFrameRect(ir, colour, company_owned ? FR_LOWERED | FR_DARKENED | FR_BORDERONLY : FR_LOWERED | FR_DARKENED);
 
 	if (company_owned) {
-		GfxFillRect(ir.Shrink(WidgetDimensions::scaled.bevel), _colour_gradient[_company_colours[owner]][4]);
+		GfxFillRect(ir.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(_company_colours[owner], SHADE_NORMAL));
 	}
 
 	if (str != STR_NULL) {
@@ -2157,7 +2157,7 @@ NWidgetCore *NWidgetMatrix::GetWidgetFromPos(int x, int y)
 /* virtual */ void NWidgetMatrix::Draw(const Window *w)
 {
 	/* Fill the background. */
-	GfxFillRect(this->GetCurrentRect(), _colour_gradient[this->colour & 0xF][5]);
+	GfxFillRect(this->GetCurrentRect(), GetColourGradient(this->colour, SHADE_LIGHT));
 
 	/* Set up a clipping area for the previews. */
 	bool rtl = _current_text_dir == TD_RTL;
@@ -2424,7 +2424,7 @@ void NWidgetBackground::Draw(const Window *w)
 	if (this->child != nullptr) this->child->Draw(w);
 
 	if (this->IsDisabled()) {
-		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), _colour_gradient[this->colour & 0xF][2], FILLRECT_CHECKER);
+		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(this->colour, SHADE_DARKER), FILLRECT_CHECKER);
 	}
 
 	DrawOutline(w, this);
@@ -2516,13 +2516,13 @@ void NWidgetViewport::UpdateViewportCoordinates(Window *w)
  * @param widget      Widget number of the widget clicked in.
  * @param padding     Amount of empty space between the widget edge and the top of the first row. Default value is \c 0.
  * @param line_height Height of a single row. A negative value means using the vertical resize step of the widget.
- * @return Row number clicked at. If clicked at a wrong position, #INT_MAX is returned.
+ * @return Row number clicked at. If clicked at a wrong position, #Scrollbar::npos is returned.
  */
-int Scrollbar::GetScrolledRowFromWidget(int clickpos, const Window * const w, WidgetID widget, int padding, int line_height) const
+Scrollbar::size_type Scrollbar::GetScrolledRowFromWidget(int clickpos, const Window * const w, WidgetID widget, int padding, int line_height) const
 {
-	uint pos = w->GetRowFromWidget(clickpos, widget, padding, line_height);
+	int pos = w->GetRowFromWidget(clickpos, widget, padding, line_height);
 	if (pos != INT_MAX) pos += this->GetPosition();
-	return (pos >= this->GetCount()) ? INT_MAX : pos;
+	return (pos < 0 || pos >= this->GetCount()) ? Scrollbar::npos : pos;
 }
 
 /**
@@ -2671,7 +2671,7 @@ void NWidgetScrollbar::Draw(const Window *w)
 	}
 
 	if (this->IsDisabled()) {
-		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), _colour_gradient[this->colour & 0xF][2], FILLRECT_CHECKER);
+		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(this->colour, SHADE_DARKER), FILLRECT_CHECKER);
 	}
 
 	DrawOutline(w, this);
@@ -3159,7 +3159,7 @@ void NWidgetLeaf::Draw(const Window *w)
 	if (this->index >= 0) w->DrawWidget(r, this->index);
 
 	if (this->IsDisabled()) {
-		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), _colour_gradient[this->colour & 0xF][2], FILLRECT_CHECKER);
+		GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(this->colour, SHADE_DARKER), FILLRECT_CHECKER);
 	}
 
 	DrawOutline(w, this);

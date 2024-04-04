@@ -19,9 +19,10 @@
 #include "strings_func.h"
 #include "window_func.h"
 #include "string_func.h"
-#include "widgets/dropdown_type.h"
-#include "widgets/dropdown_func.h"
-#include "widgets/slider_func.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
+#include "dropdown_common_type.h"
+#include "slider_func.h"
 #include "highscore.h"
 #include "base_media_base.h"
 #include "company_base.h"
@@ -48,6 +49,7 @@
 #include "network/network_survey.h"
 #include "video/video_driver.hpp"
 #include "social_integration.h"
+#include "sound_func.h"
 
 #include "safeguards.h"
 
@@ -131,6 +133,18 @@ void ShowBaseSetTextfileWindow(TextfileType file_type, const TBaseSet *baseset, 
 {
 	CloseWindowById(WC_TEXTFILE, file_type);
 	new BaseSetTextfileWindow<TBaseSet>(file_type, baseset, content_type);
+}
+
+template <class T>
+DropDownList BuildSetDropDownList(int *selected_index)
+{
+	int n = T::GetNumSets();
+	*selected_index = T::GetIndexOfUsedSet();
+	DropDownList list;
+	for (int i = 0; i < n; i++) {
+		list.push_back(MakeDropDownListStringItem(T::GetSet(i)->GetListLabel(), i));
+	}
+	return list;
 }
 
 std::set<int> _refresh_rates = { 30, 60, 75, 90, 100, 120, 144, 240 };
@@ -406,21 +420,21 @@ struct GameOptionsWindow : Window {
 
 				/* Add non-custom currencies; sorted naturally */
 				for (const CurrencySpec &currency : _currency_specs) {
-					int i = &currency - _currency_specs;
+					int i = &currency - _currency_specs.data();
 					if (i == CURRENCY_CUSTOM) continue;
 					if (currency.code.empty()) {
-						list.push_back(std::make_unique<DropDownListStringItem>(currency.name, i, HasBit(disabled, i)));
+						list.push_back(MakeDropDownListStringItem(currency.name, i, HasBit(disabled, i)));
 					} else {
 						SetDParam(0, currency.name);
 						SetDParamStr(1, currency.code);
-						list.push_back(std::make_unique<DropDownListStringItem>(STR_GAME_OPTIONS_CURRENCY_CODE, i, HasBit(disabled, i)));
+						list.push_back(MakeDropDownListStringItem(STR_GAME_OPTIONS_CURRENCY_CODE, i, HasBit(disabled, i)));
 					}
 				}
 				std::sort(list.begin(), list.end(), DropDownListStringItem::NatSortFunc);
 
 				/* Append custom currency at the end */
-				list.push_back(std::make_unique<DropDownListDividerItem>(-1, false)); // separator line
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_GAME_OPTIONS_CURRENCY_CUSTOM, CURRENCY_CUSTOM, HasBit(disabled, CURRENCY_CUSTOM)));
+				list.push_back(MakeDropDownListDividerItem()); // separator line
+				list.push_back(MakeDropDownListStringItem(STR_GAME_OPTIONS_CURRENCY_CUSTOM, CURRENCY_CUSTOM, HasBit(disabled, CURRENCY_CUSTOM)));
 				break;
 			}
 
@@ -434,7 +448,7 @@ struct GameOptionsWindow : Window {
 
 				const StringID *items = _autosave_dropdown;
 				for (uint i = 0; *items != INVALID_STRING_ID; items++, i++) {
-					list.push_back(std::make_unique<DropDownListStringItem>(*items, i, false));
+					list.push_back(MakeDropDownListStringItem(*items, i));
 				}
 				break;
 			}
@@ -456,7 +470,7 @@ struct GameOptionsWindow : Window {
 						SetDParamStr(0, _languages[i].name);
 					}
 					SetDParam(1, (LANGUAGE_TOTAL_STRINGS - _languages[i].missing) * 100 / LANGUAGE_TOTAL_STRINGS);
-					list.push_back(std::make_unique<DropDownListStringItem>(hide_percentage ? STR_JUST_RAW_STRING : STR_GAME_OPTIONS_LANGUAGE_PERCENTAGE, i, false));
+					list.push_back(MakeDropDownListStringItem(hide_percentage ? STR_JUST_RAW_STRING : STR_GAME_OPTIONS_LANGUAGE_PERCENTAGE, i));
 				}
 				std::sort(list.begin(), list.end(), DropDownListStringItem::NatSortFunc);
 				break;
@@ -469,7 +483,7 @@ struct GameOptionsWindow : Window {
 				for (uint i = 0; i < _resolutions.size(); i++) {
 					SetDParam(0, _resolutions[i].width);
 					SetDParam(1, _resolutions[i].height);
-					list.push_back(std::make_unique<DropDownListStringItem>(STR_GAME_OPTIONS_RESOLUTION_ITEM, i, false));
+					list.push_back(MakeDropDownListStringItem(STR_GAME_OPTIONS_RESOLUTION_ITEM, i));
 				}
 				break;
 
@@ -478,7 +492,7 @@ struct GameOptionsWindow : Window {
 					auto i = std::distance(_refresh_rates.begin(), it);
 					if (*it == _settings_client.gui.refresh_rate) *selected_index = i;
 					SetDParam(0, *it);
-					list.push_back(std::make_unique<DropDownListStringItem>(STR_GAME_OPTIONS_REFRESH_RATE_ITEM, i, false));
+					list.push_back(MakeDropDownListStringItem(STR_GAME_OPTIONS_REFRESH_RATE_ITEM, i));
 				}
 				break;
 
@@ -829,7 +843,7 @@ struct GameOptionsWindow : Window {
 
 			case WID_GO_BASE_SFX_VOLUME:
 			case WID_GO_BASE_MUSIC_VOLUME: {
-				byte &vol = (widget == WID_GO_BASE_MUSIC_VOLUME) ? _settings_client.music.music_vol : _settings_client.music.effect_vol;
+				uint8_t &vol = (widget == WID_GO_BASE_MUSIC_VOLUME) ? _settings_client.music.music_vol : _settings_client.music.effect_vol;
 				if (ClickSliderWidget(this->GetWidget<NWidgetBase>(widget)->GetCurrentRect(), pt, 0, INT8_MAX, vol)) {
 					if (widget == WID_GO_BASE_MUSIC_VOLUME) {
 						MusicDriver::GetInstance()->SetVolume(vol);
@@ -949,13 +963,7 @@ struct GameOptionsWindow : Window {
 				break;
 
 			case WID_GO_BASE_SFX_DROPDOWN:
-				if (_game_mode == GM_MENU) {
-					auto set = BaseSounds::GetSet(index);
-					BaseSounds::ini_set = set->name;
-					BaseSounds::SetSet(set);
-					this->reload = true;
-					this->InvalidateData();
-				}
+				ChangeSoundSet(index);
 				break;
 
 			case WID_GO_BASE_MUSIC_DROPDOWN:
@@ -993,7 +1001,6 @@ struct GameOptionsWindow : Window {
 #endif /* HAS_TRUETYPE_FONT */
 
 		this->SetWidgetDisabledState(WID_GO_BASE_GRF_DROPDOWN, _game_mode != GM_MENU);
-		this->SetWidgetDisabledState(WID_GO_BASE_SFX_DROPDOWN, _game_mode != GM_MENU);
 
 		this->SetWidgetDisabledState(WID_GO_BASE_GRF_PARAMETERS, BaseGraphics::GetUsedSet() == nullptr || !BaseGraphics::GetUsedSet()->IsConfigurable());
 
@@ -1184,7 +1191,7 @@ static constexpr NWidgetPart _nested_game_options_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _game_options_desc(__FILE__, __LINE__,
+static WindowDesc _game_options_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_GAME_OPTIONS, WC_NONE,
 	0,
@@ -1235,13 +1242,13 @@ struct SettingFilter {
 
 /** Data structure describing a single setting in a tab */
 struct BaseSettingEntry {
-	byte flags; ///< Flags of the setting entry. @see SettingEntryFlags
-	byte level; ///< Nesting level of this setting entry
+	uint8_t flags; ///< Flags of the setting entry. @see SettingEntryFlags
+	uint8_t level; ///< Nesting level of this setting entry
 
 	BaseSettingEntry() : flags(0), level(0) {}
 	virtual ~BaseSettingEntry() = default;
 
-	virtual void Init(byte level = 0);
+	virtual void Init(uint8_t level = 0);
 	virtual void FoldAll() {}
 	virtual void UnFoldAll() {}
 	virtual void ResetAll() = 0;
@@ -1279,13 +1286,13 @@ struct SettingEntry : BaseSettingEntry {
 
 	SettingEntry(const char *name);
 
-	void Init(byte level = 0) override;
+	void Init(uint8_t level = 0) override;
 	void ResetAll() override;
 	uint Length() const override;
 	uint GetMaxHelpHeight(int maxw) override;
 	bool UpdateFilterState(SettingFilter &filter, bool force_visible) override;
 
-	void SetButtons(byte new_val);
+	void SetButtons(uint8_t new_val);
 
 protected:
 	void DrawSetting(GameSettings *settings_ptr, int left, int right, int y, bool highlight) const override;
@@ -1306,7 +1313,7 @@ struct SettingsContainer {
 		return item;
 	}
 
-	void Init(byte level = 0);
+	void Init(uint8_t level = 0);
 	void ResetAll();
 	void FoldAll();
 	void UnFoldAll();
@@ -1329,7 +1336,7 @@ struct SettingsPage : BaseSettingEntry, SettingsContainer {
 
 	SettingsPage(StringID title);
 
-	void Init(byte level = 0) override;
+	void Init(uint8_t level = 0) override;
 	void ResetAll() override;
 	void FoldAll() override;
 	void UnFoldAll() override;
@@ -1354,7 +1361,7 @@ protected:
  * Initialization of a setting entry
  * @param level      Page nesting level of this entry
  */
-void BaseSettingEntry::Init(byte level)
+void BaseSettingEntry::Init(uint8_t level)
 {
 	this->level = level;
 }
@@ -1425,7 +1432,7 @@ uint BaseSettingEntry::Draw(GameSettings *settings_ptr, int left, int right, int
 
 	int x = rtl ? right : left;
 	if (cur_row >= first_row) {
-		int colour = _colour_gradient[COLOUR_ORANGE][4];
+		int colour = GetColourGradient(COLOUR_ORANGE, SHADE_NORMAL);
 		y += (cur_row - first_row) * SETTING_HEIGHT; // Compute correct y start position
 
 		/* Draw vertical for parent nesting levels */
@@ -1464,7 +1471,7 @@ SettingEntry::SettingEntry(const char *name)
  * Initialization of a setting entry
  * @param level      Page nesting level of this entry
  */
-void SettingEntry::Init(byte level)
+void SettingEntry::Init(uint8_t level)
 {
 	BaseSettingEntry::Init(level);
 	this->setting = GetSettingFromName(this->name)->AsIntSetting();
@@ -1481,7 +1488,7 @@ void SettingEntry::ResetAll()
  * @param new_val New value for the button flags
  * @see SettingEntryFlags
  */
-void SettingEntry::SetButtons(byte new_val)
+void SettingEntry::SetButtons(uint8_t new_val)
 {
 	assert((new_val & ~SEF_BUTTONS_MASK) == 0); // Should not touch any flags outside the buttons
 	this->flags = (this->flags & ~SEF_BUTTONS_MASK) | new_val;
@@ -1638,7 +1645,7 @@ void SettingEntry::DrawSetting(GameSettings *settings_ptr, int left, int right, 
  * Initialization of an entire setting page
  * @param level Nesting level of this page (internal variable, do not provide a value for it when calling)
  */
-void SettingsContainer::Init(byte level)
+void SettingsContainer::Init(uint8_t level)
 {
 	for (auto &it : this->entries) {
 		it->Init(level);
@@ -1796,7 +1803,7 @@ SettingsPage::SettingsPage(StringID title)
  * Initialization of an entire setting page
  * @param level Nesting level of this page (internal variable, do not provide a value for it when calling)
  */
-void SettingsPage::Init(byte level)
+void SettingsPage::Init(uint8_t level)
 {
 	BaseSettingEntry::Init(level);
 	SettingsContainer::Init(level + 1);
@@ -2474,15 +2481,15 @@ struct GameSettingsWindow : Window {
 					 * we don't want to allow comparing with new game's settings. */
 					bool disabled = mode == RM_CHANGED_AGAINST_NEW && settings_ptr == &_settings_newgame;
 
-					list.push_back(std::make_unique<DropDownListStringItem>(_game_settings_restrict_dropdown[mode], mode, disabled));
+					list.push_back(MakeDropDownListStringItem(_game_settings_restrict_dropdown[mode], mode, disabled));
 				}
 				break;
 
 			case WID_GS_TYPE_DROPDOWN:
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_CONFIG_SETTING_TYPE_DROPDOWN_ALL, ST_ALL, false));
-				list.push_back(std::make_unique<DropDownListStringItem>(_game_mode == GM_MENU ? STR_CONFIG_SETTING_TYPE_DROPDOWN_GAME_MENU : STR_CONFIG_SETTING_TYPE_DROPDOWN_GAME_INGAME, ST_GAME, false));
-				list.push_back(std::make_unique<DropDownListStringItem>(_game_mode == GM_MENU ? STR_CONFIG_SETTING_TYPE_DROPDOWN_COMPANY_MENU : STR_CONFIG_SETTING_TYPE_DROPDOWN_COMPANY_INGAME, ST_COMPANY, false));
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_CONFIG_SETTING_TYPE_DROPDOWN_CLIENT, ST_CLIENT, false));
+				list.push_back(MakeDropDownListStringItem(STR_CONFIG_SETTING_TYPE_DROPDOWN_ALL, ST_ALL));
+				list.push_back(MakeDropDownListStringItem(_game_mode == GM_MENU ? STR_CONFIG_SETTING_TYPE_DROPDOWN_GAME_MENU : STR_CONFIG_SETTING_TYPE_DROPDOWN_GAME_INGAME, ST_GAME));
+				list.push_back(MakeDropDownListStringItem(_game_mode == GM_MENU ? STR_CONFIG_SETTING_TYPE_DROPDOWN_COMPANY_MENU : STR_CONFIG_SETTING_TYPE_DROPDOWN_COMPANY_INGAME, ST_COMPANY));
+				list.push_back(MakeDropDownListStringItem(STR_CONFIG_SETTING_TYPE_DROPDOWN_CLIENT, ST_CLIENT));
 				break;
 		}
 		return list;
@@ -2581,8 +2588,8 @@ struct GameSettingsWindow : Window {
 
 		if (widget != WID_GS_OPTIONSPANEL) return;
 
-		uint btn = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_GS_OPTIONSPANEL, WidgetDimensions::scaled.framerect.top);
-		if (btn == INT_MAX || (int)btn < this->warn_lines) return;
+		int32_t btn = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_GS_OPTIONSPANEL, WidgetDimensions::scaled.framerect.top);
+		if (btn == INT32_MAX || btn < this->warn_lines) return;
 		btn -= this->warn_lines;
 
 		uint cur_row = 0;
@@ -2647,7 +2654,7 @@ struct GameSettingsWindow : Window {
 					DropDownList list;
 					for (int i = sd->min; i <= (int)sd->max; i++) {
 						sd->SetValueDParams(0, i);
-						list.push_back(std::make_unique<DropDownListStringItem>(STR_JUST_STRING2, i, false));
+						list.push_back(MakeDropDownListStringItem(STR_JUST_STRING2, i));
 					}
 
 					ShowDropDownListAt(this, std::move(list), value, WID_GS_SETTING_DROPDOWN, wi_rect, COLOUR_ORANGE);
@@ -2710,7 +2717,7 @@ struct GameSettingsWindow : Window {
 			if (this->last_clicked == pe && !sd->IsBoolSetting() && !(sd->flags & SF_GUI_DROPDOWN)) {
 				int64_t value64 = value;
 				/* Show the correct currency-translated value */
-				if (sd->flags & SF_GUI_CURRENCY) value64 *= _currency->rate;
+				if (sd->flags & SF_GUI_CURRENCY) value64 *= GetCurrency().rate;
 
 				CharSetFilter charset_filter = CS_NUMERAL; //default, only numeric input allowed
 				if (sd->min < 0) charset_filter = CS_NUMERAL_SIGNED; // special case, also allow '-' sign for negative input
@@ -2746,7 +2753,7 @@ struct GameSettingsWindow : Window {
 			long long llvalue = atoll(str);
 
 			/* Save the correct currency-translated value */
-			if (sd->flags & SF_GUI_CURRENCY) llvalue /= _currency->rate;
+			if (sd->flags & SF_GUI_CURRENCY) llvalue /= GetCurrency().rate;
 
 			value = ClampTo<int32_t>(llvalue);
 		} else {
@@ -2904,7 +2911,7 @@ static constexpr NWidgetPart _nested_settings_selection_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _settings_selection_desc(__FILE__, __LINE__,
+static WindowDesc _settings_selection_desc(
 	WDP_CENTER, "settings", 510, 450,
 	WC_GAME_OPTIONS, WC_NONE,
 	0,
@@ -2928,9 +2935,9 @@ void ShowGameSettings()
  * @param clickable_left is the left button clickable?
  * @param clickable_right is the right button clickable?
  */
-void DrawArrowButtons(int x, int y, Colours button_colour, byte state, bool clickable_left, bool clickable_right)
+void DrawArrowButtons(int x, int y, Colours button_colour, uint8_t state, bool clickable_left, bool clickable_right)
 {
-	int colour = _colour_gradient[button_colour][2];
+	int colour = GetColourGradient(button_colour, SHADE_DARKER);
 	Dimension dim = NWidgetScrollbar::GetHorizontalDimension();
 
 	Rect lr = {x,                  y, x + (int)dim.width     - 1, y + (int)dim.height - 1};
@@ -2961,7 +2968,7 @@ void DrawArrowButtons(int x, int y, Colours button_colour, byte state, bool clic
  */
 void DrawDropDownButton(int x, int y, Colours button_colour, bool state, bool clickable)
 {
-	int colour = _colour_gradient[button_colour][2];
+	int colour = GetColourGradient(button_colour, SHADE_DARKER);
 
 	Rect r = {x, y, x + SETTING_BUTTON_WIDTH - 1, y + SETTING_BUTTON_HEIGHT - 1};
 
@@ -3000,21 +3007,22 @@ struct CustomCurrencyWindow : Window {
 
 	void SetButtonState()
 	{
-		this->SetWidgetDisabledState(WID_CC_RATE_DOWN, _custom_currency.rate == 1);
-		this->SetWidgetDisabledState(WID_CC_RATE_UP, _custom_currency.rate == UINT16_MAX);
-		this->SetWidgetDisabledState(WID_CC_YEAR_DOWN, _custom_currency.to_euro == CF_NOEURO);
-		this->SetWidgetDisabledState(WID_CC_YEAR_UP, _custom_currency.to_euro == CalendarTime::MAX_YEAR);
+		this->SetWidgetDisabledState(WID_CC_RATE_DOWN, GetCustomCurrency().rate == 1);
+		this->SetWidgetDisabledState(WID_CC_RATE_UP, GetCustomCurrency().rate == UINT16_MAX);
+		this->SetWidgetDisabledState(WID_CC_YEAR_DOWN, GetCustomCurrency().to_euro == CF_NOEURO);
+		this->SetWidgetDisabledState(WID_CC_YEAR_UP, GetCustomCurrency().to_euro == CalendarTime::MAX_YEAR);
 	}
 
 	void SetStringParameters(WidgetID widget) const override
 	{
 		switch (widget) {
 			case WID_CC_RATE:      SetDParam(0, 1); SetDParam(1, 1);            break;
-			case WID_CC_PREFIX:    SetDParamStr(0, _custom_currency.prefix);    break;
-			case WID_CC_SUFFIX:    SetDParamStr(0, _custom_currency.suffix);    break;
+			case WID_CC_SEPARATOR: SetDParamStr(0, GetCustomCurrency().separator); break;
+			case WID_CC_PREFIX:    SetDParamStr(0, GetCustomCurrency().prefix);    break;
+			case WID_CC_SUFFIX:    SetDParamStr(0, GetCustomCurrency().suffix);    break;
 			case WID_CC_YEAR:
-				SetDParam(0, (_custom_currency.to_euro != CF_NOEURO) ? STR_CURRENCY_SWITCH_TO_EURO : STR_CURRENCY_SWITCH_TO_EURO_NEVER);
-				SetDParam(1, _custom_currency.to_euro);
+				SetDParam(0, (GetCustomCurrency().to_euro != CF_NOEURO) ? STR_CURRENCY_SWITCH_TO_EURO : STR_CURRENCY_SWITCH_TO_EURO_NEVER);
+				SetDParam(1, GetCustomCurrency().to_euro);
 				break;
 
 			case WID_CC_PREVIEW:
@@ -3035,6 +3043,7 @@ struct CustomCurrencyWindow : Window {
 				break;
 
 			/* Set the appropriate width for the edit buttons. */
+			case WID_CC_SEPARATOR_EDIT:
 			case WID_CC_PREFIX_EDIT:
 			case WID_CC_SUFFIX_EDIT:
 				*size = maxdim(*size, {(uint)SETTING_BUTTON_WIDTH, (uint)SETTING_BUTTON_HEIGHT});
@@ -3058,28 +3067,36 @@ struct CustomCurrencyWindow : Window {
 
 		switch (widget) {
 			case WID_CC_RATE_DOWN:
-				if (_custom_currency.rate > 1) _custom_currency.rate--;
-				if (_custom_currency.rate == 1) this->DisableWidget(WID_CC_RATE_DOWN);
+				if (GetCustomCurrency().rate > 1) GetCustomCurrency().rate--;
+				if (GetCustomCurrency().rate == 1) this->DisableWidget(WID_CC_RATE_DOWN);
 				this->EnableWidget(WID_CC_RATE_UP);
 				break;
 
 			case WID_CC_RATE_UP:
-				if (_custom_currency.rate < UINT16_MAX) _custom_currency.rate++;
-				if (_custom_currency.rate == UINT16_MAX) this->DisableWidget(WID_CC_RATE_UP);
+				if (GetCustomCurrency().rate < UINT16_MAX) GetCustomCurrency().rate++;
+				if (GetCustomCurrency().rate == UINT16_MAX) this->DisableWidget(WID_CC_RATE_UP);
 				this->EnableWidget(WID_CC_RATE_DOWN);
 				break;
 
 			case WID_CC_RATE:
-				SetDParam(0, _custom_currency.rate);
+				SetDParam(0, GetCustomCurrency().rate);
 				str = STR_JUST_INT;
 				len = 5;
 				line = WID_CC_RATE;
 				afilter = CS_NUMERAL;
 				break;
 
+			case WID_CC_SEPARATOR_EDIT:
+			case WID_CC_SEPARATOR:
+				SetDParamStr(0, GetCustomCurrency().separator);
+				str = STR_JUST_RAW_STRING;
+				len = 7;
+				line = WID_CC_SEPARATOR;
+				break;
+
 			case WID_CC_PREFIX_EDIT:
 			case WID_CC_PREFIX:
-				SetDParamStr(0, _custom_currency.prefix);
+				SetDParamStr(0, GetCustomCurrency().prefix);
 				str = STR_JUST_RAW_STRING;
 				len = 15;
 				line = WID_CC_PREFIX;
@@ -3087,26 +3104,26 @@ struct CustomCurrencyWindow : Window {
 
 			case WID_CC_SUFFIX_EDIT:
 			case WID_CC_SUFFIX:
-				SetDParamStr(0, _custom_currency.suffix);
+				SetDParamStr(0, GetCustomCurrency().suffix);
 				str = STR_JUST_RAW_STRING;
 				len = 15;
 				line = WID_CC_SUFFIX;
 				break;
 
 			case WID_CC_YEAR_DOWN:
-				_custom_currency.to_euro = (_custom_currency.to_euro <= MIN_EURO_YEAR) ? CF_NOEURO : _custom_currency.to_euro - 1;
-				if (_custom_currency.to_euro == CF_NOEURO) this->DisableWidget(WID_CC_YEAR_DOWN);
+				GetCustomCurrency().to_euro = (GetCustomCurrency().to_euro <= MIN_EURO_YEAR) ? CF_NOEURO : GetCustomCurrency().to_euro - 1;
+				if (GetCustomCurrency().to_euro == CF_NOEURO) this->DisableWidget(WID_CC_YEAR_DOWN);
 				this->EnableWidget(WID_CC_YEAR_UP);
 				break;
 
 			case WID_CC_YEAR_UP:
-				_custom_currency.to_euro = Clamp(_custom_currency.to_euro + 1, MIN_EURO_YEAR, CalendarTime::MAX_YEAR);
-				if (_custom_currency.to_euro == CalendarTime::MAX_YEAR) this->DisableWidget(WID_CC_YEAR_UP);
+				GetCustomCurrency().to_euro = Clamp(GetCustomCurrency().to_euro + 1, MIN_EURO_YEAR, CalendarTime::MAX_YEAR);
+				if (GetCustomCurrency().to_euro == CalendarTime::MAX_YEAR) this->DisableWidget(WID_CC_YEAR_UP);
 				this->EnableWidget(WID_CC_YEAR_DOWN);
 				break;
 
 			case WID_CC_YEAR:
-				SetDParam(0, _custom_currency.to_euro);
+				SetDParam(0, GetCustomCurrency().to_euro);
 				str = STR_JUST_INT;
 				len = 7;
 				line = WID_CC_YEAR;
@@ -3129,21 +3146,25 @@ struct CustomCurrencyWindow : Window {
 
 		switch (this->query_widget) {
 			case WID_CC_RATE:
-				_custom_currency.rate = Clamp(atoi(str), 1, UINT16_MAX);
+				GetCustomCurrency().rate = Clamp(atoi(str), 1, UINT16_MAX);
+				break;
+
+			case WID_CC_SEPARATOR: // Thousands separator
+				GetCustomCurrency().separator = str;
 				break;
 
 			case WID_CC_PREFIX:
-				_custom_currency.prefix = str;
+				GetCustomCurrency().prefix = str;
 				break;
 
 			case WID_CC_SUFFIX:
-				_custom_currency.suffix = str;
+				GetCustomCurrency().suffix = str;
 				break;
 
 			case WID_CC_YEAR: { // Year to switch to euro
 				TimerGameCalendar::Year val = atoi(str);
 
-				_custom_currency.to_euro = (val < MIN_EURO_YEAR ? CF_NOEURO : std::min(val, CalendarTime::MAX_YEAR));
+				GetCustomCurrency().to_euro = (val < MIN_EURO_YEAR ? CF_NOEURO : std::min(val, CalendarTime::MAX_YEAR));
 				break;
 			}
 		}
@@ -3173,6 +3194,10 @@ static constexpr NWidgetPart _nested_cust_currency_widgets[] = {
 					NWidget(WWT_TEXT, COLOUR_BLUE, WID_CC_RATE), SetDataTip(STR_CURRENCY_EXCHANGE_RATE, STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP), SetFill(1, 0),
 				EndContainer(),
 				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_PUSHBTN, COLOUR_DARK_BLUE, WID_CC_SEPARATOR_EDIT), SetDataTip(0x0, STR_CURRENCY_SET_CUSTOM_CURRENCY_SEPARATOR_TOOLTIP), SetFill(0, 1),
+					NWidget(WWT_TEXT, COLOUR_BLUE, WID_CC_SEPARATOR), SetDataTip(STR_CURRENCY_SEPARATOR, STR_CURRENCY_SET_CUSTOM_CURRENCY_SEPARATOR_TOOLTIP), SetFill(1, 0),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
 					NWidget(WWT_PUSHBTN, COLOUR_DARK_BLUE, WID_CC_PREFIX_EDIT), SetDataTip(0x0, STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP), SetFill(0, 1),
 					NWidget(WWT_TEXT, COLOUR_BLUE, WID_CC_PREFIX), SetDataTip(STR_CURRENCY_PREFIX, STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP), SetFill(1, 0),
 				EndContainer(),
@@ -3194,7 +3219,7 @@ static constexpr NWidgetPart _nested_cust_currency_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _cust_currency_desc(__FILE__, __LINE__,
+static WindowDesc _cust_currency_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_CUSTOM_CURRENCY, WC_NONE,
 	0,

@@ -18,8 +18,9 @@
 #include "sound_func.h"
 #include "fios.h"
 #include "string_func.h"
-#include "widgets/dropdown_type.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_type.h"
+#include "dropdown_common_type.h"
+#include "dropdown_func.h"
 #include "querystring_gui.h"
 #include "town.h"
 #include "core/geometry_func.hpp"
@@ -62,7 +63,7 @@ static uint GetMapHeightLimit()
  * Changes landscape type and sets genworld window dirty
  * @param landscape new landscape type
  */
-void SetNewLandscapeType(byte landscape)
+void SetNewLandscapeType(uint8_t landscape)
 {
 	_settings_newgame.game_creation.landscape = landscape;
 	InvalidateWindowClassesData(WC_SELECT_GAME);
@@ -341,7 +342,7 @@ static DropDownList BuildMapsizeDropDown()
 
 	for (uint i = MIN_MAP_SIZE_BITS; i <= MAX_MAP_SIZE_BITS; i++) {
 		SetDParam(0, 1LL << i);
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_JUST_INT, i, false));
+		list.push_back(MakeDropDownListStringItem(STR_JUST_INT, i));
 	}
 
 	return list;
@@ -354,20 +355,20 @@ static DropDownList BuildTownNameDropDown()
 	/* Add and sort newgrf townnames generators */
 	const auto &grf_names = GetGRFTownNameList();
 	for (uint i = 0; i < grf_names.size(); i++) {
-		list.push_back(std::make_unique<DropDownListStringItem>(grf_names[i], BUILTIN_TOWNNAME_GENERATOR_COUNT + i, false));
+		list.push_back(MakeDropDownListStringItem(grf_names[i], BUILTIN_TOWNNAME_GENERATOR_COUNT + i));
 	}
 	std::sort(list.begin(), list.end(), DropDownListStringItem::NatSortFunc);
 
 	size_t newgrf_size = list.size();
 	/* Insert newgrf_names at the top of the list */
 	if (newgrf_size > 0) {
-		list.push_back(std::make_unique<DropDownListDividerItem>(-1, false)); // separator line
+		list.push_back(MakeDropDownListDividerItem()); // separator line
 		newgrf_size++;
 	}
 
 	/* Add and sort original townnames generators */
 	for (uint i = 0; i < BUILTIN_TOWNNAME_GENERATOR_COUNT; i++) {
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_MAPGEN_TOWN_NAME_ORIGINAL_ENGLISH + i, i, false));
+		list.push_back(MakeDropDownListStringItem(STR_MAPGEN_TOWN_NAME_ORIGINAL_ENGLISH + i, i));
 	}
 	std::sort(list.begin() + newgrf_size, list.end(), DropDownListStringItem::NatSortFunc);
 
@@ -1008,14 +1009,14 @@ struct GenerateLandscapeWindow : public Window {
 	}
 };
 
-static WindowDesc _generate_landscape_desc(__FILE__, __LINE__,
+static WindowDesc _generate_landscape_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_GENERATE_LANDSCAPE, WC_NONE,
 	0,
 	std::begin(_nested_generate_landscape_widgets), std::end(_nested_generate_landscape_widgets)
 );
 
-static WindowDesc _heightmap_load_desc(__FILE__, __LINE__,
+static WindowDesc _heightmap_load_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_GENERATE_LANDSCAPE, WC_NONE,
 	0,
@@ -1318,7 +1319,7 @@ static constexpr NWidgetPart _nested_create_scenario_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _create_scenario_desc(__FILE__, __LINE__,
+static WindowDesc _create_scenario_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_GENERATE_LANDSCAPE, WC_NONE,
 	0,
@@ -1344,7 +1345,7 @@ static constexpr NWidgetPart _nested_generate_progress_widgets[] = {
 };
 
 
-static WindowDesc _generate_progress_desc(__FILE__, __LINE__,
+static WindowDesc _generate_progress_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_MODAL_PROGRESS, WC_NONE,
 	0,

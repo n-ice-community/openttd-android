@@ -3,8 +3,8 @@
 ##isocode mr_IN
 ##plural 0
 ##textdir ltr
-##numberformat 00,000,000,000,000,000,000
-##numberabbreviations 3=00,000,000,000,000,000{NBSP}k|6=00,000,000,000,000{NBSP}m|9=00,000,000,000{NBSP}bn|12=00,000,000{NBSP}tn|15=00,000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep ,
+##digitsepcur ,
 ##decimalsep .
 ##winlangid 0x044e
 ##grflangid 0x11
@@ -670,7 +670,7 @@ STR_NEWS_NEW_VEHICLE_TYPE                                       :{BIG_FONT}{BLAC
 
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :पौंड
 STR_GAME_OPTIONS_CURRENCY_USD                                   :डोल्लर
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :युरो
@@ -725,6 +725,7 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :अन्य
 
 
 # Custom currency window
+
 
 
 
@@ -1147,7 +1148,7 @@ STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} 
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE} संपर्क तुटला असण्याची शक्यता
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE} गेल्या {NUM} सेकंदांत सर्वरकडून काहीच माहिती आलेली नाही
 
-###length 21
+###length 22
 
 # Network related errors
 STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
@@ -2094,6 +2095,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

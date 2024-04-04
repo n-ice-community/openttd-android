@@ -35,8 +35,8 @@ static const NWidgetPart _nested_build_info_widgets[] = {
 	NWidget(WWT_PANEL, COLOUR_GREY, WID_TT_BACKGROUND), SetMinimalSize(200, 32), EndContainer(),
 };
 
-static WindowDesc _build_info_desc(__FILE__, __LINE__,
-	WDP_MANUAL, nullptr, 0, 0, // Coordinates and sizes are not used,
+static WindowDesc _build_info_desc(
+  WDP_MANUAL, nullptr, 0, 0, // Coordinates and sizes are not used,
 	WC_TOOLTIPS, WC_NONE,
 	WDF_NO_FOCUS,
 	std::begin(_nested_build_info_widgets), std::end(_nested_build_info_widgets)
@@ -225,7 +225,7 @@ static const NWidgetPart _nested_build_confirmation_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_confirmation_desc(__FILE__, __LINE__,
+static WindowDesc _build_confirmation_desc(
 	WDP_MANUAL, "build_confirmation", 0, 0,
 	WC_BUILD_CONFIRMATION, WC_NONE,
 	0,

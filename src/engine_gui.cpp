@@ -98,7 +98,7 @@ struct EnginePreviewWindow : Window {
 		}
 		this->vehicle_space = std::max<int>(ScaleSpriteTrad(40), y - y_offs);
 
-		size->width = std::max(size->width, x - x_offs);
+		size->width = std::max(size->width, x + std::abs(x_offs));
 		SetDParam(0, GetEngineCategoryName(engine));
 		size->height = GetStringHeight(STR_ENGINE_PREVIEW_MESSAGE, size->width) + WidgetDimensions::scaled.vsep_wide + GetCharacterHeight(FS_NORMAL) + this->vehicle_space;
 		SetDParam(0, engine);
@@ -144,7 +144,7 @@ struct EnginePreviewWindow : Window {
 	}
 };
 
-static WindowDesc _engine_preview_desc(__FILE__, __LINE__,
+static WindowDesc _engine_preview_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_ENGINE_PREVIEW, WC_NONE,
 	WDF_CONSTRUCTION,

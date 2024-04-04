@@ -40,7 +40,7 @@ static constexpr NWidgetPart _background_widgets[] = {
 /**
  * Window description for the background window to prevent smearing.
  */
-static WindowDesc _background_desc(__FILE__, __LINE__,
+static WindowDesc _background_desc(
 	WDP_MANUAL, nullptr, 0, 0,
 	WC_BOOTSTRAP, WC_NONE,
 	WDF_NO_CLOSE,
@@ -76,7 +76,7 @@ static constexpr NWidgetPart _nested_bootstrap_errmsg_widgets[] = {
 };
 
 /** Window description for the error window. */
-static WindowDesc _bootstrap_errmsg_desc(__FILE__, __LINE__,
+static WindowDesc _bootstrap_errmsg_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_BOOTSTRAP, WC_NONE,
 	WDF_MODAL | WDF_NO_CLOSE,
@@ -133,7 +133,7 @@ static constexpr NWidgetPart _nested_bootstrap_download_status_window_widgets[] 
 };
 
 /** Window description for the download window */
-static WindowDesc _bootstrap_download_status_window_desc(__FILE__, __LINE__,
+static WindowDesc _bootstrap_download_status_window_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_NETWORK_STATUS_WINDOW, WC_NONE,
 	WDF_MODAL | WDF_NO_CLOSE,
@@ -185,7 +185,7 @@ static constexpr NWidgetPart _bootstrap_query_widgets[] = {
 };
 
 /** The window description for the query. */
-static WindowDesc _bootstrap_query_desc(__FILE__, __LINE__,
+static WindowDesc _bootstrap_query_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_CONFIRM_POPUP_QUERY, WC_NONE,
 	WDF_NO_CLOSE,
@@ -385,9 +385,9 @@ bool HandleBootstrap()
 	 * This way the mauve and gray colours work and we can show the user interface. */
 	GfxInitPalettes();
 	static const int offsets[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0x04, 0x08 };
-	for (uint i = 0; i != 16; i++) {
-		for (int j = 0; j < 8; j++) {
-			_colour_gradient[i][j] = offsets[i] + j;
+	for (Colours i = COLOUR_BEGIN; i != COLOUR_END; i++) {
+		for (ColourShade j = SHADE_BEGIN; j < SHADE_END; j++) {
+			SetColourGradient(i, j, offsets[i] + j);
 		}
 	}
 

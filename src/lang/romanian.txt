@@ -3,8 +3,8 @@
 ##isocode ro_RO
 ##plural 14
 ##textdir ltr
-##numberformat 00.000.000.000.000.000.000
-##numberabbreviations 3=00.000.000.000.000.000{NBSP}mii|6=00.000.000.000.000{NBSP}mil.|9=00.000.000.000{NBSP}mld.|12=00.000.000{NBSP}bil.|15=00.000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep .
+##digitsepcur .
 ##decimalsep ,
 ##winlangid 0x0418
 ##grflangid 0x28
@@ -967,7 +967,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Alege un
 
 STR_GAME_OPTIONS_CURRENCY_CODE                                  :{STRING} ({STRING})
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Liră sterlină
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dolar american
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -1116,6 +1116,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Curs de
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Scade valoarea monedei tale pentru o liră sterlină (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Mărește valoarea monedei tale pentru o liră sterlină (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Setează rata de schimb pentru o liră sterlină (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Prefix: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Setează prefixul monedei
@@ -2585,7 +2586,7 @@ STR_NETWORK_ERROR_INVALID_CLIENT_NAME                           :{WHITE}Numele t
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Posibilă pierdere a conexiunii
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}În ultimele {NUM} secunde nu s-au mai primit date de la server
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :eroare generală
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :eroare de desincronizare
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :nu pot încărca harta
@@ -3075,7 +3076,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Propriet
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Proprietar al căii ferate: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Autoritatea locală: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Niciuna
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Coordonate: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Construit/renovat: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Clasa stației: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Tip stație: {LTBLUE}{STRING}
@@ -4840,8 +4840,6 @@ STR_AI_SETTINGS_CAPTION_GAMESCRIPT                              :Script de joc
 STR_AI_SETTINGS_CLOSE                                           :{BLACK}Închide
 STR_AI_SETTINGS_RESET                                           :{BLACK}Resetează
 STR_AI_SETTINGS_SETTING                                         :{STRING}: {ORANGE}{STRING}
-STR_AI_SETTINGS_SETTING_DEVIATION                               :{STRING}: {ORANGE}[{STRING}, {STRING}]
-STR_AI_SETTINGS_JUST_DEVIATION                                  :[{STRING}, {STRING}]
 
 
 # Textfile window
@@ -4894,9 +4892,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Venit es
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Salvarea se efectueaza încã,{}vã rugãm asteptati pânã se încheie!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Auto-salvarea a esuat
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Discul nu a putut fi citit
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Salvarea jocului eșuată{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Ștergerea fișierului a eșuat
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Încărcarea jocului eșuată{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Eroare internă: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Salvare eronată - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Salvarea a fost făcută cu o versiune mai nouă
@@ -5806,6 +5802,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_RIGHT_ARROW                                            :{RIGHT_ARROW}

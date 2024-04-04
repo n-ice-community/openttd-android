@@ -15,8 +15,8 @@
 #include "core/geometry_func.hpp"
 #include "company_func.h"
 #include "command_func.h"
-#include "widgets/dropdown_type.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "sortlist_type.h"
 #include "goal_base.h"
 #include "viewport_func.h"
@@ -253,11 +253,11 @@ protected:
 		for (const StoryPage *p : this->story_pages) {
 			bool current_page = p->index == this->selected_page_id;
 			if (!p->title.empty()) {
-				list.push_back(std::make_unique<DropDownListStringItem>(p->title, p->index, current_page));
+				list.push_back(MakeDropDownListStringItem(p->title, p->index, current_page));
 			} else {
 				/* No custom title => use a generic page title with page number. */
 				SetDParam(0, page_num);
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_STORY_BOOK_GENERIC_PAGE_ITEM, p->index, current_page));
+				list.push_back(MakeDropDownListStringItem(STR_STORY_BOOK_GENERIC_PAGE_ITEM, p->index, current_page));
 			}
 			page_num++;
 		}
@@ -495,12 +495,12 @@ protected:
 	 * Get the total height of the content displayed in this window.
 	 * @return the height in pixels
 	 */
-	uint GetContentHeight()
+	int32_t GetContentHeight()
 	{
 		this->EnsureStoryPageElementLayout();
 
 		/* The largest bottom coordinate of any element is the height of the content */
-		uint max_y = std::accumulate(this->layout_cache.begin(), this->layout_cache.end(), 0, [](uint max_y, const LayoutCacheElement &ce) -> uint { return std::max<uint>(max_y, ce.bounds.bottom); });
+		int32_t max_y = std::accumulate(this->layout_cache.begin(), this->layout_cache.end(), 0, [](int32_t max_y, const LayoutCacheElement &ce) -> int32_t { return std::max<int32_t>(max_y, ce.bounds.bottom); });
 
 		return max_y;
 	}
@@ -968,14 +968,14 @@ static constexpr NWidgetPart _nested_story_book_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _story_book_desc(__FILE__, __LINE__,
+static WindowDesc _story_book_desc(
 	WDP_AUTO, "view_story", 400, 300,
 	WC_STORY_BOOK, WC_NONE,
 	0,
 	std::begin(_nested_story_book_widgets), std::end(_nested_story_book_widgets)
 );
 
-static WindowDesc _story_book_gs_desc(__FILE__, __LINE__,
+static WindowDesc _story_book_gs_desc(
 	WDP_CENTER, "view_story_gs", 400, 300,
 	WC_STORY_BOOK, WC_NONE,
 	0,

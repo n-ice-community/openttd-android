@@ -212,9 +212,9 @@ struct SignListWindow : Window, SignList {
 				tr = tr.Indent(this->text_offset, rtl);
 
 				/* At least one sign available. */
-				for (uint16_t i = this->vscroll->GetPosition(); this->vscroll->IsVisible(i) && i < this->vscroll->GetCount(); i++)
-				{
-					const Sign *si = this->signs[i];
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->signs);
+				for (auto it = first; it != last; ++it) {
+					const Sign *si = *it;
 
 					if (si->owner != OWNER_NONE) DrawCompanyIcon(si->owner, icon_left, tr.top + sprite_offset_y);
 
@@ -386,7 +386,7 @@ static constexpr NWidgetPart _nested_sign_list_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _sign_list_desc(__FILE__, __LINE__,
+static WindowDesc _sign_list_desc(
 	WDP_AUTO, "list_signs", 358, 138,
 	WC_SIGN_LIST, WC_NONE,
 	0,
@@ -552,7 +552,7 @@ static constexpr NWidgetPart _nested_query_sign_edit_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _query_sign_edit_desc(__FILE__, __LINE__,
+static WindowDesc _query_sign_edit_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_QUERY_STRING, WC_NONE,
 	WDF_CONSTRUCTION,

@@ -21,7 +21,8 @@
 #include "window_func.h"
 #include "sound_func.h"
 #include "company_func.h"
-#include "widgets/dropdown_type.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "tunnelbridge.h"
 #include "tilehighlight_func.h"
 #include "spritecache.h"
@@ -759,8 +760,8 @@ struct BuildRailToolbarWindow : Window {
 
 		                        RailStationGUISettings params = _railstation;
 		                        RailType rt = _cur_railtype;
-		                        byte numtracks = _settings_client.gui.station_numtracks;
-		                        byte platlength = _settings_client.gui.station_platlength;
+		                        uint8_t numtracks = _settings_client.gui.station_numtracks;
+		                        uint8_t platlength = _settings_client.gui.station_platlength;
 		                        bool adjacent = _ctrl_pressed;
 
 		                        auto proc = [=](bool test, StationID to_join) -> bool {
@@ -940,7 +941,7 @@ static constexpr NWidgetPart _nested_build_rail_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_rail_desc(__FILE__, __LINE__,
+static WindowDesc _build_rail_desc(
 	WDP_ALIGN_TOOLBAR, "toolbar_rail", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -1720,7 +1721,7 @@ static constexpr NWidgetPart _nested_station_builder_widgets[] = {
 };
 
 /** High level window description of the station-build window (default & newGRF) */
-static WindowDesc _station_builder_desc(__FILE__, __LINE__,
+static WindowDesc _station_builder_desc(
 	WDP_AUTO, "build_station_rail", 350, 0,
 	WC_BUILD_STATION, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -1808,8 +1809,6 @@ public:
 		} else if (IsInsideMM(widget, WID_BS_SEMAPHORE_NORM, WID_BS_ELECTRIC_PBS_OWAY + 1)) {
 			size->width = std::max(size->width, this->sig_sprite_size.width + padding.width);
 			size->height = std::max(size->height, this->sig_sprite_size.height + padding.height);
-		} else if (widget == WID_BS_CAPTION) {
-			size->width += WidgetDimensions::scaled.frametext.Horizontal();
 		}
 	}
 
@@ -1928,59 +1927,58 @@ static constexpr NWidgetPart _nested_signal_builder_widgets[] = {
 			NWidget(NWID_VERTICAL, NC_EQUALSIZE),
 				/* Semaphore block signals. */
 				NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_NORM), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_NORM_TOOLTIP), EndContainer(),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_ENTRY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_ENTRY_TOOLTIP), EndContainer(),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_EXIT), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_EXIT_TOOLTIP), EndContainer(),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_COMBO), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_COMBO_TOOLTIP), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_NORM), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_NORM_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_ENTRY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_ENTRY_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_EXIT), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_EXIT_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_COMBO), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_COMBO_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
 				EndContainer(),
 				/* Electric block signals. */
 				NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_NORM), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_NORM_TOOLTIP), EndContainer(),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_ENTRY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_ENTRY_TOOLTIP), EndContainer(),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_EXIT), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_EXIT_TOOLTIP), EndContainer(),
-					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_COMBO), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_COMBO_TOOLTIP), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_NORM), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_NORM_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_ENTRY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_ENTRY_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_EXIT), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_EXIT_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+					NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_COMBO), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_COMBO_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
 				EndContainer(),
 			EndContainer(),
 		EndContainer(),
 
 		/* Divider (only shown if block signals visible). */
 		NWidget(NWID_SELECTION, INVALID_COLOUR, WID_BS_BLOCK_SPACER_SEL),
-			NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetMinimalSize(4, 0), EndContainer(),
+			NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetFill(0, 0), SetMinimalSize(4, 0), EndContainer(),
 		EndContainer(),
 
 		/* Path signals. */
 		NWidget(NWID_VERTICAL, NC_EQUALSIZE),
 			/* Semaphore path signals. */
 			NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
-				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_PBS), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_PBS_TOOLTIP), EndContainer(),
-				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_PBS_OWAY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_PBS_OWAY_TOOLTIP), EndContainer(),
+				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_PBS), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_PBS_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_SEMAPHORE_PBS_OWAY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_SEMAPHORE_PBS_OWAY_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
 			EndContainer(),
 			/* Electric path signals. */
 			NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
-				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_PBS), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_PBS_TOOLTIP), EndContainer(),
-				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_PBS_OWAY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_PBS_OWAY_TOOLTIP), EndContainer(),
+				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_PBS), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_PBS_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
+				NWidget(WWT_PANEL, COLOUR_DARK_GREEN, WID_BS_ELECTRIC_PBS_OWAY), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_ELECTRIC_PBS_OWAY_TOOLTIP), SetMinimalSize(22, 22), EndContainer(),
 			EndContainer(),
 		EndContainer(),
 
 		/* Convert/autofill buttons. */
 		NWidget(NWID_VERTICAL, NC_EQUALSIZE),
-			NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_BS_CONVERT), SetDataTip(SPR_IMG_SIGNAL_CONVERT, STR_BUILD_SIGNAL_CONVERT_TOOLTIP), SetFill(1, 1),
-			NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_TOOLTIP), SetFill(1, 1),
-				NWidget(WWT_LABEL, COLOUR_DARK_GREEN, WID_BS_DRAG_SIGNALS_DENSITY_LABEL), SetDataTip(STR_JUST_INT, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_TOOLTIP), SetTextStyle(TC_ORANGE), SetFill(1, 1),
-				NWidget(NWID_HORIZONTAL), SetPIP(2, 0, 2),
-					NWidget(NWID_SPACER), SetFill(1, 0),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_BS_DRAG_SIGNALS_DENSITY_DECREASE), SetMinimalSize(9, 12), SetDataTip(AWV_DECREASE, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_DECREASE_TOOLTIP),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_BS_DRAG_SIGNALS_DENSITY_INCREASE), SetMinimalSize(9, 12), SetDataTip(AWV_INCREASE, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_INCREASE_TOOLTIP),
-					NWidget(NWID_SPACER), SetFill(1, 0),
+			NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_BS_CONVERT), SetDataTip(SPR_IMG_SIGNAL_CONVERT, STR_BUILD_SIGNAL_CONVERT_TOOLTIP), SetFill(0, 1),
+			NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_TOOLTIP), SetFill(0, 1),
+				NWidget(NWID_VERTICAL), SetPadding(2), SetPIPRatio(1, 0, 1),
+					NWidget(WWT_LABEL, COLOUR_DARK_GREEN, WID_BS_DRAG_SIGNALS_DENSITY_LABEL), SetDataTip(STR_JUST_INT, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_TOOLTIP), SetTextStyle(TC_ORANGE), SetFill(1, 1),
+					NWidget(NWID_HORIZONTAL), SetPIPRatio(1, 0, 1),
+						NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_BS_DRAG_SIGNALS_DENSITY_DECREASE), SetMinimalSize(9, 12), SetDataTip(AWV_DECREASE, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_DECREASE_TOOLTIP),
+						NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_BS_DRAG_SIGNALS_DENSITY_INCREASE), SetMinimalSize(9, 12), SetDataTip(AWV_INCREASE, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_INCREASE_TOOLTIP),
+					EndContainer(),
 				EndContainer(),
-				NWidget(NWID_SPACER), SetMinimalSize(0, 2), SetFill(1, 0),
 			EndContainer(),
 		EndContainer(),
 	EndContainer(),
 };
 
 /** Signal selection window description */
-static WindowDesc _signal_builder_desc(__FILE__, __LINE__,
+static WindowDesc _signal_builder_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_BUILD_SIGNAL, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -2061,7 +2059,7 @@ static constexpr NWidgetPart _nested_build_depot_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_depot_desc(__FILE__, __LINE__,
+static WindowDesc _build_depot_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_BUILD_DEPOT, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -2290,7 +2288,7 @@ static constexpr NWidgetPart _nested_build_waypoint_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_waypoint_desc(__FILE__, __LINE__,
+static WindowDesc _build_waypoint_desc(
 	WDP_AUTO, "build_waypoint", 0, 0,
 	WC_BUILD_WAYPOINT, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -2437,7 +2435,7 @@ DropDownList GetRailTypeDropDownList(bool for_replacement, bool all_option)
 	DropDownList list;
 
 	if (all_option) {
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_REPLACE_ALL_RAILTYPE, INVALID_RAILTYPE, false));
+		list.push_back(MakeDropDownListStringItem(STR_REPLACE_ALL_RAILTYPE, INVALID_RAILTYPE));
 	}
 
 	Dimension d = { 0, 0 };
@@ -2459,16 +2457,16 @@ DropDownList GetRailTypeDropDownList(bool for_replacement, bool all_option)
 		SetDParam(0, rti->strings.menu_text);
 		SetDParam(1, rti->max_speed);
 		if (for_replacement) {
-			list.push_back(std::make_unique<DropDownListStringItem>(rti->strings.replace_text, rt, !HasBit(avail_railtypes, rt)));
+			list.push_back(MakeDropDownListStringItem(rti->strings.replace_text, rt, !HasBit(avail_railtypes, rt)));
 		} else {
 			StringID str = rti->max_speed > 0 ? STR_TOOLBAR_RAILTYPE_VELOCITY : STR_JUST_STRING;
-			list.push_back(std::make_unique<DropDownListIconItem>(d, rti->gui_sprites.build_x_rail, PAL_NONE, str, rt, !HasBit(avail_railtypes, rt)));
+			list.push_back(MakeDropDownListIconItem(d, rti->gui_sprites.build_x_rail, PAL_NONE, str, rt, !HasBit(avail_railtypes, rt)));
 		}
 	}
 
 	if (list.empty()) {
 		/* Empty dropdowns are not allowed */
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_NONE, INVALID_RAILTYPE, true));
+		list.push_back(MakeDropDownListStringItem(STR_NONE, INVALID_RAILTYPE, true));
 	}
 
 	return list;

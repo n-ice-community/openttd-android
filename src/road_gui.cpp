@@ -27,7 +27,8 @@
 #include "hotkeys.h"
 #include "road_gui.h"
 #include "zoom_func.h"
-#include "build_confirmation_func.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "engine_base.h"
 #include "strings_func.h"
 #include "core/geometry_func.hpp"
@@ -41,6 +42,7 @@
 #include "string_func.h"
 #include "timer/timer.h"
 #include "timer/timer_game_calendar.h"
+#include "build_confirmation_func.h"
 
 #include "widgets/road_widget.h"
 
@@ -887,7 +889,7 @@ static constexpr NWidgetPart _nested_build_road_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_road_desc(__FILE__, __LINE__,
+static WindowDesc _build_road_desc(
 	WDP_ALIGN_TOOLBAR, "toolbar_road", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -928,7 +930,7 @@ static constexpr NWidgetPart _nested_build_tramway_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_tramway_desc(__FILE__, __LINE__,
+static WindowDesc _build_tramway_desc(
 	WDP_ALIGN_TOOLBAR, "toolbar_tramway", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -983,7 +985,7 @@ static constexpr NWidgetPart _nested_build_road_scen_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_road_scen_desc(__FILE__, __LINE__,
+static WindowDesc _build_road_scen_desc(
 	WDP_ALIGN_TOOLBAR, "toolbar_road_scen", 0, 0,
 	WC_SCEN_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -1018,7 +1020,7 @@ static constexpr NWidgetPart _nested_build_tramway_scen_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_tramway_scen_desc(__FILE__, __LINE__,
+static WindowDesc _build_tramway_scen_desc(
 	WDP_AUTO, "toolbar_tram_scen", 0, 0,
 	WC_SCEN_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -1116,7 +1118,7 @@ static constexpr NWidgetPart _nested_build_road_depot_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_road_depot_desc(__FILE__, __LINE__,
+static WindowDesc _build_road_depot_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_BUILD_DEPOT, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -1169,9 +1171,11 @@ private:
 		const RoadStopSpec *spec = RoadStopClass::Get(_roadstop_gui_settings.roadstop_class)->GetSpec(_roadstop_gui_settings.roadstop_type);
 
 		/* Raise and lower to ensure the correct widget is lowered after changing displayed orientation plane. */
-		this->RaiseWidget(WID_BROS_STATION_NE + _roadstop_gui_settings.orientation);
-		this->GetWidget<NWidgetStacked>(WID_BROS_AVAILABLE_ORIENTATIONS)->SetDisplayedPlane((spec != nullptr && HasBit(spec->flags, RSF_DRIVE_THROUGH_ONLY)) ? 1 : 0);
-		this->LowerWidget(WID_BROS_STATION_NE + _roadstop_gui_settings.orientation);
+		if (RoadTypeIsRoad(_cur_roadtype)) {
+			this->RaiseWidget(WID_BROS_STATION_NE + _roadstop_gui_settings.orientation);
+			this->GetWidget<NWidgetStacked>(WID_BROS_AVAILABLE_ORIENTATIONS)->SetDisplayedPlane((spec != nullptr && HasBit(spec->flags, RSF_DRIVE_THROUGH_ONLY)) ? 1 : 0);
+			this->LowerWidget(WID_BROS_STATION_NE + _roadstop_gui_settings.orientation);
+		}
 
 		if (_roadstop_gui_settings.orientation >= DIAGDIR_END) return;
 
@@ -1736,7 +1740,7 @@ static constexpr NWidgetPart _nested_road_station_picker_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _road_station_picker_desc(__FILE__, __LINE__,
+static WindowDesc _road_station_picker_desc(
 	WDP_AUTO, "build_station_road", 0, 0,
 	WC_BUS_STATION, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -1814,7 +1818,7 @@ static constexpr NWidgetPart _nested_tram_station_picker_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _tram_station_picker_desc(__FILE__, __LINE__,
+static WindowDesc _tram_station_picker_desc(
 	WDP_AUTO, "build_station_tram", 0, 0,
 	WC_BUS_STATION, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,
@@ -1865,7 +1869,7 @@ DropDownList GetRoadTypeDropDownList(RoadTramTypes rtts, bool for_replacement, b
 	DropDownList list;
 
 	if (all_option) {
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_REPLACE_ALL_ROADTYPE, INVALID_ROADTYPE, false));
+		list.push_back(MakeDropDownListStringItem(STR_REPLACE_ALL_ROADTYPE, INVALID_ROADTYPE));
 	}
 
 	Dimension d = { 0, 0 };
@@ -1887,16 +1891,16 @@ DropDownList GetRoadTypeDropDownList(RoadTramTypes rtts, bool for_replacement, b
 		SetDParam(0, rti->strings.menu_text);
 		SetDParam(1, rti->max_speed / 2);
 		if (for_replacement) {
-			list.push_back(std::make_unique<DropDownListStringItem>(rti->strings.replace_text, rt, !HasBit(avail_roadtypes, rt)));
+			list.push_back(MakeDropDownListStringItem(rti->strings.replace_text, rt, !HasBit(avail_roadtypes, rt)));
 		} else {
 			StringID str = rti->max_speed > 0 ? STR_TOOLBAR_RAILTYPE_VELOCITY : STR_JUST_STRING;
-			list.push_back(std::make_unique<DropDownListIconItem>(d, rti->gui_sprites.build_x_road, PAL_NONE, str, rt, !HasBit(avail_roadtypes, rt)));
+			list.push_back(MakeDropDownListIconItem(d, rti->gui_sprites.build_x_road, PAL_NONE, str, rt, !HasBit(avail_roadtypes, rt)));
 		}
 	}
 
 	if (list.empty()) {
 		/* Empty dropdowns are not allowed */
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_NONE, INVALID_ROADTYPE, true));
+		list.push_back(MakeDropDownListStringItem(STR_NONE, INVALID_ROADTYPE, true));
 	}
 
 	return list;
@@ -1929,12 +1933,12 @@ DropDownList GetScenRoadTypeDropDownList(RoadTramTypes rtts)
 		SetDParam(0, rti->strings.menu_text);
 		SetDParam(1, rti->max_speed / 2);
 		StringID str = rti->max_speed > 0 ? STR_TOOLBAR_RAILTYPE_VELOCITY : STR_JUST_STRING;
-		list.push_back(std::make_unique<DropDownListIconItem>(d, rti->gui_sprites.build_x_road, PAL_NONE, str, rt, !HasBit(avail_roadtypes, rt)));
+		list.push_back(MakeDropDownListIconItem(d, rti->gui_sprites.build_x_road, PAL_NONE, str, rt, !HasBit(avail_roadtypes, rt)));
 	}
 
 	if (list.empty()) {
 		/* Empty dropdowns are not allowed */
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_NONE, -1, true));
+		list.push_back(MakeDropDownListStringItem(STR_NONE, -1, true));
 	}
 
 	return list;

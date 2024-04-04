@@ -115,10 +115,6 @@ bool SetFallbackFont(FontCacheSettings *settings, const std::string &, int winla
 }
 
 
-#ifndef ANTIALIASED_QUALITY
-#define ANTIALIASED_QUALITY     4
-#endif
-
 /**
  * Create a new Win32FontCache.
  * @param fs      The font size that is going to be cached.
@@ -171,7 +167,8 @@ void Win32FontCache::SetFontSize(int pixels)
 	/* Create GDI font handle. */
 	this->logfont.lfHeight = -pixels;
 	this->logfont.lfWidth = 0;
-	this->logfont.lfOutPrecision = ANTIALIASED_QUALITY;
+	this->logfont.lfOutPrecision = OUT_TT_ONLY_PRECIS;
+	this->logfont.lfQuality = ANTIALIASED_QUALITY;
 
 	if (this->font != nullptr) {
 		SelectObject(dc, this->old_font);
@@ -227,7 +224,7 @@ void Win32FontCache::ClearFontCache()
 	if (width > MAX_GLYPH_DIM || height > MAX_GLYPH_DIM) UserError("Font glyph is too large");
 
 	/* Call GetGlyphOutline again with size to actually render the glyph. */
-	byte *bmp = new byte[size];
+	uint8_t *bmp = new uint8_t[size];
 	GetGlyphOutline(this->dc, key, GGO_GLYPH_INDEX | (aa ? GGO_GRAY8_BITMAP : GGO_BITMAP), &gm, size, bmp, &mat);
 
 	/* GDI has rendered the glyph, now we allocate a sprite and copy the image into it. */
@@ -344,11 +341,11 @@ static bool TryLoadFontFromFile(const std::string &font_name, LOGFONT &logfont)
 				/* Try to query an array of LOGFONTs that describe the file. */
 				DWORD len = 0;
 				if (GetFontResourceInfo(fontPath, &len, nullptr, 2) && len >= sizeof(LOGFONT)) {
-					LOGFONT *buf = (LOGFONT *)new byte[len];
+					LOGFONT *buf = (LOGFONT *)new uint8_t[len];
 					if (GetFontResourceInfo(fontPath, &len, buf, 2)) {
 						logfont = *buf; // Just use first entry.
 					}
-					delete[](byte *)buf;
+					delete[](uint8_t *)buf;
 				}
 			}
 

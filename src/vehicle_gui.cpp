@@ -26,7 +26,8 @@
 #include "vehicle_func.h"
 #include "autoreplace_gui.h"
 #include "string_func.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "timetable.h"
 #include "articulated_vehicles.h"
 #include "spritecache.h"
@@ -427,17 +428,17 @@ DropDownList BaseVehicleListWindow::BuildCargoDropDownList(bool full) const
 	DropDownList list;
 
 	/* Add item for disabling filtering. */
-	list.push_back(std::make_unique<DropDownListStringItem>(this->GetCargoFilterLabel(CargoFilterCriteria::CF_ANY), CargoFilterCriteria::CF_ANY, false));
+	list.push_back(MakeDropDownListStringItem(this->GetCargoFilterLabel(CargoFilterCriteria::CF_ANY), CargoFilterCriteria::CF_ANY));
 	/* Add item for freight (i.e. vehicles with cargo capacity and with no passenger capacity). */
-	list.push_back(std::make_unique<DropDownListStringItem>(this->GetCargoFilterLabel(CargoFilterCriteria::CF_FREIGHT), CargoFilterCriteria::CF_FREIGHT, false));
+	list.push_back(MakeDropDownListStringItem(this->GetCargoFilterLabel(CargoFilterCriteria::CF_FREIGHT), CargoFilterCriteria::CF_FREIGHT));
 	/* Add item for vehicles not carrying anything, e.g. train engines. */
-	list.push_back(std::make_unique<DropDownListStringItem>(this->GetCargoFilterLabel(CargoFilterCriteria::CF_NONE), CargoFilterCriteria::CF_NONE, false));
+	list.push_back(MakeDropDownListStringItem(this->GetCargoFilterLabel(CargoFilterCriteria::CF_NONE), CargoFilterCriteria::CF_NONE));
 
 	/* Add cargos */
 	Dimension d = GetLargestCargoIconSize();
 	for (const CargoSpec *cs : _sorted_cargo_specs) {
 		if (!full && !HasBit(this->used_cargoes, cs->Index())) continue;
-		list.push_back(std::make_unique<DropDownListIconItem>(d, cs->GetCargoIcon(), PAL_NONE, cs->name, cs->Index(), false, !HasBit(this->used_cargoes, cs->Index())));
+		list.push_back(MakeDropDownListIconItem(d, cs->GetCargoIcon(), PAL_NONE, cs->name, cs->Index(), false, !HasBit(this->used_cargoes, cs->Index())));
 	}
 
 	return list;
@@ -454,16 +455,25 @@ DropDownList BaseVehicleListWindow::BuildActionDropdownList(bool show_autoreplac
 {
 	DropDownList list;
 
-	if (show_autoreplace) list.push_back(std::make_unique<DropDownListStringItem>(STR_VEHICLE_LIST_REPLACE_VEHICLES, ADI_REPLACE, false));
-	list.push_back(std::make_unique<DropDownListStringItem>(STR_VEHICLE_LIST_SEND_FOR_SERVICING, ADI_SERVICE, false));
-	list.push_back(std::make_unique<DropDownListStringItem>(this->vehicle_depot_name[this->vli.vtype], ADI_DEPOT, false));
-
-	if (show_group) {
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_GROUP_ADD_SHARED_VEHICLE, ADI_ADD_SHARED, false));
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_GROUP_REMOVE_ALL_VEHICLES, ADI_REMOVE_ALL, false));
-	} else if (show_create) {
-		list.push_back(std::make_unique<DropDownListStringItem>(STR_VEHICLE_LIST_CREATE_GROUP, ADI_CREATE_GROUP, false));
+	/* Autoreplace actions. */
+	if (show_autoreplace) {
+		list.push_back(MakeDropDownListStringItem(STR_VEHICLE_LIST_REPLACE_VEHICLES, ADI_REPLACE));
+		list.push_back(MakeDropDownListDividerItem());
 	}
+
+	/* Group actions. */
+	if (show_group) {
+		list.push_back(MakeDropDownListStringItem(STR_GROUP_ADD_SHARED_VEHICLE, ADI_ADD_SHARED));
+		list.push_back(MakeDropDownListStringItem(STR_GROUP_REMOVE_ALL_VEHICLES, ADI_REMOVE_ALL));
+		list.push_back(MakeDropDownListDividerItem());
+	} else if (show_create) {
+		list.push_back(MakeDropDownListStringItem(STR_VEHICLE_LIST_CREATE_GROUP, ADI_CREATE_GROUP));
+		list.push_back(MakeDropDownListDividerItem());
+	}
+
+	/* Depot actions. */
+	list.push_back(MakeDropDownListStringItem(STR_VEHICLE_LIST_SEND_FOR_SERVICING, ADI_SERVICE));
+	list.push_back(MakeDropDownListStringItem(this->vehicle_depot_name[this->vli.vtype], ADI_DEPOT));
 
 	return list;
 }
@@ -486,7 +496,7 @@ void DepotSortList(VehicleList *list)
 }
 
 /** draw the vehicle profit button in the vehicle list window. */
-static void DrawVehicleProfitButton(TimerGameCalendar::Date age, Money display_profit_last_year, uint num_vehicles, int x, int y)
+static void DrawVehicleProfitButton(TimerGameEconomy::Date age, Money display_profit_last_year, uint num_vehicles, int x, int y)
 {
 	SpriteID spr;
 
@@ -515,7 +525,7 @@ static const uint MAX_REFIT_CYCLE = 256;
  * @param dest_cargo_type Destination cargo type.
  * @return the best sub type
  */
-byte GetBestFittingSubType(Vehicle *v_from, Vehicle *v_for, CargoID dest_cargo_type)
+uint8_t GetBestFittingSubType(Vehicle *v_from, Vehicle *v_for, CargoID dest_cargo_type)
 {
 	v_from = v_from->GetFirstEnginePart();
 	v_for = v_for->GetFirstEnginePart();
@@ -529,7 +539,7 @@ byte GetBestFittingSubType(Vehicle *v_from, Vehicle *v_for, CargoID dest_cargo_t
 		include(subtypes, GetCargoSubtypeText(v_from));
 	}
 
-	byte ret_refit_cyc = 0;
+	uint8_t ret_refit_cyc = 0;
 	bool success = false;
 	if (!subtypes.empty()) {
 		/* Check whether any articulated part is refittable to 'dest_cargo_type' with a subtype listed in 'subtypes' */
@@ -539,7 +549,7 @@ byte GetBestFittingSubType(Vehicle *v_from, Vehicle *v_for, CargoID dest_cargo_t
 			if (!HasBit(e->info.refit_mask, dest_cargo_type) && v->cargo_type != dest_cargo_type) continue;
 
 			CargoID old_cargo_type = v->cargo_type;
-			byte old_cargo_subtype = v->cargo_subtype;
+			uint8_t old_cargo_subtype = v->cargo_subtype;
 
 			/* Set the 'destination' cargo */
 			v->cargo_type = dest_cargo_type;
@@ -581,7 +591,7 @@ byte GetBestFittingSubType(Vehicle *v_from, Vehicle *v_for, CargoID dest_cargo_t
 /** Option to refit a vehicle chain */
 struct RefitOption {
 	CargoID cargo;    ///< Cargo to refit to
-	byte subtype;     ///< Subcargo to use
+	uint8_t subtype;     ///< Subcargo to use
 	StringID string;  ///< GRF-local String to display for the cargo
 
 	/**
@@ -624,7 +634,7 @@ static void DrawVehicleRefitWindow(const RefitOptions &refits, const RefitOption
 	bool rtl = _current_text_dir == TD_RTL;
 	uint iconwidth = std::max(GetSpriteSize(SPR_CIRCLE_FOLDED).width, GetSpriteSize(SPR_CIRCLE_UNFOLDED).width);
 	uint iconheight = GetSpriteSize(SPR_CIRCLE_FOLDED).height;
-	int linecolour = _colour_gradient[COLOUR_ORANGE][4];
+	int linecolour = GetColourGradient(COLOUR_ORANGE, SHADE_NORMAL);
 
 	int iconleft   = rtl ? ir.right - iconwidth     : ir.left;
 	int iconcenter = rtl ? ir.right - iconwidth / 2 : ir.left + iconwidth / 2;
@@ -709,7 +719,7 @@ struct RefitWindow : public Window {
 			if (v->type == VEH_TRAIN && std::find(vehicles_to_refit.begin(), vehicles_to_refit.end(), v->index) == vehicles_to_refit.end()) continue;
 			const Engine *e = v->GetEngine();
 			CargoTypes cmask = e->info.refit_mask;
-			byte callback_mask = e->info.callback_mask;
+			uint8_t callback_mask = e->info.callback_mask;
 
 			/* Skip this engine if it does not carry anything */
 			if (!e->CanCarryCargo()) continue;
@@ -737,7 +747,7 @@ struct RefitWindow : public Window {
 					/* Make a note of the original cargo type. It has to be
 					 * changed to test the cargo & subtype... */
 					CargoID temp_cargo = v->cargo_type;
-					byte temp_subtype  = v->cargo_subtype;
+					uint8_t temp_subtype  = v->cargo_subtype;
 
 					v->cargo_type = cid;
 
@@ -1272,7 +1282,7 @@ static constexpr NWidgetPart _nested_vehicle_refit_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _vehicle_refit_desc(__FILE__, __LINE__,
+static WindowDesc _vehicle_refit_desc(
 	WDP_AUTO, "view_vehicle_refit", 240, 174,
 	WC_VEHICLE_REFIT, WC_VEHICLE_VIEW,
 	WDF_CONSTRUCTION,
@@ -1705,10 +1715,9 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 
 	int vehicle_button_x = rtl ? ir.right - profit.width : ir.left;
 
-	uint max = static_cast<uint>(std::min<size_t>(this->vscroll->GetPosition() + this->vscroll->GetCapacity(), this->vehgroups.size()));
-	for (uint i = this->vscroll->GetPosition(); i < max; ++i) {
-
-		const GUIVehicleGroup &vehgroup = this->vehgroups[i];
+	auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->vehgroups);
+	for (auto it = first; it != last; ++it) {
+		const GUIVehicleGroup &vehgroup = *it;
 
 		SetDParam(0, vehgroup.GetDisplayProfitThisYear());
 		SetDParam(1, vehgroup.GetDisplayProfitLastYear());
@@ -2202,14 +2211,14 @@ public:
 	}
 };
 
-static WindowDesc _vehicle_list_other_desc(__FILE__, __LINE__,
+static WindowDesc _vehicle_list_other_desc(
 	WDP_AUTO, "list_vehicles", 260, 246,
 	WC_INVALID, WC_NONE,
 	0,
 	std::begin(_nested_vehicle_list), std::end(_nested_vehicle_list)
 );
 
-static WindowDesc _vehicle_list_train_desc(__FILE__, __LINE__,
+static WindowDesc _vehicle_list_train_desc(
 	WDP_AUTO, "list_vehicles_train", 325, 246,
 	WC_TRAINS_LIST, WC_NONE,
 	0,
@@ -2768,7 +2777,7 @@ struct VehicleDetailsWindow : Window {
 };
 
 /** Vehicle details window descriptor. */
-static WindowDesc _train_vehicle_details_desc(__FILE__, __LINE__,
+static WindowDesc _train_vehicle_details_desc(
 	WDP_AUTO, "view_vehicle_details_train", 405, 178,
 	WC_VEHICLE_DETAILS, WC_VEHICLE_VIEW,
 	0,
@@ -2776,7 +2785,7 @@ static WindowDesc _train_vehicle_details_desc(__FILE__, __LINE__,
 );
 
 /** Vehicle details window descriptor for other vehicles than a train. */
-static WindowDesc _nontrain_vehicle_details_desc(__FILE__, __LINE__,
+static WindowDesc _nontrain_vehicle_details_desc(
 	WDP_AUTO, "view_vehicle_details", 405, 113,
 	WC_VEHICLE_DETAILS, WC_VEHICLE_VIEW,
 	0,
@@ -3375,7 +3384,7 @@ public:
 };
 
 /** Vehicle view window descriptor for all vehicles but trains. */
-static WindowDesc _vehicle_view_desc(__FILE__, __LINE__,
+static WindowDesc _vehicle_view_desc(
 	WDP_AUTO, "view_vehicle", 250, 116,
 	WC_VEHICLE_VIEW, WC_NONE,
 	0,
@@ -3387,7 +3396,7 @@ static WindowDesc _vehicle_view_desc(__FILE__, __LINE__,
  * Vehicle view window descriptor for trains. Only minimum_height and
  *  default_height are different for train view.
  */
-static WindowDesc _train_view_desc(__FILE__, __LINE__,
+static WindowDesc _train_view_desc(
 	WDP_AUTO, "view_vehicle_train", 250, 134,
 	WC_VEHICLE_VIEW, WC_NONE,
 	0,

@@ -15,7 +15,8 @@
 #include "gfx_func.h"
 #include "string_func.h"
 #include "textfile_gui.h"
-#include "widgets/dropdown_type.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "gfx_layout.h"
 #include "debug.h"
 #include "openttd.h"
@@ -74,7 +75,7 @@ static constexpr NWidgetPart _nested_textfile_widgets[] = {
 };
 
 /** Window definition for the textfile window */
-static WindowDesc _textfile_desc(__FILE__, __LINE__,
+static WindowDesc _textfile_desc(
 	WDP_CENTER, "textfile", 630, 460,
 	WC_TEXTFILE, WC_NONE,
 	0,
@@ -534,7 +535,7 @@ void TextfileWindow::AfterLoadMarkdown()
 			DropDownList list;
 			for (size_t line : this->jumplist) {
 				SetDParamStr(0, this->lines[line].text);
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_TEXTFILE_JUMPLIST_ITEM, (int)line, false));
+				list.push_back(MakeDropDownListStringItem(STR_TEXTFILE_JUMPLIST_ITEM, (int)line));
 			}
 			ShowDropDownList(this, std::move(list), -1, widget);
 			break;
@@ -664,10 +665,10 @@ void TextfileWindow::ScrollToLine(size_t line)
  * When decompressing fails, *bufp is set to nullptr and *sizep to 0. The
  * compressed buffer passed in is still freed in this case.
  */
-static void Gunzip(byte **bufp, size_t *sizep)
+static void Gunzip(uint8_t **bufp, size_t *sizep)
 {
 	static const int BLOCKSIZE  = 8192;
-	byte             *buf       = nullptr;
+	uint8_t             *buf       = nullptr;
 	size_t           alloc_size = 0;
 	z_stream         z;
 	int              res;
@@ -720,10 +721,10 @@ static void Gunzip(byte **bufp, size_t *sizep)
  * When decompressing fails, *bufp is set to nullptr and *sizep to 0. The
  * compressed buffer passed in is still freed in this case.
  */
-static void Xunzip(byte **bufp, size_t *sizep)
+static void Xunzip(uint8_t **bufp, size_t *sizep)
 {
 	static const int BLOCKSIZE  = 8192;
-	byte             *buf       = nullptr;
+	uint8_t             *buf       = nullptr;
 	size_t           alloc_size = 0;
 	lzma_stream      z = LZMA_STREAM_INIT;
 	int              res;
@@ -789,12 +790,12 @@ static void Xunzip(byte **bufp, size_t *sizep)
 
 #if defined(WITH_ZLIB)
 	/* In-place gunzip */
-	if (textfile.ends_with(".gz")) Gunzip((byte**)&buf, &filesize);
+	if (textfile.ends_with(".gz")) Gunzip((uint8_t**)&buf, &filesize);
 #endif
 
 #if defined(WITH_LIBLZMA)
 	/* In-place xunzip */
-	if (textfile.ends_with(".xz")) Xunzip((byte**)&buf, &filesize);
+	if (textfile.ends_with(".xz")) Xunzip((uint8_t**)&buf, &filesize);
 #endif
 
 	if (buf == nullptr) return;

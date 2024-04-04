@@ -292,10 +292,10 @@ CommandCost CheckAllowRemoveRoad(TileIndex tile, RoadBits remove, Owner owner, R
 	/* Get a bitmask of which neighbouring roads has a tile */
 	RoadBits n = ROAD_NONE;
 	RoadBits present = GetAnyRoadBits(tile, rtt);
-	if ((present & ROAD_NE) && (GetAnyRoadBits(TILE_ADDXY(tile, -1,  0), rtt) & ROAD_SW)) n |= ROAD_NE;
-	if ((present & ROAD_SE) && (GetAnyRoadBits(TILE_ADDXY(tile,  0,  1), rtt) & ROAD_NW)) n |= ROAD_SE;
-	if ((present & ROAD_SW) && (GetAnyRoadBits(TILE_ADDXY(tile,  1,  0), rtt) & ROAD_NE)) n |= ROAD_SW;
-	if ((present & ROAD_NW) && (GetAnyRoadBits(TILE_ADDXY(tile,  0, -1), rtt) & ROAD_SE)) n |= ROAD_NW;
+	if ((present & ROAD_NE) && (GetAnyRoadBits(TileAddXY(tile, -1,  0), rtt) & ROAD_SW)) n |= ROAD_NE;
+	if ((present & ROAD_SE) && (GetAnyRoadBits(TileAddXY(tile,  0,  1), rtt) & ROAD_NW)) n |= ROAD_SE;
+	if ((present & ROAD_SW) && (GetAnyRoadBits(TileAddXY(tile,  1,  0), rtt) & ROAD_NE)) n |= ROAD_SW;
+	if ((present & ROAD_NW) && (GetAnyRoadBits(TileAddXY(tile,  0, -1), rtt) & ROAD_SE)) n |= ROAD_NW;
 
 	int rating_decrease = RATING_ROAD_DOWN_STEP_EDGE;
 	/* If 0 or 1 bits are set in n, or if no bits that match the bits to remove,
@@ -1007,55 +1007,49 @@ CommandCost CmdBuildLongRoad(DoCommandFlag flags, TileIndex end_tile, TileIndex 
 	bool had_bridge = false;
 	bool had_tunnel = false;
 	bool had_success = false;
-	bool under_tunnelbridge = false;
 
 	/* Start tile is the first tile clicked by the user. */
 	for (;;) {
-		/* Don't try to place road between tunnelbridge ends */
-		if (IsTileType(tile, MP_TUNNELBRIDGE)) {
-			under_tunnelbridge = !under_tunnelbridge;
-		} else if (!under_tunnelbridge) {
-			RoadBits bits = AxisToRoadBits(axis);
+		RoadBits bits = AxisToRoadBits(axis);
 
-			/* Determine which road parts should be built. */
-			if (!is_ai && start_tile != end_tile) {
-				/* Only build the first and last roadbit if they can connect to something. */
-				if (tile == end_tile && !CanConnectToRoad(tile, rt, dir)) {
-					bits = DiagDirToRoadBits(ReverseDiagDir(dir));
-				} else if (tile == start_tile && !CanConnectToRoad(tile, rt, ReverseDiagDir(dir))) {
-					bits = DiagDirToRoadBits(dir);
-				}
-			} else {
-				/* Road parts only have to be built at the start tile or at the end tile. */
-				if (tile == end_tile && !end_half) bits &= DiagDirToRoadBits(ReverseDiagDir(dir));
-				if (tile == start_tile && start_half) bits &= DiagDirToRoadBits(dir);
+		/* Determine which road parts should be built. */
+		if (!is_ai && start_tile != end_tile) {
+			/* Only build the first and last roadbit if they can connect to something. */
+			if (tile == end_tile && !CanConnectToRoad(tile, rt, dir)) {
+				bits = DiagDirToRoadBits(ReverseDiagDir(dir));
+			} else if (tile == start_tile && !CanConnectToRoad(tile, rt, ReverseDiagDir(dir))) {
+				bits = DiagDirToRoadBits(dir);
 			}
+		} else {
+			/* Road parts only have to be built at the start tile or at the end tile. */
+			if (tile == end_tile && !end_half) bits &= DiagDirToRoadBits(ReverseDiagDir(dir));
+			if (tile == start_tile && start_half) bits &= DiagDirToRoadBits(dir);
+		}
 
-			CommandCost ret = Command<CMD_BUILD_ROAD>::Do(flags, tile, bits, rt, drd, 0);
-			if (ret.Failed()) {
-				last_error = ret;
-				if (last_error.GetErrorMessage() != STR_ERROR_ALREADY_BUILT) {
-					if (is_ai) return last_error;
-					if (had_success) break; // Keep going if we haven't constructed any road yet, skipping the start of the drag
+		CommandCost ret = Command<CMD_BUILD_ROAD>::Do(flags, tile, bits, rt, drd, 0);
+		if (ret.Failed()) {
+			last_error = ret;
+			if (last_error.GetErrorMessage() != STR_ERROR_ALREADY_BUILT) {
+				if (is_ai) return last_error;
+				if (had_success) break; // Keep going if we haven't constructed any road yet, skipping the start of the drag
+			}
+		} else {
+			had_success = true;
+			/* Only pay for the upgrade on one side of the bridges and tunnels */
+			if (IsTileType(tile, MP_TUNNELBRIDGE)) {
+				if (IsBridge(tile)) {
+					if (!had_bridge || GetTunnelBridgeDirection(tile) == dir) {
+						cost.AddCost(ret);
+					}
+					had_bridge = true;
+				} else { // IsTunnel(tile)
+					if (!had_tunnel || GetTunnelBridgeDirection(tile) == dir) {
+						cost.AddCost(ret);
+					}
+					had_tunnel = true;
 				}
 			} else {
-				had_success = true;
-				/* Only pay for the upgrade on one side of the bridges and tunnels */
-				if (IsTileType(tile, MP_TUNNELBRIDGE)) {
-					if (IsBridge(tile)) {
-						if (!had_bridge || GetTunnelBridgeDirection(tile) == dir) {
-							cost.AddCost(ret);
-						}
-						had_bridge = true;
-					} else { // IsTunnel(tile)
-						if (!had_tunnel || GetTunnelBridgeDirection(tile) == dir) {
-							cost.AddCost(ret);
-						}
-						had_tunnel = true;
-					}
-				} else {
-					cost.AddCost(ret);
-				}
+				cost.AddCost(ret);
 			}
 		}
 
@@ -1291,8 +1285,8 @@ static CommandCost ClearTile_Road(TileIndex tile, DoCommandFlag flags)
 
 struct DrawRoadTileStruct {
 	uint16_t image;
-	byte subcoord_x;
-	byte subcoord_y;
+	uint8_t subcoord_x;
+	uint8_t subcoord_y;
 };
 
 #include "table/road_land.h"
@@ -1326,7 +1320,7 @@ static Foundation GetRoadFoundation(Slope tileh, RoadBits bits)
 	return (bits == ROAD_X ? FOUNDATION_INCLINED_X : FOUNDATION_INCLINED_Y);
 }
 
-const byte _road_sloped_sprites[14] = {
+const uint8_t _road_sloped_sprites[14] = {
 	0,  0,  2,  0,
 	0,  1,  0,  0,
 	3,  0,  0,  0,
@@ -1926,12 +1920,11 @@ static int GetSlopePixelZ_Road(TileIndex tile, uint x, uint y, bool)
 {
 
 	if (IsNormalRoad(tile)) {
-		int z;
-		Slope tileh = GetTilePixelSlope(tile, &z);
+		auto [tileh, z] = GetTilePixelSlope(tile);
 		if (tileh == SLOPE_FLAT) return z;
 
 		Foundation f = GetRoadFoundation(tileh, GetAllRoadBits(tile));
-		z += ApplyPixelFoundationToSlope(f, &tileh);
+		z += ApplyPixelFoundationToSlope(f, tileh);
 		return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
 	} else {
 		return GetTileMaxPixelZ(tile);
@@ -1999,7 +1992,7 @@ static void TileLoop_Road(TileIndex tile)
 			if (t->road_build_months != 0 &&
 					(DistanceManhattan(t->xy, tile) < 8 || grp != HZB_TOWN_EDGE) &&
 					IsNormalRoad(tile) && !HasAtMostOneBit(GetAllRoadBits(tile))) {
-				if (GetFoundationSlope(tile) == SLOPE_FLAT && EnsureNoVehicleOnGround(tile).Succeeded() && Chance16(1, 40)) {
+				if (std::get<0>(GetFoundationSlope(tile)) == SLOPE_FLAT && EnsureNoVehicleOnGround(tile).Succeeded() && Chance16(1, 40)) {
 					StartRoadWorks(tile);
 
 					if (_settings_client.sound.ambient) SndPlayTileFx(SND_21_ROAD_WORKS, tile);
@@ -2239,7 +2232,7 @@ static void GetTileDesc_Road(TileIndex tile, TileDesc *td)
  * Given the direction the road depot is pointing, this is the direction the
  * vehicle should be travelling in in order to enter the depot.
  */
-static const byte _roadveh_enter_depot_dir[4] = {
+static const uint8_t _roadveh_enter_depot_dir[4] = {
 	TRACKDIR_X_SW, TRACKDIR_Y_NW, TRACKDIR_X_NE, TRACKDIR_Y_SE
 };
 
@@ -2343,12 +2336,11 @@ static CommandCost TerraformTile_Road(TileIndex tile, DoCommandFlag flags, int z
 				if (CheckRoadSlope(tileh_new, &bits_copy, ROAD_NONE, ROAD_NONE).Succeeded()) {
 					/* CheckRoadSlope() sometimes changes the road_bits, if it does not agree with them. */
 					if (bits == bits_copy) {
-						int z_old;
-						Slope tileh_old = GetTileSlope(tile, &z_old);
+						auto [tileh_old, z_old] = GetTileSlopeZ(tile);
 
 						/* Get the slope on top of the foundation */
-						z_old += ApplyFoundationToSlope(GetRoadFoundation(tileh_old, bits), &tileh_old);
-						z_new += ApplyFoundationToSlope(GetRoadFoundation(tileh_new, bits), &tileh_new);
+						z_old += ApplyFoundationToSlope(GetRoadFoundation(tileh_old, bits), tileh_old);
+						z_new += ApplyFoundationToSlope(GetRoadFoundation(tileh_new, bits), tileh_new);
 
 						/* The surface slope must not be changed */
 						if ((z_old == z_new) && (tileh_old == tileh_new)) return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);

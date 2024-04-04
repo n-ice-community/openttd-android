@@ -448,8 +448,8 @@ public:
 				GfxFillRect(br, PC_BLACK);
 
 				Rect tr = r.Shrink(WidgetDimensions::scaled.inset).WithHeight(this->resize.step_height);
-				uint scroll_pos = this->vscroll->GetPosition();
-				for (auto it = this->display_list.begin() + scroll_pos; it != this->display_list.end() && tr.top < br.bottom; ++it) {
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->display_list);
+				for (auto it = first; it != last; ++it) {
 					const FiosItem *item = *it;
 
 					if (item == this->selected) {
@@ -505,7 +505,7 @@ public:
 			if (tr.top > tr.bottom) return;
 
 			/* Climate */
-			byte landscape = _load_check_data.settings.game_creation.landscape;
+			uint8_t landscape = _load_check_data.settings.game_creation.landscape;
 			if (landscape < NUM_LANDSCAPE) {
 				SetDParam(0, STR_CLIMATE_TEMPERATE_LANDSCAPE + landscape);
 				DrawString(tr, STR_NETWORK_SERVER_LIST_LANDSCAPE);
@@ -901,7 +901,7 @@ public:
 };
 
 /** Load game/scenario */
-static WindowDesc _load_dialog_desc(__FILE__, __LINE__,
+static WindowDesc _load_dialog_desc(
 	WDP_CENTER, "load_game", 500, 294,
 	WC_SAVELOAD, WC_NONE,
 	0,
@@ -909,7 +909,7 @@ static WindowDesc _load_dialog_desc(__FILE__, __LINE__,
 );
 
 /** Load heightmap */
-static WindowDesc _load_heightmap_dialog_desc(__FILE__, __LINE__,
+static WindowDesc _load_heightmap_dialog_desc(
 	WDP_CENTER, "load_heightmap", 257, 320,
 	WC_SAVELOAD, WC_NONE,
 	0,
@@ -917,7 +917,7 @@ static WindowDesc _load_heightmap_dialog_desc(__FILE__, __LINE__,
 );
 
 /** Save game/scenario */
-static WindowDesc _save_dialog_desc(__FILE__, __LINE__,
+static WindowDesc _save_dialog_desc(
 	WDP_CENTER, "save_game", 500, 294,
 	WC_SAVELOAD, WC_NONE,
 	0,

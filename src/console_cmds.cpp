@@ -89,7 +89,7 @@ static ConsoleFileList _console_file_list_scenario{FT_SCENARIO, false}; ///< Fil
 static ConsoleFileList _console_file_list_heightmap{FT_HEIGHTMAP, false}; ///< File storage cache for heightmaps.
 
 /* console command defines */
-#define DEF_CONSOLE_CMD(function) static bool function([[maybe_unused]] byte argc, [[maybe_unused]] char *argv[])
+#define DEF_CONSOLE_CMD(function) static bool function([[maybe_unused]] uint8_t argc, [[maybe_unused]] char *argv[])
 #define DEF_CONSOLE_HOOK(function) static ConsoleHookResult function(bool echo)
 
 
@@ -150,6 +150,21 @@ DEF_CONSOLE_HOOK(ConHookNeedNetwork)
 
 	if (!_networking || (!_network_server && !MyClient::IsConnected())) {
 		if (echo) IConsolePrint(CC_ERROR, "Not connected. This command is only available in multiplayer.");
+		return CHR_DISALLOW;
+	}
+	return CHR_ALLOW;
+}
+
+/**
+ * Check whether we are in a multiplayer game and are playing, i.e. we are not the dedicated server.
+ * @return Are we a client or non-dedicated server in a network game? True when yes, false otherwise.
+ */
+DEF_CONSOLE_HOOK(ConHookNeedNonDedicatedNetwork)
+{
+	if (!NetworkAvailable(echo)) return CHR_DISALLOW;
+
+	if (_network_dedicated) {
+		if (echo) IConsolePrint(CC_ERROR, "This command is not available to a dedicated network server.");
 		return CHR_DISALLOW;
 	}
 	return CHR_ALLOW;
@@ -835,6 +850,7 @@ DEF_CONSOLE_CMD(ConRcon)
 	if (argc == 0) {
 		IConsolePrint(CC_HELP, "Remote control the server from another client. Usage: 'rcon <password> <command>'.");
 		IConsolePrint(CC_HELP, "Remember to enclose the command in quotes, otherwise only the first parameter is sent.");
+		IConsolePrint(CC_HELP, "When your client's public key is in the 'authorized keys' for 'rcon', the password is not checked and may be '*'.");
 		return true;
 	}
 
@@ -919,13 +935,19 @@ DEF_CONSOLE_CMD(ConJoinCompany)
 
 	CompanyID company_id = (CompanyID)(atoi(argv[1]) <= MAX_COMPANIES ? atoi(argv[1]) - 1 : atoi(argv[1]));
 
+	const NetworkClientInfo *info = NetworkClientInfo::GetByClientID(_network_own_client_id);
+	if (info == nullptr) {
+		IConsolePrint(CC_ERROR, "You have not joined the game yet!");
+		return true;
+	}
+
 	/* Check we have a valid company id! */
 	if (!Company::IsValidID(company_id) && company_id != COMPANY_SPECTATOR) {
 		IConsolePrint(CC_ERROR, "Company does not exist. Company-id must be between 1 and {}.", MAX_COMPANIES);
 		return true;
 	}
 
-	if (NetworkClientInfo::GetByClientID(_network_own_client_id)->client_playas == company_id) {
+	if (info->client_playas == company_id) {
 		IConsolePrint(CC_ERROR, "You are already there!");
 		return true;
 	}
@@ -1954,6 +1976,86 @@ DEF_CONSOLE_CMD(ConCompanyPassword)
 	return true;
 }
 
+/** All the known authorized keys with their name. */
+static std::vector<std::pair<std::string_view, NetworkAuthorizedKeys *>> _console_cmd_authorized_keys{
+	{ "rcon", &_settings_client.network.rcon_authorized_keys },
+	{ "server", &_settings_client.network.server_authorized_keys },
+};
+
+DEF_CONSOLE_CMD(ConNetworkAuthorizedKey)
+{
+	if (argc <= 2) {
+		IConsolePrint(CC_HELP, "List and update authorized keys. Usage: 'authorized_key list [type]|add [type] [key]|remove [type] [key]'.");
+		IConsolePrint(CC_HELP, "  list: list all the authorized keys of the given type.");
+		IConsolePrint(CC_HELP, "  add: add the given key to the authorized keys of the given type.");
+		IConsolePrint(CC_HELP, "  remove: remove the given key from the authorized keys of the given type; use 'all' to remove all authorized keys.");
+		IConsolePrint(CC_HELP, "Instead of a key, use 'client:<id>' to add/remove the key of that given client.");
+
+		std::string buffer;
+		for (auto [name, _] : _console_cmd_authorized_keys) fmt::format_to(std::back_inserter(buffer), ", {}", name);
+		IConsolePrint(CC_HELP, "The supported types are: all{}.", buffer);
+		return true;
+	}
+
+	bool valid_type = false; ///< Whether a valid type was given.
+
+	for (auto [name, authorized_keys] : _console_cmd_authorized_keys) {
+		if (!StrEqualsIgnoreCase(argv[2], name) && !StrEqualsIgnoreCase(argv[2], "all")) continue;
+
+		valid_type = true;
+
+		if (StrEqualsIgnoreCase(argv[1], "list")) {
+			IConsolePrint(CC_WHITE, "The authorized keys for {} are:", name);
+			for (auto &authorized_key : *authorized_keys) IConsolePrint(CC_INFO, "  {}", authorized_key);
+			continue;
+		}
+
+		if (argc <= 3) {
+			IConsolePrint(CC_ERROR, "You must enter the key.");
+			return false;
+		}
+
+		std::string authorized_key = argv[3];
+		if (StrStartsWithIgnoreCase(authorized_key, "client:")) {
+			std::string id_string(authorized_key.substr(7));
+			authorized_key = NetworkGetPublicKeyOfClient(static_cast<ClientID>(std::stoi(id_string)));
+			if (authorized_key.empty()) {
+				IConsolePrint(CC_ERROR, "You must enter a valid client id; see 'clients'.");
+				return false;
+			}
+		}
+
+		if (StrEqualsIgnoreCase(argv[1], "add")) {
+			if (authorized_keys->Add(authorized_key)) {
+				IConsolePrint(CC_INFO, "Added {} to {}.", authorized_key, name);
+			} else {
+				IConsolePrint(CC_WARNING, "Not added {} to {} as it already exists.", authorized_key, name);
+			}
+			continue;
+		}
+
+		if (StrEqualsIgnoreCase(argv[1], "remove")) {
+			if (authorized_keys->Remove(authorized_key)) {
+				IConsolePrint(CC_INFO, "Removed {} from {}.", authorized_key, name);
+			} else {
+				IConsolePrint(CC_WARNING, "Not removed {} from {} as it does not exist.", authorized_key, name);
+			}
+			continue;
+		}
+
+		IConsolePrint(CC_WARNING, "No valid action was given.");
+		return false;
+	}
+
+	if (!valid_type) {
+		IConsolePrint(CC_WARNING, "No valid type was given.");
+		return false;
+	}
+
+	return true;
+}
+
+
 /* Content downloading only is available with ZLIB */
 #if defined(WITH_ZLIB)
 #include "network/network_content.h"
@@ -2091,10 +2193,14 @@ DEF_CONSOLE_CMD(ConFont)
 		IConsolePrint(CC_HELP, "Manage the fonts configuration.");
 		IConsolePrint(CC_HELP, "Usage 'font'.");
 		IConsolePrint(CC_HELP, "  Print out the fonts configuration.");
-		IConsolePrint(CC_HELP, "Usage 'font [medium|small|large|mono] [<name>] [<size>] [aa|noaa]'.");
+		IConsolePrint(CC_HELP, "  The \"Currently active\" configuration is the one actually in effect (after interface scaling and replacing unavailable fonts).");
+		IConsolePrint(CC_HELP, "  The \"Requested\" configuration is the one requested via console command or config file.");
+		IConsolePrint(CC_HELP, "Usage 'font [medium|small|large|mono] [<font name>] [<size>] [aa|noaa]'.");
 		IConsolePrint(CC_HELP, "  Change the configuration for a font.");
 		IConsolePrint(CC_HELP, "  Omitting an argument will keep the current value.");
-		IConsolePrint(CC_HELP, "  Set <name> to \"\" for the sprite font (size and aa have no effect on sprite font).");
+		IConsolePrint(CC_HELP, "  Set <font name> to \"\" for the default font. Note that <size> and aa/noaa have no effect if the default font is in use, and fixed defaults are used instead.");
+		IConsolePrint(CC_HELP, "  If the sprite font is enabled in Game Options, it is used instead of the default font.");
+		IConsolePrint(CC_HELP, "  The <size> is automatically multiplied by the current interface scaling.");
 		return true;
 	}
 
@@ -2112,7 +2218,7 @@ DEF_CONSOLE_CMD(ConFont)
 		uint size = setting->size;
 		bool aa = setting->aa;
 
-		byte arg_index = 2;
+		uint8_t arg_index = 2;
 		/* We may encounter "aa" or "noaa" but it must be the last argument. */
 		if (StrEqualsIgnoreCase(argv[arg_index], "aa") || StrEqualsIgnoreCase(argv[arg_index], "noaa")) {
 			aa = !StrStartsWithIgnoreCase(argv[arg_index++], "no");
@@ -2152,7 +2258,9 @@ DEF_CONSOLE_CMD(ConFont)
 			InitFontCache(fs == FS_MONO);
 			fc = FontCache::Get(fs);
 		}
-		IConsolePrint(CC_DEFAULT, "{}: \"{}\" {} {} [\"{}\" {} {}]", FontSizeToName(fs), fc->GetFontName(), fc->GetFontSize(), GetFontAAState(fs) ? "aa" : "noaa", setting->font, setting->size, setting->aa ? "aa" : "noaa");
+		IConsolePrint(CC_DEFAULT, "{} font:", FontSizeToName(fs));
+		IConsolePrint(CC_DEFAULT, "Currently active: \"{}\", size {}, {}", fc->GetFontName(), fc->GetFontSize(), GetFontAAState(fs) ? "aa" : "noaa");
+		IConsolePrint(CC_DEFAULT, "Requested: \"{}\", size {}, {}", setting->font, setting->size, setting->aa ? "aa" : "noaa");
 	}
 
 	return true;
@@ -2708,7 +2816,7 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("reconnect",               ConNetworkReconnect, ConHookClientOnly);
 	IConsole::CmdRegister("rcon",                    ConRcon,             ConHookNeedNetwork);
 
-	IConsole::CmdRegister("join",                    ConJoinCompany,      ConHookNeedNetwork);
+	IConsole::CmdRegister("join",                    ConJoinCompany,      ConHookNeedNonDedicatedNetwork);
 	IConsole::AliasRegister("spectate",              "join 255");
 	IConsole::CmdRegister("move",                    ConMoveClient,       ConHookServerOnly);
 	IConsole::CmdRegister("reset_company",           ConResetCompany,     ConHookServerOnly);
@@ -2721,6 +2829,9 @@ void IConsoleStdLibRegister()
 
 	IConsole::CmdRegister("pause",                   ConPauseGame,        ConHookServerOrNoNetwork);
 	IConsole::CmdRegister("unpause",                 ConUnpauseGame,      ConHookServerOrNoNetwork);
+
+	IConsole::CmdRegister("authorized_key", ConNetworkAuthorizedKey, ConHookServerOnly);
+	IConsole::AliasRegister("ak", "authorized_key %+");
 
 	IConsole::CmdRegister("company_pw",              ConCompanyPassword,  ConHookNeedNetwork);
 	IConsole::AliasRegister("company_password",      "company_pw %+");

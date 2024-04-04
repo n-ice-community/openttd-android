@@ -194,10 +194,10 @@ static void StartSound(SoundID sound_id, float pan, uint volume)
 }
 
 
-static const byte _vol_factor_by_zoom[] = {255, 255, 255, 190, 134, 87};
+static const uint8_t _vol_factor_by_zoom[] = {255, 255, 255, 190, 134, 87};
 static_assert(lengthof(_vol_factor_by_zoom) == ZOOM_LVL_END);
 
-static const byte _sound_base_vol[] = {
+static const uint8_t _sound_base_vol[] = {
 	128,  90, 128, 128, 128, 128, 128, 128,
 	128,  90,  90, 128, 128, 128, 128, 128,
 	128, 128, 128,  80, 128, 128, 128, 128,
@@ -210,7 +210,7 @@ static const byte _sound_base_vol[] = {
 	 90,
 };
 
-static const byte _sound_idx[] = {
+static const uint8_t _sound_idx[] = {
 	 2,  3,  4,  5,  6,  7,  8,  9,
 	10, 11, 12, 13, 14, 15, 16, 17,
 	18, 19, 20, 21, 22, 23, 24, 25,
@@ -230,6 +230,34 @@ void SndCopyToPool()
 		sound[i] = _original_sounds[_sound_idx[i]];
 		sound[i].volume = _sound_base_vol[i];
 		sound[i].priority = 0;
+	}
+}
+
+/**
+ * Change the configured sound set and reset sounds.
+ * @param index Index of sound set to switch to.
+ */
+void ChangeSoundSet(int index)
+{
+	if (BaseSounds::GetIndexOfUsedSet() == index) return;
+
+	auto set = BaseSounds::GetSet(index);
+	BaseSounds::ini_set = set->name;
+	BaseSounds::SetSet(set);
+
+	MxCloseAllChannels();
+	InitializeSound();
+
+	/* Replace baseset sounds in the pool with the updated original sounds. This is safe to do as
+	 * any sound still playing owns its sample data. */
+	for (uint i = 0; i < ORIGINAL_SAMPLE_COUNT; i++) {
+		SoundEntry *sound = GetSound(i);
+		/* GRF Container 0 means the sound comes from the baseset, and isn't overridden by NewGRF. */
+		if (sound == nullptr || sound->grf_container_ver != 0) continue;
+
+		*sound = _original_sounds[_sound_idx[i]];
+		sound->volume = _sound_base_vol[i];
+		sound->priority = 0;
 	}
 }
 

@@ -3,8 +3,8 @@
 ##isocode is_IS
 ##plural 0
 ##textdir ltr
-##numberformat 00.000.000.000.000.000.000
-##numberabbreviations 3=00.000.000.000.000.000{NBSP}k|6=00.000.000.000.000{NBSP}m|9=00.000.000.000{NBSP}bn|12=00.000.000{NBSP}tn|15=00.000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep .
+##digitsepcur .
 ##decimalsep ,
 ##winlangid 0x040f
 ##grflangid 0x29
@@ -824,7 +824,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Gjaldmi�
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Val á gjaldmiðli
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Sterlingspund
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Bandaríkjadalur
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Evra
@@ -912,6 +912,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Gengi: 
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Hækka gengi miðað við pund (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Lækka gengi miðað við pund (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Setja gengi gjaldmiðils miðað við pund (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Forskeyti: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Veldu forskeyti fyrir gjaldmiðilinn
@@ -2037,7 +2038,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Tölvan 
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Hefur líklega misst sambandið
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Síðustu {NUM} sekúndu{P "" r} hafa engin gögn borist frá þjóninum
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :almenn villa
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :samstillingarvilla
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :gat ekki opnað kort
@@ -2472,7 +2473,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Eigandi 
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Eigandi járnbrautarspors: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Bæjaryfirvöld: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Enginn
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Hnit: {LTBLUE}{NUM}x{NUM}x{NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Byggt: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Tegund stöðvar: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Tegund stöðvar: {LTBLUE}{STRING}
@@ -3902,9 +3902,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Áætla�
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Vistun er enn í gangi,{}vinsamlegast bíddu á meðan hún klárst!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Sjálfvirk vistun mistókst
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Get ekki lesið af drifi
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Vistun leiks mistókst{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Get ekki eytt skrá
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Mistókst að opna leik{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Innri villa: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Bilun í vistuðum leik - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Leikur er vistaður í nýrri útgáfu
@@ -4765,6 +4763,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

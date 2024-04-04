@@ -3,8 +3,8 @@
 ##isocode bg_BG
 ##plural 0
 ##textdir ltr
-##numberformat 00.000.000.000.000.000.000
-##numberabbreviations 3=00.000.000.000.000.000{NBSP}k|6=00.000.000.000.000{NBSP}m|9=00.000.000.000{NBSP}bn|12=00.000.000{NBSP}tn|15=00.000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep .
+##digitsepcur .
 ##decimalsep ,
 ##winlangid 0x0402
 ##grflangid 0x18
@@ -882,7 +882,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Избо
 
 STR_GAME_OPTIONS_CURRENCY_CODE                                  :{STRING} ({STRING})
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Британска лира
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Американски долар
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Евро
@@ -1018,6 +1018,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Обм�
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Намали стойността на твоята валута за една лира(£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Увеличи стойността на твоята валута за една лира (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Сложи обменния курс на твоята валута за една лира (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Представка: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Укажете префиксен текст за валутата
@@ -2277,7 +2278,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Отне
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Възможна загуба на връзката
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Последните {NUM} сек. не се е получила информация от сървъра
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :обща грешка
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :загуба на синхронизация
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :не може да зареди картата
@@ -2722,7 +2723,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Собс
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Собственик на железопътната линия: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Община: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Нищо
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Координати: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Построен: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Клас на станцията: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Тип на станцията: {LTBLUE}{STRING}
@@ -4246,8 +4246,6 @@ STR_AI_SETTINGS_CAPTION_GAMESCRIPT                              :Игрови с
 STR_AI_SETTINGS_CLOSE                                           :{BLACK}Затвори
 STR_AI_SETTINGS_RESET                                           :{BLACK}Рестартиране
 STR_AI_SETTINGS_SETTING                                         :{STRING}: {ORANGE}{STRING}
-STR_AI_SETTINGS_SETTING_DEVIATION                               :{STRING}: {ORANGE}[{STRING}, {STRING}]
-STR_AI_SETTINGS_JUST_DEVIATION                                  :[{STRING}, {STRING}]
 
 
 # Textfile window
@@ -4292,9 +4290,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Приб
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Записването продължава,{}моля изчакайте да сръши!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Автозапазването е неуспешно
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Не може да прочете диска
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Запазването на играта е неуспешно{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Изтриването на файла е неуспешно
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Отварянето на играта е неуспешно{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Вътрешна грешка: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Запазената игра е повредена - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Запазената игра е направена от по-нова версия
@@ -5177,6 +5173,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_RIGHT_ARROW                                            :{RIGHT_ARROW}

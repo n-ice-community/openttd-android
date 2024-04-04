@@ -52,6 +52,8 @@ add_files(
     animated_tile_func.h
     articulated_vehicles.cpp
     articulated_vehicles.h
+    autocompletion.cpp
+    autocompletion.h
     autoreplace.cpp
     autoreplace_base.h
     autoreplace_cmd.cpp
@@ -138,6 +140,10 @@ add_files(
     dock_gui.cpp
     driver.cpp
     driver.h
+    dropdown.cpp
+    dropdown_common_type.h
+    dropdown_func.h
+    dropdown_type.h
     economy.cpp
     economy_base.h
     economy_cmd.h
@@ -393,6 +399,8 @@ add_files(
     signs_func.h
     signs_gui.cpp
     signs_type.h
+    slider.cpp
+    slider_func.h
     slope_func.h
     slope_type.h
     smallmap_gui.cpp

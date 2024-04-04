@@ -136,20 +136,21 @@ void ResetObjects()
 	_object_specs[OBJECT_TRANSMITTER].cls_id = ObjectClass::Allocate('TRNS');
 }
 
-template <typename Tspec, typename Tid, Tid Tmax>
-/* static */ void NewGRFClass<Tspec, Tid, Tmax>::InsertDefaults()
+template <>
+/* static */ void ObjectClass::InsertDefaults()
 {
 	ObjectClass::Get(ObjectClass::Allocate('LTHS'))->name = STR_OBJECT_CLASS_LTHS;
 	ObjectClass::Get(ObjectClass::Allocate('TRNS'))->name = STR_OBJECT_CLASS_TRNS;
 }
 
-template <typename Tspec, typename Tid, Tid Tmax>
-bool NewGRFClass<Tspec, Tid, Tmax>::IsUIAvailable(uint index) const
+template <>
+bool ObjectClass::IsUIAvailable(uint index) const
 {
 	return this->GetSpec(index)->IsEverAvailable();
 }
 
-INSTANTIATE_NEWGRF_CLASS_METHODS(ObjectClass, ObjectSpec, ObjectClassID, OBJECT_CLASS_MAX)
+/* Instantiate ObjectClass. */
+template class NewGRFClass<ObjectSpec, ObjectClassID, OBJECT_CLASS_MAX>;
 
 /* virtual */ uint32_t ObjectScopeResolver::GetRandomBits() const
 {
@@ -191,7 +192,7 @@ static uint32_t GetObjectIDAtOffset(TileIndex tile, uint32_t cur_grfid)
  * @param grf_version8 True, if we are dealing with a new NewGRF which uses GRF version >= 8.
  * @return a construction of bits obeying the newgrf format
  */
-static uint32_t GetNearbyObjectTileInformation(byte parameter, TileIndex tile, ObjectID index, bool grf_version8)
+static uint32_t GetNearbyObjectTileInformation(uint8_t parameter, TileIndex tile, ObjectID index, bool grf_version8)
 {
 	if (parameter != 0) tile = GetNearbyTile(parameter, tile); // only perform if it is required
 	bool is_same_object = (IsTileType(tile, MP_OBJECT) && GetObjectIndex(tile) == index);
@@ -226,7 +227,7 @@ static uint32_t GetClosestObject(TileIndex tile, ObjectType type, const Object *
  * @param current  Object for which the inquiry is made
  * @return The formatted answer to the callback : rr(reserved) cc(count) dddd(manhattan distance of closest sister)
  */
-static uint32_t GetCountAndDistanceOfClosestInstance(byte local_id, uint32_t grfid, TileIndex tile, const Object *current)
+static uint32_t GetCountAndDistanceOfClosestInstance(uint8_t local_id, uint32_t grfid, TileIndex tile, const Object *current)
 {
 	uint32_t grf_id = GetRegister(0x100);  // Get the GRFID of the definition to look for in register 100h
 	uint32_t idx;
@@ -253,7 +254,7 @@ static uint32_t GetCountAndDistanceOfClosestInstance(byte local_id, uint32_t grf
 }
 
 /** Used by the resolver to get values for feature 0F deterministic spritegroups. */
-/* virtual */ uint32_t ObjectScopeResolver::GetVariable(byte variable, [[maybe_unused]] uint32_t parameter, bool *available) const
+/* virtual */ uint32_t ObjectScopeResolver::GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const
 {
 	/* We get the town from the object, or we calculate the closest
 	 * town if we need to when there's no object. */

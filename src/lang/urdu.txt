@@ -3,8 +3,8 @@
 ##isocode ur_PK
 ##plural 0
 ##textdir rtl
-##numberformat 00٬000٬000٬000٬000٬000٬000
-##numberabbreviations 3=00٬000٬000٬000٬000٬000{NBSP}k|6=00٬000٬000٬000٬000{NBSP}m|9=00٬000٬000٬000{NBSP}bn|12=00٬000٬000{NBSP}tn|15=00٬000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep ٬
+##digitsepcur ٬
 ##decimalsep ٫
 ##winlangid 0x0420
 ##grflangid 0x5c
@@ -823,7 +823,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}کرنس
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}کرنسی کی اکائی اختیار کریں
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :برطانوی پاونڈ
 STR_GAME_OPTIONS_CURRENCY_USD                                   :امریکی ڈالر
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :یورو
@@ -909,6 +909,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}زر م
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}ایک پاونڈ (£) کے لئے اپنی کرنسی کی تعداد کم کریں
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}ایک پاونڈ (£) کے لئے اپنی کرنسی کی تعداد میں اضافہ کریں
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}ایک پاونڈ (£) کے لئے اپنی کرنسی کا exchange rate اختیار کریں
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}سابقہ: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}اپنی کرنسی کا سابقہ رکھیں
@@ -1797,7 +1798,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}آپ ک�
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}ممکنہ طور پر کنکشن کا خاتمہ
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}آخری {NUM} سیکنڈ{P "" وں} سے سرور سے کوئی معلومات نہیں ملیں
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :عمومی خرابی
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :desync خرابی
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :نقشہ لوڈ نہیں ہوسکا
@@ -3139,6 +3140,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

@@ -86,9 +86,9 @@ typedef const void *NIOffsetProc(const void *b);
 struct NIProperty {
 	const char *name;          ///< A (human readable) name for the property
 	NIOffsetProc *offset_proc; ///< Callback proc to get the actual variable address in memory
-	byte read_size;            ///< Number of bytes (i.e. byte, word, dword etc)
-	byte prop;                 ///< The number of the property
-	byte type;
+	uint8_t read_size;            ///< Number of bytes (i.e. byte, word, dword etc)
+	uint8_t prop;                 ///< The number of the property
+	uint8_t type;
 };
 
 
@@ -99,8 +99,8 @@ struct NIProperty {
 struct NICallback {
 	const char *name;          ///< The human readable name of the callback
 	NIOffsetProc *offset_proc; ///< Callback proc to get the actual variable address in memory
-	byte read_size;            ///< The number of bytes (i.e. byte, word, dword etc) to read
-	byte cb_bit;               ///< The bit that needs to be set for this callback to be enabled
+	uint8_t read_size;            ///< The number of bytes (i.e. byte, word, dword etc) to read
+	uint8_t cb_bit;               ///< The bit that needs to be set for this callback to be enabled
 	uint16_t cb_id;              ///< The number of the callback
 };
 /** Mask to show no bit needs to be enabled for the callback. */
@@ -109,7 +109,7 @@ static const int CBM_NO_BIT = UINT8_MAX;
 /** Representation on the NewGRF variables. */
 struct NIVariable {
 	const char *name;
-	byte var;
+	uint8_t var;
 };
 
 /** Helper class to wrap some functionality/queries in. */
@@ -284,7 +284,7 @@ struct NewGRFInspectWindow : Window {
 	uint chain_index;
 
 	/** The currently edited parameter, to update the right one. */
-	byte current_edit_param;
+	uint8_t current_edit_param;
 
 	Scrollbar *vscroll;
 
@@ -589,8 +589,8 @@ struct NewGRFInspectWindow : Window {
 				if (nif->variables == nullptr) return;
 
 				/* Get the line, make sure it's within the boundaries. */
-				int line = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_NGRFI_MAINPANEL, WidgetDimensions::scaled.frametext.top);
-				if (line == INT_MAX) return;
+				int32_t line = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_NGRFI_MAINPANEL, WidgetDimensions::scaled.frametext.top);
+				if (line == INT32_MAX) return;
 
 				/* Find the variable related to the line */
 				for (const NIVariable *niv = nif->variables; niv->name != nullptr; niv++, line--) {
@@ -679,14 +679,14 @@ static constexpr NWidgetPart _nested_newgrf_inspect_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _newgrf_inspect_chain_desc(__FILE__, __LINE__,
+static WindowDesc _newgrf_inspect_chain_desc(
 	WDP_AUTO, "newgrf_inspect_chain", 400, 300,
 	WC_NEWGRF_INSPECT, WC_NONE,
 	0,
 	std::begin(_nested_newgrf_inspect_chain_widgets), std::end(_nested_newgrf_inspect_chain_widgets)
 );
 
-static WindowDesc _newgrf_inspect_desc(__FILE__, __LINE__,
+static WindowDesc _newgrf_inspect_desc(
 	WDP_AUTO, "newgrf_inspect", 400, 300,
 	WC_NEWGRF_INSPECT, WC_NONE,
 	0,
@@ -930,16 +930,19 @@ struct SpriteAlignerWindow : Window {
 			}
 
 			case WID_SA_LIST: {
+				/* Don't redraw sprite list while it is still being filled by picker. */
+				if (_newgrf_debug_sprite_picker.mode == SPM_REDRAW) break;
+
 				const NWidgetBase *nwid = this->GetWidget<NWidgetBase>(widget);
 				int step_size = nwid->resize_y;
 
-				std::vector<SpriteID> &list = _newgrf_debug_sprite_picker.sprites;
-				int max = std::min<int>(this->vscroll->GetPosition() + this->vscroll->GetCapacity(), (uint)list.size());
+				const std::vector<SpriteID> &list = _newgrf_debug_sprite_picker.sprites;
 
 				Rect ir = r.Shrink(WidgetDimensions::scaled.matrix);
-				for (int i = this->vscroll->GetPosition(); i < max; i++) {
-					SetDParam(0, list[i]);
-					DrawString(ir, STR_JUST_COMMA, list[i] == this->current_sprite ? TC_WHITE : TC_BLACK, SA_RIGHT | SA_FORCE);
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(list);
+				for (auto it = first; it != last; ++it) {
+					SetDParam(0, *it);
+					DrawString(ir, STR_JUST_COMMA, *it == this->current_sprite ? TC_WHITE : TC_BLACK, SA_RIGHT | SA_FORCE);
 					ir.top += step_size;
 				}
 				break;
@@ -1160,7 +1163,7 @@ static constexpr NWidgetPart _nested_sprite_aligner_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _sprite_aligner_desc(__FILE__, __LINE__,
+static WindowDesc _sprite_aligner_desc(
 	WDP_AUTO, "sprite_aligner", 400, 300,
 	WC_SPRITE_ALIGNER, WC_NONE,
 	0,

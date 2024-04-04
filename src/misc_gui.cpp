@@ -67,7 +67,7 @@ static constexpr NWidgetPart _nested_land_info_widgets[] = {
 	NWidget(WWT_PANEL, COLOUR_GREY, WID_LI_BACKGROUND), EndContainer(),
 };
 
-static WindowDesc _land_info_desc(__FILE__, __LINE__,
+static WindowDesc _land_info_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_LAND_INFO, WC_NONE,
 	0,
@@ -126,7 +126,7 @@ public:
 #else
 #	define LANDINFOD_LEVEL 1
 #endif
-		Debug(misc, LANDINFOD_LEVEL, "TILE: 0x{:x} ({},{})", (TileIndex)tile, TileX(tile), TileY(tile));
+		Debug(misc, LANDINFOD_LEVEL, "TILE: {0} (0x{0:x}) ({1},{2})", (TileIndex)tile, TileX(tile), TileY(tile));
 		Debug(misc, LANDINFOD_LEVEL, "type   = 0x{:x}", tile.type());
 		Debug(misc, LANDINFOD_LEVEL, "height = 0x{:x}", tile.height());
 		Debug(misc, LANDINFOD_LEVEL, "m1     = 0x{:x}", tile.m1());
@@ -217,14 +217,15 @@ public:
 		this->landinfo_data.push_back(GetString(str));
 
 		/* Location */
-		std::stringstream tile_ss;
-		tile_ss << "0x" << std::setfill('0') << std::setw(4) << std::hex << std::uppercase << tile.base(); // 0x%.4X
-
 		SetDParam(0, TileX(tile));
 		SetDParam(1, TileY(tile));
 		SetDParam(2, GetTileZ(tile));
-		SetDParamStr(3, tile_ss.str());
 		this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_LANDINFO_COORDS));
+
+		/* Tile index */
+		SetDParam(0, tile);
+		SetDParam(1, tile);
+		this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_LANDINFO_INDEX));
 
 		/* Local authority */
 		SetDParam(0, STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE);
@@ -404,7 +405,7 @@ static constexpr NWidgetPart _nested_about_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _about_desc(__FILE__, __LINE__,
+static WindowDesc _about_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_GAME_OPTIONS, WC_NONE,
 	0,
@@ -419,6 +420,7 @@ static const char * const _credits[] = {
 	"  Matthijs Kooijman (blathijs) - Pathfinder-guru, Debian port (since 0.3)",
 	"  Christoph Elsenhans (frosch) - General coding (since 0.6)",
 	"  Lo\u00efc Guilloux (glx) - General / Windows Expert (since 0.4.5)",
+	"  Koen Bussemaker (Kuhnovic) - General / Ship pathfinder (since 14)",
 	"  Charles Pigott (LordAro) - General / Correctness police (since 1.9)",
 	"  Michael Lutz (michi_cc) - Path based signals (since 0.7)",
 	"  Niels Martin Hansen (nielsm) - Music system, general coding (since 1.9)",
@@ -426,7 +428,7 @@ static const char * const _credits[] = {
 	"  Peter Nelson (peter1138) - Spiritual descendant from NewGRF gods (since 0.4.5)",
 	"  Remko Bijker (Rubidium) - Coder and way more (since 0.4.5)",
 	"  Patric Stout (TrueBrain) - NoProgrammer (since 0.3), sys op",
-	"  Tyler Trahan (2TallTyler) - General coding (since 13)",
+	"  Tyler Trahan (2TallTyler) - General / Time Lord (since 13)",
 	"",
 	"Inactive Developers:",
 	"  Grzegorz Duczy\u0144ski (adf88) - General coding (1.7 - 1.8)",
@@ -666,7 +668,7 @@ static constexpr NWidgetPart _nested_tooltips_widgets[] = {
 	NWidget(WWT_EMPTY, INVALID_COLOUR, WID_TT_BACKGROUND),
 };
 
-static WindowDesc _tool_tips_desc(__FILE__, __LINE__,
+static WindowDesc _tool_tips_desc(
 	WDP_MANUAL, nullptr, 0, 0, // Coordinates and sizes are not used,
 	WC_TOOLTIPS, WC_NONE,
 	WDF_NO_FOCUS | WDF_NO_CLOSE,
@@ -822,7 +824,7 @@ void QueryString::DrawEditBox(const Window *w, WidgetID wid) const
 
 	DrawFrameRect(cr, wi->colour, wi->IsLowered() ? FR_LOWERED : FR_NONE);
 	DrawSpriteIgnorePadding(rtl ? SPR_IMG_DELETE_RIGHT : SPR_IMG_DELETE_LEFT, PAL_NONE, cr, SA_CENTER);
-	if (this->text.bytes == 1) GfxFillRect(cr.Shrink(WidgetDimensions::scaled.bevel), _colour_gradient[wi->colour & 0xF][2], FILLRECT_CHECKER);
+	if (this->text.bytes == 1) GfxFillRect(cr.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(wi->colour, SHADE_DARKER), FILLRECT_CHECKER);
 
 	DrawFrameRect(fr, wi->colour, FR_LOWERED | FR_DARKENED);
 	GfxFillRect(fr.Shrink(WidgetDimensions::scaled.bevel), PC_BLACK);
@@ -1100,7 +1102,7 @@ static constexpr NWidgetPart _nested_query_string_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _query_string_desc(__FILE__, __LINE__,
+static WindowDesc _query_string_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_QUERY_STRING, WC_NONE,
 	0,
@@ -1243,7 +1245,7 @@ static constexpr NWidgetPart _nested_query_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _query_desc(__FILE__, __LINE__,
+static WindowDesc _query_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_CONFIRM_POPUP_QUERY, WC_NONE,
 	WDF_MODAL,

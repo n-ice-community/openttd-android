@@ -1243,10 +1243,10 @@ static void ViewportAddLandscape()
 
 			if (tile_type != MP_VOID) {
 				/* We are inside the map => paint landscape. */
-				_cur_ti.tileh = GetTilePixelSlope(_cur_ti.tile, &_cur_ti.z);
+				std::tie(_cur_ti.tileh, _cur_ti.z) = GetTilePixelSlope(_cur_ti.tile);
 			} else {
 				/* We are outside the map => paint black. */
-				_cur_ti.tileh = GetTilePixelSlopeOutsideMap(tilecoord.x, tilecoord.y, &_cur_ti.z);
+				std::tie(_cur_ti.tileh, _cur_ti.z) = GetTilePixelSlopeOutsideMap(tilecoord.x, tilecoord.y);
 			}
 
 			int viewport_y = GetViewportY(tilecoord);
@@ -1695,7 +1695,7 @@ static void ViewportDrawDirtyBlocks()
 
 	dst = dpi->dst_ptr;
 
-	byte bo = UnScaleByZoom(dpi->left + dpi->top, dpi->zoom) & 1;
+	uint8_t bo = UnScaleByZoom(dpi->left + dpi->top, dpi->zoom) & 1;
 	do {
 		for (int i = (bo ^= 1); i < right; i += 2) blitter->SetPixel(dst, i, 0, (uint8_t)colour);
 		dst = blitter->MoveTo(dst, 0, 1);
@@ -1717,7 +1717,7 @@ static void ViewportDrawStrings(ZoomLevel zoom, const StringSpriteToDrawVector *
 				/* Don't draw the rectangle.
 				 * Real colours need the TC_IS_PALETTE_COLOUR flag.
 				 * Otherwise colours from _string_colourmap are assumed. */
-				colour = (TextColour)_colour_gradient[ss.colour][6] | TC_IS_PALETTE_COLOUR;
+				colour = (TextColour)GetColourGradient(ss.colour, SHADE_LIGHTER) | TC_IS_PALETTE_COLOUR;
 			} else {
 				/* Draw the rectangle if 'transparent station signs' is off,
 				 * or if we are drawing a general text sign (STR_WHITE_SIGN). */
@@ -2917,9 +2917,9 @@ static int CalcHeightdiff(HighLightStyle style, uint distance, TileIndex start_t
 
 			/* In the case of an area we can determine whether we were dragging south or
 			 * east by checking the X-coordinates of the tiles */
-			byte style_t = (byte)(TileX(end_tile) > TileX(start_tile));
-			start_tile = TILE_ADD(start_tile, ToTileIndexDiff(heightdiff_area_by_dir[style_t]));
-			end_tile   = TILE_ADD(end_tile, ToTileIndexDiff(heightdiff_area_by_dir[2 + style_t]));
+			uint8_t style_t = (uint8_t)(TileX(end_tile) > TileX(start_tile));
+			start_tile = TileAdd(start_tile, ToTileIndexDiff(heightdiff_area_by_dir[style_t]));
+			end_tile   = TileAdd(end_tile, ToTileIndexDiff(heightdiff_area_by_dir[2 + style_t]));
 			[[fallthrough]];
 		}
 
@@ -2951,18 +2951,18 @@ static int CalcHeightdiff(HighLightStyle style, uint distance, TileIndex start_t
 			if (swap && distance == 0) style = flip_style_direction[style];
 
 			/* Use lookup table for start-tile based on HighLightStyle direction */
-			byte style_t = style * 2;
+			uint8_t style_t = style * 2;
 			assert(style_t < lengthof(heightdiff_line_by_dir) - 13);
-			h0 = TileHeight(TILE_ADD(start_tile, ToTileIndexDiff(heightdiff_line_by_dir[style_t])));
-			uint ht = TileHeight(TILE_ADD(start_tile, ToTileIndexDiff(heightdiff_line_by_dir[style_t + 1])));
+			h0 = TileHeight(TileAdd(start_tile, ToTileIndexDiff(heightdiff_line_by_dir[style_t])));
+			uint ht = TileHeight(TileAdd(start_tile, ToTileIndexDiff(heightdiff_line_by_dir[style_t + 1])));
 			h0 = std::max(h0, ht);
 
 			/* Use lookup table for end-tile based on HighLightStyle direction
 			 * flip around side (lower/upper, left/right) based on distance */
 			if (distance == 0) style_t = flip_style_direction[style] * 2;
 			assert(style_t < lengthof(heightdiff_line_by_dir) - 13);
-			h1 = TileHeight(TILE_ADD(end_tile, ToTileIndexDiff(heightdiff_line_by_dir[12 + style_t])));
-			ht = TileHeight(TILE_ADD(end_tile, ToTileIndexDiff(heightdiff_line_by_dir[12 + style_t + 1])));
+			h1 = TileHeight(TileAdd(end_tile, ToTileIndexDiff(heightdiff_line_by_dir[12 + style_t])));
+			ht = TileHeight(TileAdd(end_tile, ToTileIndexDiff(heightdiff_line_by_dir[12 + style_t + 1])));
 			h1 = std::max(h1, ht);
 			break;
 		}
@@ -3193,7 +3193,7 @@ static void CalcRaildirsDrawstyle(int x, int y, int method)
 		TileIndex t0 = TileVirtXY(_thd.selstart.x, _thd.selstart.y);
 		TileIndex t1 = TileVirtXY(x, y);
 		uint distance = DistanceManhattan(t0, t1) + 1;
-		byte index = 0;
+		uint8_t index = 0;
 
 		if (distance != 1) {
 			int heightdiff = CalcHeightdiff(b, distance, t0, t1);
@@ -3294,7 +3294,7 @@ calc_heightdiff_single_direction:;
 				TileIndex t0 = TileVirtXY(sx, sy);
 				TileIndex t1 = TileVirtXY(x, y);
 				uint distance = DistanceManhattan(t0, t1) + 1;
-				byte index = 0;
+				uint8_t index = 0;
 
 				if (distance != 1) {
 					/* With current code passing a HT_LINE style to calculate the height
@@ -3328,7 +3328,7 @@ calc_heightdiff_single_direction:;
 				TileIndex t1 = TileVirtXY(x, y);
 				uint dx = Delta(TileX(t0), TileX(t1)) + 1;
 				uint dy = Delta(TileY(t0), TileY(t1)) + 1;
-				byte index = 0;
+				uint8_t index = 0;
 
 				/* If dragging an area (eg dynamite tool) and it is actually a single
 				 * row/column, change the type to 'line' to get proper calculation for height */

@@ -32,6 +32,7 @@
 #include "command_func.h"
 #include "console_func.h"
 #include "genworld.h"
+#include "string_func.h"
 #include "window_func.h"
 #include "company_func.h"
 #include "rev.h"
@@ -139,6 +140,8 @@ private:
 		"newgrf",
 		"servers",
 		"server_bind_addresses",
+		"server_authorized_keys",
+		"rcon_authorized_keys",
 	};
 
 public:
@@ -309,7 +312,7 @@ static bool LoadIntList(const char *str, void *array, int nelems, VarType type)
 		case SLE_VAR_BL:
 		case SLE_VAR_I8:
 		case SLE_VAR_U8:
-			for (i = 0; i != nitems; i++) ((byte*)array)[i] = items[i];
+			for (i = 0; i != nitems; i++) ((uint8_t*)array)[i] = items[i];
 			break;
 
 		case SLE_VAR_I16:
@@ -339,7 +342,7 @@ static bool LoadIntList(const char *str, void *array, int nelems, VarType type)
  */
 std::string ListSettingDesc::FormatValue(const void *object) const
 {
-	const byte *p = static_cast<const byte *>(GetVariableAddress(object, this->save));
+	const uint8_t *p = static_cast<const uint8_t *>(GetVariableAddress(object, this->save));
 
 	std::string result;
 	for (size_t i = 0; i != this->save.length; i++) {
@@ -770,6 +773,11 @@ bool IntSettingDesc::IsDefaultValue(void *object) const
 	return this->def == object_value;
 }
 
+void IntSettingDesc::ResetToDefault(void *object) const
+{
+	this->Write(object, this->def);
+}
+
 std::string StringSettingDesc::FormatValue(const void *object) const
 {
 	const std::string &str = this->Read(object);
@@ -802,6 +810,11 @@ bool StringSettingDesc::IsDefaultValue(void *object) const
 	return this->def == str;
 }
 
+void StringSettingDesc::ResetToDefault(void *object) const
+{
+	this->Write(object, this->def);
+}
+
 bool ListSettingDesc::IsSameValue(const IniItem *, void *) const
 {
 	/* Checking for equality is way more expensive than just writing the value. */
@@ -812,6 +825,12 @@ bool ListSettingDesc::IsDefaultValue(void *) const
 {
 	/* Defaults of lists are often complicated, and hard to compare. */
 	return false;
+}
+
+void ListSettingDesc::ResetToDefault(void *) const
+{
+	/* Resetting a list to default is not supported. */
+	NOT_REACHED();
 }
 
 /**
@@ -1264,13 +1283,15 @@ static void HandleSettingDescs(IniFile &generic_ini, IniFile &private_ini, IniFi
 		proc(secrets_ini, table, "patches", &_settings_newgame, only_startup);
 	}
 
-	proc(generic_ini, _currency_settings, "currency", &_custom_currency, only_startup);
+	proc(generic_ini, _currency_settings, "currency", &GetCustomCurrency(), only_startup);
 	proc(generic_ini, _company_settings, "company", &_settings_client.company, only_startup);
 
 	if (!only_startup) {
 		proc_list(private_ini, "server_bind_addresses", _network_bind_list);
 		proc_list(private_ini, "servers", _network_host_list);
 		proc_list(private_ini, "bans", _network_ban_list);
+		proc_list(private_ini, "server_authorized_keys", _settings_client.network.server_authorized_keys);
+		proc_list(private_ini, "rcon_authorized_keys", _settings_client.network.rcon_authorized_keys);
 	}
 }
 

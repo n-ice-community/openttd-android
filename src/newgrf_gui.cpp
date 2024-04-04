@@ -16,8 +16,8 @@
 #include "gamelog.h"
 #include "settings_type.h"
 #include "settings_func.h"
-#include "widgets/dropdown_type.h"
-#include "widgets/dropdown_func.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "network/network.h"
 #include "network/network_content.h"
 #include "sortlist_type.h"
@@ -146,11 +146,11 @@ static void ShowNewGRFInfo(const GRFConfig *c, const Rect &r, bool show_params)
 struct NewGRFParametersWindow : public Window {
 	static GRFParameterInfo dummy_parameter_info; ///< Dummy info in case a newgrf didn't provide info about some parameter.
 	GRFConfig *grf_config; ///< Set the parameters of this GRFConfig.
-	uint clicked_button;   ///< The row in which a button was clicked or UINT_MAX.
+	int32_t clicked_button; ///< The row in which a button was clicked or INT_MAX when none is selected.
 	bool clicked_increase; ///< True if the increase button was clicked, false for the decrease button.
 	bool clicked_dropdown; ///< Whether the dropdown is open.
 	bool closing_dropdown; ///< True, if the dropdown list is currently closing.
-	uint clicked_row;      ///< The selected parameter
+	int32_t clicked_row; ///< The selected parameter, or INT_MAX when none is selected.
 	int line_height;       ///< Height of a row in the matrix widget.
 	Scrollbar *vscroll;
 	bool action14present;  ///< True if action14 information is present.
@@ -158,10 +158,10 @@ struct NewGRFParametersWindow : public Window {
 
 	NewGRFParametersWindow(WindowDesc *desc, bool is_baseset, GRFConfig *c, bool editable) : Window(desc),
 		grf_config(c),
-		clicked_button(UINT_MAX),
+		clicked_button(INT32_MAX),
 		clicked_dropdown(false),
 		closing_dropdown(false),
-		clicked_row(UINT_MAX),
+		clicked_row(INT32_MAX),
 		editable(editable)
 	{
 		this->action14present = (c->num_valid_params != c->param.size() || !c->param_info.empty());
@@ -282,7 +282,7 @@ struct NewGRFParametersWindow : public Window {
 
 		int button_y_offset = (this->line_height - SETTING_BUTTON_HEIGHT) / 2;
 		int text_y_offset = (this->line_height - GetCharacterHeight(FS_NORMAL)) / 2;
-		for (uint i = this->vscroll->GetPosition(); this->vscroll->IsVisible(i) && i < this->vscroll->GetCount(); i++) {
+		for (int32_t i = this->vscroll->GetPosition(); this->vscroll->IsVisible(i) && i < this->vscroll->GetCount(); i++) {
 			GRFParameterInfo &par_info = this->GetParameterInfo(i);
 			uint32_t current_value = par_info.GetValue(this->grf_config);
 			bool selected = (i == this->clicked_row);
@@ -354,7 +354,7 @@ struct NewGRFParametersWindow : public Window {
 
 			case WID_NP_BACKGROUND: {
 				if (!this->editable) break;
-				uint num = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_NP_BACKGROUND);
+				int32_t num = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_NP_BACKGROUND);
 				if (num >= this->vscroll->GetCount()) break;
 
 				if (this->clicked_row != num) {
@@ -394,7 +394,7 @@ struct NewGRFParametersWindow : public Window {
 
 							DropDownList list;
 							for (uint32_t i = par_info.min_value; i <= par_info.max_value; i++) {
-								list.push_back(std::make_unique<DropDownListStringItem>(GetGRFStringFromGRFText(par_info.value_names.find(i)->second), i, false));
+								list.push_back(MakeDropDownListStringItem(GetGRFStringFromGRFText(par_info.value_names.find(i)->second), i));
 							}
 
 							ShowDropDownListAt(this, std::move(list), old_val, WID_NP_SETTING_DROPDOWN, wi_rect, COLOUR_ORANGE);
@@ -493,15 +493,15 @@ struct NewGRFParametersWindow : public Window {
 		}
 
 		this->vscroll->SetCount(this->action14present ? this->grf_config->num_valid_params : this->grf_config->num_params);
-		if (this->clicked_row != UINT_MAX && this->clicked_row >= this->vscroll->GetCount()) {
-			this->clicked_row = UINT_MAX;
+		if (this->clicked_row != INT32_MAX && this->clicked_row >= this->vscroll->GetCount()) {
+			this->clicked_row = INT32_MAX;
 			this->CloseChildWindows(WC_QUERY_STRING);
 		}
 	}
 
 	/** When reset, unclick the button after a small timeout. */
 	TimeoutTimer<TimerWindow> unclick_timeout = {std::chrono::milliseconds(150), [this]() {
-		this->clicked_button = UINT_MAX;
+		this->clicked_button = INT32_MAX;
 		this->SetDirty();
 	}};
 };
@@ -541,7 +541,7 @@ static constexpr NWidgetPart _nested_newgrf_parameter_widgets[] = {
 };
 
 /** Window definition for the change grf parameters window */
-static WindowDesc _newgrf_parameters_desc(__FILE__, __LINE__,
+static WindowDesc _newgrf_parameters_desc(
 	WDP_CENTER, "settings_newgrf_config", 500, 208,
 	WC_GRF_PARAMETERS, WC_NONE,
 	0,
@@ -909,11 +909,10 @@ struct NewGRFWindow : public Window, NewGRFScanCallback {
 				Rect tr = r.Shrink(WidgetDimensions::scaled.framerect);
 				uint step_height = this->GetWidget<NWidgetBase>(WID_NS_AVAIL_LIST)->resize_y;
 				int offset_y = (step_height - GetCharacterHeight(FS_NORMAL)) / 2;
-				uint min_index = this->vscroll2->GetPosition();
-				uint max_index = std::min(min_index + this->vscroll2->GetCapacity(), (uint)this->avails.size());
 
-				for (uint i = min_index; i < max_index; i++) {
-					const GRFConfig *c = this->avails[i];
+				auto [first, last] = this->vscroll2->GetVisibleRangeIterators(this->avails);
+				for (auto it = first; it != last; ++it) {
+					const GRFConfig *c = *it;
 					bool h = (c == this->avail_sel);
 					const char *text = c->GetName();
 
@@ -956,10 +955,10 @@ struct NewGRFWindow : public Window, NewGRFScanCallback {
 				DropDownList list;
 
 				/* Add 'None' option for clearing list */
-				list.push_back(std::make_unique<DropDownListStringItem>(STR_NONE, -1, false));
+				list.push_back(MakeDropDownListStringItem(STR_NONE, -1));
 
 				for (uint i = 0; i < this->grf_presets.size(); i++) {
-					list.push_back(std::make_unique<DropDownListStringItem>(this->grf_presets[i], i, false));
+					list.push_back(MakeDropDownListStringItem(this->grf_presets[i], i));
 				}
 
 				this->CloseChildWindows(WC_QUERY_STRING); // Remove the parameter query window
@@ -1968,7 +1967,7 @@ static constexpr NWidgetPart _nested_newgrf_widgets[] = {
 };
 
 /* Window definition of the manage newgrfs window */
-static WindowDesc _newgrf_desc(__FILE__, __LINE__,
+static WindowDesc _newgrf_desc(
 	WDP_CENTER, "settings_newgrf", 300, 263,
 	WC_GAME_OPTIONS, WC_NONE,
 	0,
@@ -2052,7 +2051,7 @@ static constexpr NWidgetPart _nested_save_preset_widgets[] = {
 };
 
 /** Window description of the preset save window. */
-static WindowDesc _save_preset_desc(__FILE__, __LINE__,
+static WindowDesc _save_preset_desc(
 	WDP_CENTER, "save_preset", 140, 110,
 	WC_SAVE_PRESET, WC_GAME_OPTIONS,
 	WDF_MODAL,
@@ -2127,13 +2126,13 @@ struct SavePresetWindow : public Window {
 				uint step_height = this->GetWidget<NWidgetBase>(WID_SVP_PRESET_LIST)->resize_y;
 				int offset_y = (step_height - GetCharacterHeight(FS_NORMAL)) / 2;
 				Rect tr = r.Shrink(WidgetDimensions::scaled.framerect);
-				uint min_index = this->vscroll->GetPosition();
-				uint max_index = std::min(min_index + this->vscroll->GetCapacity(), (uint)this->presets.size());
 
-				for (uint i = min_index; i < max_index; i++) {
-					if ((int)i == this->selected) GfxFillRect(br.left, tr.top, br.right, tr.top + step_height - 1, PC_DARK_BLUE);
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->presets);
+				for (auto it = first; it != last; ++it) {
+					int row = static_cast<int>(std::distance(std::begin(this->presets), it));
+					if (row == this->selected) GfxFillRect(br.left, tr.top, br.right, tr.top + step_height - 1, PC_DARK_BLUE);
 
-					DrawString(tr.left, tr.right, tr.top + offset_y, this->presets[i], ((int)i == this->selected) ? TC_WHITE : TC_SILVER);
+					DrawString(tr.left, tr.right, tr.top + offset_y, *it, (row == this->selected) ? TC_WHITE : TC_SILVER);
 					tr.top += step_height;
 				}
 				break;
@@ -2197,7 +2196,7 @@ static constexpr NWidgetPart _nested_scan_progress_widgets[] = {
 };
 
 /** Description of the widgets and other settings of the window. */
-static WindowDesc _scan_progress_desc(__FILE__, __LINE__,
+static WindowDesc _scan_progress_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_MODAL_PROGRESS, WC_NONE,
 	0,

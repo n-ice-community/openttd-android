@@ -3,8 +3,8 @@
 ##isocode gd_GB
 ##plural 13
 ##textdir ltr
-##numberformat 00,000,000,000,000,000,000
-##numberabbreviations 3=00,000,000,000,000,000{NBSP}k|6=00,000,000,000,000{NBSP}m|9=00,000,000,000{NBSP}bn|12=00,000,000{NBSP}tn|15=00,000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep ,
+##digitsepcur ,
 ##decimalsep .
 ##winlangid 0x083c
 ##grflangid 0x13
@@ -1058,7 +1058,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Aonadan 
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Tagh aonadan airgeadra
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Not Breatannach
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dolar Aimeireaganach
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Eòro
@@ -1147,6 +1147,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Luach-i
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Lùghdaich meud an airgeadra agad airson not (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Meudaich meud an airgeadra agad airson not (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Suidhich luach-iomlaid an airgeadra agad airson not (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Ro-leasachan: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Suidhich sreang ro-leasachain an airgeadra agad
@@ -2373,7 +2374,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Bha an c
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Dh'fhaoidte gun deach ceangal air chall
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Cha tàinig dàta sam bith on fhrithealaiche fad {NUM} {P diog dhiog diogan diog}
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :mearachd choitcheann
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :mearachd sioncronachaidh
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :cha b' urrainn dhuinn am mapa a luchdadh
@@ -2836,7 +2837,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Seilbhea
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Seilbheadair na rathaid-iarainn: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Ùghdarras ionadail: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Chan eil gin
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Ionad: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Air a thogail: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Seòrsa an stèisein: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Seòrsa an stèisein: {LTBLUE}{STRING}
@@ -4401,9 +4401,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Tuairmse
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Ga shàbhaladh fhathast,{}fuirich greis gus am bi e deiseil!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Dh’fhàillig leis an fhèin-shàbhaladh
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Cha ghabh an draibh leughadh
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Dh’fhàillig le sàbhaladh a’ gheama{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Cha ghabh am faidhle sguabadh às
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Dh’fhàillig le luchdadh a’ gheama{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Mearachd taobh a-staigh: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Tha an geama air shàbhaladh briste - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Chaidh an sàbhaladh seo a dhèanamh le tionndadh as ùire dhen gheama
@@ -5430,6 +5428,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

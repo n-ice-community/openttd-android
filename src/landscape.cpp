@@ -76,7 +76,7 @@ const TileTypeProcs * const _tile_type_procs[16] = {
 };
 
 /** landscape slope => sprite */
-extern const byte _slope_to_sprite_offset[32] = {
+extern const uint8_t _slope_to_sprite_offset[32] = {
 	0, 1, 2, 3, 4, 5, 6,  7, 8, 9, 10, 11, 12, 13, 14, 0,
 	0, 0, 0, 0, 0, 0, 0, 16, 0, 0,  0, 17,  0, 15, 18, 0,
 };
@@ -163,44 +163,44 @@ Point InverseRemapCoords2(int x, int y, bool clamp_to_map, bool *clamped)
  * @param s  The #Slope to modify.
  * @return   Increment to the tile Z coordinate.
  */
-uint ApplyFoundationToSlope(Foundation f, Slope *s)
+uint ApplyFoundationToSlope(Foundation f, Slope &s)
 {
 	if (!IsFoundation(f)) return 0;
 
 	if (IsLeveledFoundation(f)) {
-		uint dz = 1 + (IsSteepSlope(*s) ? 1 : 0);
-		*s = SLOPE_FLAT;
+		uint dz = 1 + (IsSteepSlope(s) ? 1 : 0);
+		s = SLOPE_FLAT;
 		return dz;
 	}
 
 	if (f != FOUNDATION_STEEP_BOTH && IsNonContinuousFoundation(f)) {
-		*s = HalftileSlope(*s, GetHalftileFoundationCorner(f));
+		s = HalftileSlope(s, GetHalftileFoundationCorner(f));
 		return 0;
 	}
 
 	if (IsSpecialRailFoundation(f)) {
-		*s = SlopeWithThreeCornersRaised(OppositeCorner(GetRailFoundationCorner(f)));
+		s = SlopeWithThreeCornersRaised(OppositeCorner(GetRailFoundationCorner(f)));
 		return 0;
 	}
 
-	uint dz = IsSteepSlope(*s) ? 1 : 0;
-	Corner highest_corner = GetHighestSlopeCorner(*s);
+	uint dz = IsSteepSlope(s) ? 1 : 0;
+	Corner highest_corner = GetHighestSlopeCorner(s);
 
 	switch (f) {
 		case FOUNDATION_INCLINED_X:
-			*s = (((highest_corner == CORNER_W) || (highest_corner == CORNER_S)) ? SLOPE_SW : SLOPE_NE);
+			s = (((highest_corner == CORNER_W) || (highest_corner == CORNER_S)) ? SLOPE_SW : SLOPE_NE);
 			break;
 
 		case FOUNDATION_INCLINED_Y:
-			*s = (((highest_corner == CORNER_S) || (highest_corner == CORNER_E)) ? SLOPE_SE : SLOPE_NW);
+			s = (((highest_corner == CORNER_S) || (highest_corner == CORNER_E)) ? SLOPE_SE : SLOPE_NW);
 			break;
 
 		case FOUNDATION_STEEP_LOWER:
-			*s = SlopeWithOneCornerRaised(highest_corner);
+			s = SlopeWithOneCornerRaised(highest_corner);
 			break;
 
 		case FOUNDATION_STEEP_BOTH:
-			*s = HalftileSlope(SlopeWithOneCornerRaised(highest_corner), highest_corner);
+			s = HalftileSlope(SlopeWithOneCornerRaised(highest_corner), highest_corner);
 			break;
 
 		default: NOT_REACHED();
@@ -347,7 +347,7 @@ int GetSlopeZInCorner(Slope tileh, Corner corner)
  * @param z1 Gets incremented by the height of the first corner of the edge. (near corner wrt. the camera)
  * @param z2 Gets incremented by the height of the second corner of the edge. (far corner wrt. the camera)
  */
-void GetSlopePixelZOnEdge(Slope tileh, DiagDirection edge, int *z1, int *z2)
+void GetSlopePixelZOnEdge(Slope tileh, DiagDirection edge, int &z1, int &z2)
 {
 	static const Slope corners[4][4] = {
 		/*    corner     |          steep slope
@@ -359,13 +359,13 @@ void GetSlopePixelZOnEdge(Slope tileh, DiagDirection edge, int *z1, int *z2)
 	};
 
 	int halftile_test = (IsHalftileSlope(tileh) ? SlopeWithOneCornerRaised(GetHalftileSlopeCorner(tileh)) : 0);
-	if (halftile_test == corners[edge][0]) *z2 += TILE_HEIGHT; // The slope is non-continuous in z2. z2 is on the upper side.
-	if (halftile_test == corners[edge][1]) *z1 += TILE_HEIGHT; // The slope is non-continuous in z1. z1 is on the upper side.
+	if (halftile_test == corners[edge][0]) z2 += TILE_HEIGHT; // The slope is non-continuous in z2. z2 is on the upper side.
+	if (halftile_test == corners[edge][1]) z1 += TILE_HEIGHT; // The slope is non-continuous in z1. z1 is on the upper side.
 
-	if ((tileh & corners[edge][0]) != 0) *z1 += TILE_HEIGHT; // z1 is raised
-	if ((tileh & corners[edge][1]) != 0) *z2 += TILE_HEIGHT; // z2 is raised
-	if (RemoveHalftileSlope(tileh) == corners[edge][2]) *z1 += TILE_HEIGHT; // z1 is highest corner of a steep slope
-	if (RemoveHalftileSlope(tileh) == corners[edge][3]) *z2 += TILE_HEIGHT; // z2 is highest corner of a steep slope
+	if ((tileh & corners[edge][0]) != 0) z1 += TILE_HEIGHT; // z1 is raised
+	if ((tileh & corners[edge][1]) != 0) z2 += TILE_HEIGHT; // z2 is raised
+	if (RemoveHalftileSlope(tileh) == corners[edge][2]) z1 += TILE_HEIGHT; // z1 is highest corner of a steep slope
+	if (RemoveHalftileSlope(tileh) == corners[edge][3]) z2 += TILE_HEIGHT; // z2 is highest corner of a steep slope
 }
 
 /**
@@ -373,31 +373,27 @@ void GetSlopePixelZOnEdge(Slope tileh, DiagDirection edge, int *z1, int *z2)
  * If a tile does not have a foundation, the function returns the same as GetTileSlope.
  *
  * @param tile The tile of interest.
- * @param z returns the z of the foundation slope. (Can be nullptr, if not needed)
- * @return The slope on top of the foundation.
+ * @return The slope on top of the foundation and the z of the foundation slope.
  */
-Slope GetFoundationSlope(TileIndex tile, int *z)
+std::tuple<Slope, int> GetFoundationSlope(TileIndex tile)
 {
-	Slope tileh = GetTileSlope(tile, z);
+	auto [tileh, z] = GetTileSlopeZ(tile);
 	Foundation f = _tile_type_procs[GetTileType(tile)]->get_foundation_proc(tile, tileh);
-	uint z_inc = ApplyFoundationToSlope(f, &tileh);
-	if (z != nullptr) *z += z_inc;
-	return tileh;
+	z += ApplyFoundationToSlope(f, tileh);
+	return {tileh, z};
 }
 
 
 bool HasFoundationNW(TileIndex tile, Slope slope_here, uint z_here)
 {
-	int z;
-
 	int z_W_here = z_here;
 	int z_N_here = z_here;
-	GetSlopePixelZOnEdge(slope_here, DIAGDIR_NW, &z_W_here, &z_N_here);
+	GetSlopePixelZOnEdge(slope_here, DIAGDIR_NW, z_W_here, z_N_here);
 
-	Slope slope = GetFoundationPixelSlope(TILE_ADDXY(tile, 0, -1), &z);
+	auto [slope, z] = GetFoundationPixelSlope(TileAddXY(tile, 0, -1));
 	int z_W = z;
 	int z_N = z;
-	GetSlopePixelZOnEdge(slope, DIAGDIR_SE, &z_W, &z_N);
+	GetSlopePixelZOnEdge(slope, DIAGDIR_SE, z_W, z_N);
 
 	return (z_N_here > z_N) || (z_W_here > z_W);
 }
@@ -405,16 +401,14 @@ bool HasFoundationNW(TileIndex tile, Slope slope_here, uint z_here)
 
 bool HasFoundationNE(TileIndex tile, Slope slope_here, uint z_here)
 {
-	int z;
-
 	int z_E_here = z_here;
 	int z_N_here = z_here;
-	GetSlopePixelZOnEdge(slope_here, DIAGDIR_NE, &z_E_here, &z_N_here);
+	GetSlopePixelZOnEdge(slope_here, DIAGDIR_NE, z_E_here, z_N_here);
 
-	Slope slope = GetFoundationPixelSlope(TILE_ADDXY(tile, -1, 0), &z);
+	auto [slope, z] = GetFoundationPixelSlope(TileAddXY(tile, -1, 0));
 	int z_E = z;
 	int z_N = z;
-	GetSlopePixelZOnEdge(slope, DIAGDIR_SW, &z_E, &z_N);
+	GetSlopePixelZOnEdge(slope, DIAGDIR_SW, z_E, z_N);
 
 	return (z_N_here > z_N) || (z_E_here > z_E);
 }
@@ -432,8 +426,7 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 	assert(f != FOUNDATION_STEEP_BOTH);
 
 	uint sprite_block = 0;
-	int z;
-	Slope slope = GetFoundationPixelSlope(ti->tile, &z);
+	auto [slope, z] = GetFoundationPixelSlope(ti->tile);
 
 	/* Select the needed block of foundations sprites
 	 * Block 0: Walls at NW and NE edge
@@ -458,11 +451,11 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 		}
 
 		Corner highest_corner = GetHighestSlopeCorner(ti->tileh);
-		ti->z += ApplyPixelFoundationToSlope(f, &ti->tileh);
+		ti->z += ApplyPixelFoundationToSlope(f, ti->tileh);
 
 		if (IsInclinedFoundation(f)) {
 			/* inclined foundation */
-			byte inclined = highest_corner * 2 + (f == FOUNDATION_INCLINED_Y ? 1 : 0);
+			uint8_t inclined = highest_corner * 2 + (f == FOUNDATION_INCLINED_Y ? 1 : 0);
 
 			AddSortableSpriteToDraw(inclined_base + inclined, PAL_NONE, ti->x, ti->y,
 				f == FOUNDATION_INCLINED_X ? TILE_SIZE : 1,
@@ -517,7 +510,7 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 			OffsetGroundSprite(0, 0);
 		} else {
 			/* inclined foundation */
-			byte inclined = GetHighestSlopeCorner(ti->tileh) * 2 + (f == FOUNDATION_INCLINED_Y ? 1 : 0);
+			uint8_t inclined = GetHighestSlopeCorner(ti->tileh) * 2 + (f == FOUNDATION_INCLINED_Y ? 1 : 0);
 
 			AddSortableSpriteToDraw(inclined_base + inclined, PAL_NONE, ti->x, ti->y,
 				f == FOUNDATION_INCLINED_X ? TILE_SIZE : 1,
@@ -526,7 +519,7 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 			);
 			OffsetGroundSprite(0, 0);
 		}
-		ti->z += ApplyPixelFoundationToSlope(f, &ti->tileh);
+		ti->z += ApplyPixelFoundationToSlope(f, ti->tileh);
 	}
 }
 
@@ -589,7 +582,7 @@ bool IsSnowLineSet()
  * @param table the 12 * 32 byte table containing the snowline for each day
  * @ingroup SnowLineGroup
  */
-void SetSnowLine(byte table[SNOW_LINE_MONTHS][SNOW_LINE_DAYS])
+void SetSnowLine(uint8_t table[SNOW_LINE_MONTHS][SNOW_LINE_DAYS])
 {
 	_snow_line = CallocT<SnowLine>(1);
 	_snow_line->lowest_value = 0xFF;
@@ -608,7 +601,7 @@ void SetSnowLine(byte table[SNOW_LINE_MONTHS][SNOW_LINE_DAYS])
  * @return the snow line height.
  * @ingroup SnowLineGroup
  */
-byte GetSnowLine()
+uint8_t GetSnowLine()
 {
 	if (_snow_line == nullptr) return _settings_game.game_creation.snow_line_height;
 
@@ -621,7 +614,7 @@ byte GetSnowLine()
  * @return the highest snow line height.
  * @ingroup SnowLineGroup
  */
-byte HighestSnowLine()
+uint8_t HighestSnowLine()
 {
 	return _snow_line == nullptr ? _settings_game.game_creation.snow_line_height : _snow_line->highest_value;
 }
@@ -631,7 +624,7 @@ byte HighestSnowLine()
  * @return the lowest snow line height.
  * @ingroup SnowLineGroup
  */
-byte LowestSnowLine()
+uint8_t LowestSnowLine()
 {
 	return _snow_line == nullptr ? _settings_game.game_creation.snow_line_height : _snow_line->lowest_value;
 }
@@ -812,8 +805,8 @@ void InitializeLandscape()
 	for (uint y = 0; y < Map::SizeY(); y++) MakeVoid(TileXY(Map::MaxX(), y));
 }
 
-static const byte _genterrain_tbl_1[5] = { 10, 22, 33, 37, 4  };
-static const byte _genterrain_tbl_2[5] = {  0,  0,  0,  0, 33 };
+static const uint8_t _genterrain_tbl_1[5] = { 10, 22, 33, 37, 4  };
+static const uint8_t _genterrain_tbl_2[5] = {  0,  0,  0,  0, 33 };
 
 static void GenerateTerrain(int type, uint flag)
 {
@@ -837,7 +830,7 @@ static void GenerateTerrain(int type, uint flag)
 
 	if (DiagDirToAxis(direction) == AXIS_Y) Swap(w, h);
 
-	const byte *p = templ->data;
+	const uint8_t *p = templ->data;
 
 	if ((flag & 4) != 0) {
 		/* This is only executed in secondary/tertiary loops to generate the terrain for arctic and tropic.
@@ -1194,10 +1187,8 @@ static bool FlowsDown(TileIndex begin, TileIndex end)
 {
 	assert(DistanceManhattan(begin, end) == 1);
 
-	int heightBegin;
-	int heightEnd;
-	Slope slopeBegin = GetTileSlope(begin, &heightBegin);
-	Slope slopeEnd   = GetTileSlope(end, &heightEnd);
+	auto [slopeBegin, heightBegin] = GetTileSlopeZ(begin);
+	auto [slopeEnd, heightEnd] = GetTileSlopeZ(end);
 
 	return heightEnd <= heightBegin &&
 			/* Slope either is inclined or flat; rivers don't support other slopes. */
@@ -1559,7 +1550,7 @@ static uint8_t CalculateDesertLine()
 	return CalculateCoverageLine(100 - _settings_game.game_creation.desert_coverage, 4);
 }
 
-bool GenerateLandscape(byte mode)
+bool GenerateLandscape(uint8_t mode)
 {
 	/** Number of steps of landscape generation */
 	enum GenLandscapeSteps {

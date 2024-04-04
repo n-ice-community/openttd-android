@@ -3,8 +3,8 @@
 ##isocode sl_SI
 ##plural 8
 ##textdir ltr
-##numberformat 00.000.000.000.000.000.000
-##numberabbreviations 3=00.000.000.000.000.000{NBSP}k|6=00.000.000.000.000{NBSP}m|9=00.000.000.000{NBSP}bn|12=00.000.000{NBSP}tn|15=00.000{NBSP}Qa|18=00{NBSP}Qi
+##digitsep .
+##digitsepcur .
 ##decimalsep ,
 ##winlangid 0x0424
 ##grflangid 0x2c
@@ -1009,7 +1009,7 @@ STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Valute
 STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Izbira valut
 
 
-###length 43
+###length 44
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Funt
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dolar
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -1099,6 +1099,7 @@ STR_CURRENCY_EXCHANGE_RATE                                      :{LTBLUE}Menjaln
 STR_CURRENCY_DECREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Zmanjšaj količino svojega denarja za en funt (£)
 STR_CURRENCY_INCREASE_EXCHANGE_RATE_TOOLTIP                     :{BLACK}Povečaj količino svojega denarja za en funt (£)
 STR_CURRENCY_SET_EXCHANGE_RATE_TOOLTIP                          :{BLACK}Nastavi tečaj menjave svoje valute za en funt (£)
+
 
 STR_CURRENCY_PREFIX                                             :{LTBLUE}Predpona: {ORANGE}{STRING}
 STR_CURRENCY_SET_CUSTOM_CURRENCY_PREFIX_TOOLTIP                 :{BLACK}Nastavi oznako za svojo valuto
@@ -2327,7 +2328,7 @@ STR_NETWORK_ERROR_TIMEOUT_JOIN                                  :{WHITE}Priklop 
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION_CAPTION            :{WHITE}Povezava je mogoče prekinjena
 STR_NETWORK_ERROR_CLIENT_GUI_LOST_CONNECTION                    :{WHITE}Zadnj{P 0 o i e ih} {NUM} sekund{P o i e ""} ni bilo prejetih nobenih podatkov s strežnika
 
-###length 21
+###length 22
 STR_NETWORK_ERROR_CLIENT_GENERAL                                :splošna napaka
 STR_NETWORK_ERROR_CLIENT_DESYNC                                 :desinhronizacijska napaka
 STR_NETWORK_ERROR_CLIENT_SAVEGAME                               :ni mogoče naložiti zemljevida
@@ -2772,7 +2773,6 @@ STR_LAND_AREA_INFORMATION_TRAM_OWNER                            :{BLACK}Lastnik 
 STR_LAND_AREA_INFORMATION_RAIL_OWNER                            :{BLACK}Lastnik železnice: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY                       :{BLACK}Lokalna oblast: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY_NONE                  :Brez
-STR_LAND_AREA_INFORMATION_LANDINFO_COORDS                       :{BLACK}Koordinate: {LTBLUE}{NUM} x {NUM} x {NUM} ({STRING})
 STR_LAND_AREA_INFORMATION_BUILD_DATE                            :{BLACK}Zgrajeno: {LTBLUE}{DATE_LONG}
 STR_LAND_AREA_INFORMATION_STATION_CLASS                         :{BLACK}Razred postaje: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_STATION_TYPE                          :{BLACK}Vrsta postaje: {LTBLUE}{STRING}
@@ -4285,9 +4285,7 @@ STR_MESSAGE_ESTIMATED_INCOME                                    :{WHITE}Predvide
 STR_ERROR_SAVE_STILL_IN_PROGRESS                                :{WHITE}Shranjevanje poteka,{}Prosim počakaj, da se zaključi!
 STR_ERROR_AUTOSAVE_FAILED                                       :{WHITE}Samodejno shranjevanje spodletelo
 STR_ERROR_UNABLE_TO_READ_DRIVE                                  :{BLACK}Pogona ni mogoče prebrati
-STR_ERROR_GAME_SAVE_FAILED                                      :{WHITE}Shranjevanje igre ni uspelo{}{STRING}
 STR_ERROR_UNABLE_TO_DELETE_FILE                                 :{WHITE}Datoteke ni mogoče zbrisati
-STR_ERROR_GAME_LOAD_FAILED                                      :{WHITE}Nalaganje igre ni uspelo{}{STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_INTERNAL_ERROR                   :Interna napaka: {STRING}
 STR_GAME_SAVELOAD_ERROR_BROKEN_SAVEGAME                         :Napaka v shranjeni igri - {STRING}
 STR_GAME_SAVELOAD_ERROR_TOO_NEW_SAVEGAME                        :Igra je bila shranjena z novejso razlicico
@@ -5203,6 +5201,7 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}

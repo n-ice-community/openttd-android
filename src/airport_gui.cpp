@@ -22,7 +22,8 @@
 #include "station_type.h"
 #include "newgrf_airport.h"
 #include "newgrf_callbacks.h"
-#include "widgets/dropdown_type.h"
+#include "dropdown_type.h"
+#include "dropdown_func.h"
 #include "core/geometry_func.hpp"
 #include "hotkeys.h"
 #include "vehicle_func.h"
@@ -42,11 +43,11 @@
 
 static AirportClassID _selected_airport_class; ///< the currently visible airport class
 static int _selected_airport_index;            ///< the index of the selected airport in the current class or -1
-static byte _selected_airport_layout;          ///< selected airport layout number.
+static uint8_t _selected_airport_layout;          ///< selected airport layout number.
 
 static void ShowBuildAirportPicker(Window *parent);
 
-SpriteID GetCustomAirportSprite(const AirportSpec *as, byte layout);
+SpriteID GetCustomAirportSprite(const AirportSpec *as, uint8_t layout);
 
 void CcBuildAirport(Commands, const CommandCost &result, TileIndex tile)
 {
@@ -64,8 +65,8 @@ static void PlaceAirport(TileIndex tile)
 {
 	if (_selected_airport_index == -1) return;
 
-	byte airport_type = AirportClass::Get(_selected_airport_class)->GetSpec(_selected_airport_index)->GetIndex();
-	byte layout = _selected_airport_layout;
+	uint8_t airport_type = AirportClass::Get(_selected_airport_class)->GetSpec(_selected_airport_index)->GetIndex();
+	uint8_t layout = _selected_airport_layout;
 	bool adjacent = _ctrl_pressed;
 
 	auto proc = [=](bool test, StationID to_join) -> bool {
@@ -223,7 +224,7 @@ static constexpr NWidgetPart _nested_air_toolbar_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _air_toolbar_desc(__FILE__, __LINE__,
+static WindowDesc _air_toolbar_desc(
 	WDP_ALIGN_TOOLBAR, "toolbar_air", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WDF_CONSTRUCTION,
@@ -257,7 +258,7 @@ class BuildAirportWindow : public PickerWindowBase {
 		DropDownList list;
 
 		for (uint i = 0; i < AirportClass::GetClassCount(); i++) {
-			list.push_back(std::make_unique<DropDownListStringItem>(AirportClass::Get((AirportClassID)i)->name, i, false));
+			list.push_back(MakeDropDownListStringItem(AirportClass::Get((AirportClassID)i)->name, i));
 		}
 
 		return list;
@@ -364,7 +365,7 @@ public:
 				for (int i = 0; i < NUM_AIRPORTS; i++) {
 					const AirportSpec *as = AirportSpec::Get(i);
 					if (!as->enabled) continue;
-					for (byte layout = 0; layout < as->num_table; layout++) {
+					for (uint8_t layout = 0; layout < as->num_table; layout++) {
 						SpriteID sprite = GetCustomAirportSprite(as, layout);
 						if (sprite != 0) {
 							Dimension d = GetSpriteSize(sprite);
@@ -380,7 +381,7 @@ public:
 				for (int i = NEW_AIRPORT_OFFSET; i < NUM_AIRPORTS; i++) {
 					const AirportSpec *as = AirportSpec::Get(i);
 					if (!as->enabled) continue;
-					for (byte layout = 0; layout < as->num_table; layout++) {
+					for (uint8_t layout = 0; layout < as->num_table; layout++) {
 						StringID string = GetAirportTextCallback(as, layout, CBID_AIRPORT_ADDITIONAL_TEXT);
 						if (string == STR_UNDEFINED) continue;
 
@@ -512,8 +513,8 @@ public:
 				break;
 
 			case WID_AP_AIRPORT_LIST: {
-				int num_clicked = this->vscroll->GetScrolledRowFromWidget(pt.y, this, widget, 0, this->line_height);
-				if (num_clicked == INT_MAX) break;
+				int32_t num_clicked = this->vscroll->GetScrolledRowFromWidget(pt.y, this, widget, 0, this->line_height);
+				if (num_clicked == INT32_MAX) break;
 				const AirportSpec *as = AirportClass::Get(_selected_airport_class)->GetSpec(num_clicked);
 				if (as->IsAvailable()) this->SelectOtherAirport(num_clicked);
 				break;
@@ -635,7 +636,7 @@ static constexpr NWidgetPart _nested_build_airport_widgets[] = {
 	EndContainer(),
 };
 
-static WindowDesc _build_airport_desc(__FILE__, __LINE__,
+static WindowDesc _build_airport_desc(
 	WDP_AUTO, nullptr, 0, 0,
 	WC_BUILD_STATION, WC_BUILD_TOOLBAR,
 	WDF_CONSTRUCTION,

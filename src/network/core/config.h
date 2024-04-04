@@ -45,10 +45,10 @@ static const std::string NETWORK_SURVEY_DETAILS_LINK = "https://survey.openttd.o
 static const size_t TCP_MTU = 32767; ///< Number of bytes we can pack in a single TCP packet
 static const size_t COMPAT_MTU = 1460; ///< Number of bytes we can pack in a single packet for backward compatibility
 
-static const byte NETWORK_GAME_ADMIN_VERSION        =    3;           ///< What version of the admin network do we use?
-static const byte NETWORK_GAME_INFO_VERSION         =    7;           ///< What version of game-info do we use?
-static const byte NETWORK_COORDINATOR_VERSION       =    6;           ///< What version of game-coordinator-protocol do we use?
-static const byte NETWORK_SURVEY_VERSION            =    1;           ///< What version of the survey do we use?
+static const uint8_t NETWORK_GAME_ADMIN_VERSION        =    3;           ///< What version of the admin network do we use?
+static const uint8_t NETWORK_GAME_INFO_VERSION         =    7;           ///< What version of game-info do we use?
+static const uint8_t NETWORK_COORDINATOR_VERSION       =    6;           ///< What version of game-coordinator-protocol do we use?
+static const uint8_t NETWORK_SURVEY_VERSION            =    2;           ///< What version of the survey do we use?
 
 static const uint NETWORK_NAME_LENGTH               =   80;           ///< The maximum length of the server name and map name, in bytes including '\0'
 static const uint NETWORK_COMPANY_NAME_LENGTH       =  128;           ///< The maximum length of the company name, in bytes including '\0'
@@ -90,5 +90,11 @@ static const uint NETWORK_GRF_NAME_LENGTH           =   80;           ///< Maxim
  * "amount of NewGRFs" in NetworkGameInfo is currently an uint8.
  */
 static const uint NETWORK_MAX_GRF_COUNT             =   255;
+
+/**
+ * The maximum length of the hexadecimal encoded secret keys, in bytes including '\0'.
+ * This is related to \c X25519_KEY_SIZE in the network crypto internals.
+ */
+static const uint NETWORK_SECRET_KEY_LENGTH = 32 * 2 + 1;
 
 #endif /* NETWORK_CORE_CONFIG_H */
