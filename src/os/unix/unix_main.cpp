@@ -18,6 +18,11 @@
 
 #include "../../safeguards.h"
 
+#ifdef __ANDROID__
+#define main SDL_main
+extern "C" int CDECL main(int, char *[]);
+#endif
+
 int CDECL main(int argc, char *argv[])
 {
 	/* Make sure our arguments contain only valid UTF-8 characters. */
