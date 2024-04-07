@@ -447,14 +447,12 @@ void IConsoleSwitch()
 			{
 				char buf[1024] = "";
 
-				//for (const IConsoleLine *print = IConsoleLine::Get(0); print != NULL; print = print->previous) {
 				for (IConsoleLine &line : _iconsole_buffer) {
 					if (!line.buffer.empty()) {
-						strecat(buf, line.buffer.c_str(), lastof(buf));
-						strecat(buf, "\n", lastof(buf));
+						fmt::format_to_n(buf, sizeof(buf), "{}\n", line.buffer);
 					}
 				}
-				strecat(buf, "\n\n\n\n\n\n\n\n", lastof(buf)); // Move all text to top
+				fmt::format_to_n(buf, sizeof(buf), "\n\n\n\n\n\n\n\n");
 				SDL_ANDROID_SetScreenKeyboardHintMesage(buf);
 				char text[512] = "";
 				SDL_ANDROID_GetScreenKeyboardTextInput(text, sizeof(text) - 1); /* Invoke Android built-in screen keyboard */
