@@ -257,7 +257,7 @@ void OSOpenBrowser(const std::string &url)
 	args[4] = "--user";
 	args[5] = "0";
 	args[6] = "-d";
-	args[7] = url;
+	args[7] = url.c_str();
 	args[8] = NULL;
 #else
 	const char *args[3];
