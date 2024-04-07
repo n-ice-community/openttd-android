@@ -360,10 +360,12 @@ endif()
 include(CheckAtomic)
 
 if(ANDROID)
-    target_link_libraries(openttd
+    target_link_libraries(openttd_lib
         ${EXPAT_LIBRARY}
     )
     if(NOT CMAKE_BUILD_TYPE STREQUAL Debug)
+        target_compile_options(openttd_lib PRIVATE -flto=thin)
+        target_link_libraries(openttd_lib -flto=thin)
         target_compile_options(openttd PRIVATE -flto=thin)
         target_link_libraries(openttd -flto=thin)
     endif()
