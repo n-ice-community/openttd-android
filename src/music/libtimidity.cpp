@@ -34,17 +34,17 @@ static struct {
 	MidSong *song;
 
 	MidiState status;
-	uint32 song_length;
-	uint32 song_position;
+	uint32_t song_length;
+	uint32_t song_position;
 	std::mutex synth_mutex;        ///< Guard mutex for synth access
 } _midi; ///< Metadata about the midi we're playing.
 
-static void MidiMixMusic(int16 *stream, size_t len)
+static void MidiMixMusic(int16_t *stream, size_t len)
 {
 	std::unique_lock<std::mutex> lock{ _midi.synth_mutex, std::try_to_lock };
 
 	if (_midi.status == MIDI_PLAYING) {
-		mid_song_read_wave(_midi.song, (sint8 *)stream, len * 4);
+		mid_song_read_wave(_midi.song, (int8_t *)stream, len * 4);
 	}
 }
 
@@ -59,7 +59,7 @@ const char *MusicDriver_LibTimidity::Start(const StringList &param)
 	_midi.status = MIDI_STOPPED;
 	_midi.song = NULL;
 	volume = TIMIDITY_MAX_VOLUME; // Avoid clipping
-	uint32 samplerate = MxSetMusicSource(MidiMixMusic);
+	uint32_t samplerate = MxSetMusicSource(MidiMixMusic);
 
 	if (mid_init(NULL) < 0) {
 		/* If init fails, it can be because no configuration was found.
