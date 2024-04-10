@@ -49,7 +49,6 @@
 #include "game/game.hpp"
 #include "goal_base.h"
 #include "story_base.h"
-#include "tutorial_gui.h"
 #include "toolbar_gui.h"
 #include "framerate_type.h"
 #include "screenshot_gui.h"
