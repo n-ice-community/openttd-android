@@ -2686,7 +2686,7 @@ void NWidgetScrollbar::Draw(const Window *w)
 /* static */ Dimension NWidgetScrollbar::GetVerticalDimension()
 {
 	if (vertical_dimension.width == 0) {
-		vertical_dimension = maxdim(GetScaledSpriteSize(SPR_ARROW_UP), GetScaledSpriteSize(SPR_ARROW_DOWN));
+		vertical_dimension = maxdim(maxdim(GetScaledSpriteSize(SPR_ARROW_UP), GetScaledSpriteSize(SPR_ARROW_DOWN)), Dimension{GetMinButtonSize(), GetMinButtonSize()} );
 		vertical_dimension.width += WidgetDimensions::scaled.vscrollbar.Horizontal();
 		vertical_dimension.height += WidgetDimensions::scaled.vscrollbar.Vertical();
 	}
@@ -2696,7 +2696,7 @@ void NWidgetScrollbar::Draw(const Window *w)
 /* static */ Dimension NWidgetScrollbar::GetHorizontalDimension()
 {
 	if (horizontal_dimension.width == 0) {
-		horizontal_dimension = maxdim(GetScaledSpriteSize(SPR_ARROW_LEFT), GetScaledSpriteSize(SPR_ARROW_RIGHT));
+		horizontal_dimension = maxdim(maxdim(GetScaledSpriteSize(SPR_ARROW_LEFT), GetScaledSpriteSize(SPR_ARROW_RIGHT)), Dimension{GetMinButtonSize(), GetMinButtonSize()} );
 		horizontal_dimension.width += WidgetDimensions::scaled.hscrollbar.Horizontal();
 		horizontal_dimension.height += WidgetDimensions::scaled.hscrollbar.Vertical();
 	}
@@ -3004,7 +3004,7 @@ void NWidgetLeaf::SetupSmallestSize(Window *w)
 		case NWID_BUTTON_DROPDOWN:
 		case NWID_PUSHBUTTON_DROPDOWN: {
 			if (NWidgetLeaf::dropdown_dimension.width == 0) {
-				NWidgetLeaf::dropdown_dimension = GetScaledSpriteSize(SPR_ARROW_DOWN);
+				NWidgetLeaf::dropdown_dimension = maxdim(GetScaledSpriteSize(SPR_ARROW_DOWN), Dimension{GetMinButtonSize(), GetMinButtonSize()});
 				NWidgetLeaf::dropdown_dimension.width += WidgetDimensions::scaled.vscrollbar.Horizontal();
 				NWidgetLeaf::dropdown_dimension.height += WidgetDimensions::scaled.vscrollbar.Vertical();
 			}
