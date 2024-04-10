@@ -94,7 +94,7 @@ uint8_t _scroller_click_timeout = 0;
 
 bool _scrolling_viewport;  ///< A viewport is being scrolled with the mouse.
 bool _mouse_hovering;      ///< The mouse is hovering over the same point.
-static bool _left_button_dragged;
+static bool _left_button_dragged = false;
 
 SpecialMouseMode _special_mouse_mode; ///< Mode of the mouse.
 
@@ -3058,7 +3058,7 @@ static void MouseLoop(MouseClick click, int mousewheel)
 			case MC_LEFT:
 				mouse_down_on_viewport = true;
 				if (HandleViewportClicked(vp, x, y)) {
-					// Viewport already clicked, prevent sending same event on mouse-up
+					// Viewport click already handled, prevent sending same event on mouse-up
 					_left_button_dragged = true;
 					return;
 				}
@@ -3066,9 +3066,6 @@ static void MouseLoop(MouseClick click, int mousewheel)
 						(_settings_client.gui.scroll_mode == VSM_MAP_LMB || _move_pressed)) {
 					_scrolling_viewport = true;
 					_cursor.fix_at = false;
-				} else {
-					// Viewport already clicked, prevent sending same event on mouse-up
-					_left_button_dragged = true;
 				}
 				return;
 
