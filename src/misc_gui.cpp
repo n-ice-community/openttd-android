@@ -711,14 +711,6 @@ struct TooltipsWindow : public Window
 		if (pt.y + sm_height > scr_bot) pt.y = std::min(_cursor.pos.y + _cursor.total_offs.y - 5, scr_bot) - sm_height;
 		pt.x = sm_width >= _screen.width ? 0 : SoftClamp(_cursor.pos.x - (sm_width >> 1), 0, _screen.width - sm_width);
 
-		if (_settings_client.gui.windows_titlebars) {
-			// Move it to the top of the screen, away from mouse cursor, so it won't steal screen taps on Android
-			pt.y = GetMainViewTop();
-			if (_cursor.pos.y < pt.y + (int)GetMinButtonSize()) {
-				pt.x = _cursor.pos.x > _screen.width / 2 ? GetMinButtonSize() : _screen.width - sm_width - GetMinButtonSize();
-			}
-		}
-
 		return pt;
 	}
 
