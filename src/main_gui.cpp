@@ -32,7 +32,6 @@
 #include "hotkeys.h"
 #include "error.h"
 #include "news_gui.h"
-#include "tutorial_gui.h"
 #include "gui.h"
 #include "misc_cmd.h"
 #include "timer/timer.h"

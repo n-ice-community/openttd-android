@@ -31,7 +31,6 @@
 #include "rev.h"
 #include "highscore.h"
 #include "signs_base.h"
-#include "tutorial_gui.h"
 #include "viewport_func.h"
 #include "vehicle_base.h"
 #include <regex>
