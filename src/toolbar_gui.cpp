@@ -485,11 +485,7 @@ static CallBackFunction MenuClickTown(int index)
 {
 	switch (index) {
 		case 0: ShowTownDirectory(); break;
-		case 1: ShowSubsidiesList(); break;
-		case 2: ShowIndustryDirectory(); break;
-		case 3: ShowIndustryCargoesWindow(); break;
-		case 4: if (_local_company != COMPANY_SPECTATOR) ShowBuildIndustryWindow(); break;
-		case 5: // setting could be changed when the dropdown was open
+		case 1: // setting could be changed when the dropdown was open
 			if (_settings_game.economy.found_town != TF_FORBIDDEN) ShowFoundTownWindow();
 			break;
 	}
