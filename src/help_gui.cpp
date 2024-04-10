@@ -15,6 +15,8 @@
 #include "table/control_codes.h"
 #include "string_func.h"
 #include "openttd.h"
+#include "language.h"
+
 #include "help_gui.h"
 
 #include "widgets/help_widget.h"
@@ -31,6 +33,35 @@ static const std::string WEBSITE_LINK = "https://www.openttd.org/";
 static const std::string WIKI_LINK = "https://wiki.openttd.org/";
 static const std::string BUGTRACKER_LINK = "https://bugs.openttd.org/";
 static const std::string COMMUNITY_LINK = "https://community.openttd.org/";
+
+using VideoOption = std::unordered_map<std::string, std::string> ;
+static const std::unordered_map<WidgetID, VideoOption> tutorial_list = {
+	{
+		WID_HW_BUS, {
+			{"en", "https://www.youtube.com/watch?v=EULXRMR4PyE"}
+		},
+	},
+	{
+		WID_HW_TRAIN, {
+			{"en", "https://www.youtube.com/watch?v=VdMdL2qyZ6s"}
+		},
+	},
+	{
+		WID_HW_TRUCK, {
+			{"en", "https://www.youtube.com/watch?v=B-CL-XFGNtw"}
+		},
+	},
+	{
+		WID_HW_SHIP, {
+			{"en", "https://www.youtube.com/watch?v=a5JHlWtIg3A"}
+		},
+	},
+	{
+		WID_HW_FACILALL, {
+			{"en", "https://www.youtube.com/watch?v=GwjiQYsu3xg"}
+		},
+	}
+};
 
 /** Only show the first 20 changelog versions in the textfile viewer. */
 static constexpr size_t CHANGELOG_VERSIONS_LIMIT = 20;
@@ -131,6 +162,18 @@ struct HelpWindow : public Window {
 		this->EnableTextfileButton(LICENSE_FILENAME, WID_HW_LICENSE);
 	}
 
+	static void OpenTutorial(WidgetID wid) {
+		std::string link;
+
+		try {
+			link = tutorial_list.at(wid).at(_current_language->isocode);
+		} catch (const std::out_of_range& e) {
+			link = tutorial_list.at(wid).at("en");
+		}
+
+		OpenBrowser(link);
+	}
+
 	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override
 	{
 		switch (widget) {
@@ -157,6 +200,13 @@ struct HelpWindow : public Window {
 				break;
 			case WID_HW_COMMUNITY:
 				OpenBrowser(COMMUNITY_LINK);
+				break;
+			case WID_HW_BUS:
+			case WID_HW_TRAIN:
+			case WID_HW_TRUCK:
+			case WID_HW_SHIP:
+			case WID_HW_FACILALL:
+				OpenTutorial(widget);
 				break;
 		}
 	}
@@ -188,6 +238,14 @@ static constexpr NWidgetPart _nested_helpwin_widgets[] = {
 				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_CHANGELOG), SetDataTip(STR_HELP_WINDOW_CHANGELOG, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_KNOWN_BUGS),SetDataTip(STR_HELP_WINDOW_KNOWN_BUGS, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_LICENSE), SetDataTip(STR_HELP_WINDOW_LICENSE, STR_NULL), SetMinimalSize(128, 12), SetFill(1, 0),
+			EndContainer(),
+
+			NWidget(WWT_FRAME, COLOUR_DARK_GREEN), SetDataTip(STR_TUTORIAL_WINDOW_TITLE, STR_TUTORIAL_WINDOW_TOOLTIP),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_BUS), SetDataTip(STR_TUTORIAL_ROADS_AND_STATIONS, STR_TUTORIAL_ROADS_AND_STATIONS), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_TRAIN), SetDataTip(STR_TUTORIAL_RAILWAYS, STR_TUTORIAL_RAILWAYS), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_TRUCK),SetDataTip(STR_TUTORIAL_ROAD_VEHICLES, STR_TUTORIAL_ROAD_VEHICLES), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_SHIP), SetDataTip(STR_TUTORIAL_SHIPS, STR_TUTORIAL_SHIPS), SetMinimalSize(128, 12), SetFill(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREEN, WID_HW_FACILALL), SetDataTip(STR_TUTORIAL_CARGO, STR_TUTORIAL_CARGO), SetMinimalSize(128, 12), SetFill(1, 0),
 			EndContainer(),
 		EndContainer(),
 	EndContainer(),
