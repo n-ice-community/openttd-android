@@ -21,6 +21,8 @@
 #include "widgets/help_widget.h"
 #include "widgets/misc_widget.h"
 
+#include <unordered_map>
+
 #include "safeguards.h"
 
 static const std::string README_FILENAME = "README.md";
