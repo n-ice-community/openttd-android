@@ -3660,6 +3660,24 @@ static int PositionWindow(Window *w, WindowClass clss, int setting)
 	return w->left;
 }
 
+static int PositionVerticalToolbar(Window *w, WindowClass clss, int setting)
+{
+	if (w == nullptr || w->window_class != clss) {
+		w = FindWindowById(clss, 0);
+	}
+	if (w == nullptr) return 0;
+
+	auto old_top = w->top;
+	switch (setting) {
+		case 1:  w->top = (_screen.height - w->height) / 2; break;
+		case 2:  w->top = _screen.height - w->height; break;
+		default: w->top = 0; break;
+	}
+	if (w->viewport != nullptr) w->viewport->top += w->top - old_top;
+	AddDirtyBlock(w->left, 0, w->left + w->width, _screen.height); // invalidate the whole collumn
+	return w->top;
+}
+
 /**
  * (Re)position main toolbar window at the screen.
  * @param w Window structure of the main toolbar window, may also be \c nullptr.
@@ -3667,7 +3685,11 @@ static int PositionWindow(Window *w, WindowClass clss, int setting)
  */
 int PositionMainToolbar(Window *w)
 {
-	if (_settings_client.gui.vertical_toolbar && _game_mode != GM_EDITOR) return 0; /* Always at the left */
+	if (_settings_client.gui.vertical_toolbar && _game_mode != GM_EDITOR) {
+		PositionVerticalToolbar(w, WC_MAIN_TOOLBAR, _settings_client.gui.toolbar_pos);
+		PositionVerticalToolbar(nullptr, WC_MAIN_TOOLBAR_RIGHT, _settings_client.gui.toolbar_pos);
+		return 0; /* Always at the left */
+	}
 	Debug(misc, 5, "Repositioning Main Toolbar...");
 	return PositionWindow(w, WC_MAIN_TOOLBAR, _settings_client.gui.toolbar_pos);
 }

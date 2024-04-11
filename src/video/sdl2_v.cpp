@@ -412,6 +412,8 @@ bool VideoDriver_SDL_Base::PollEvent()
 				case SDL_BUTTON_RIGHT:
 					_right_button_down = true;
 					_right_button_clicked = true;
+					_right_button_down_pos.x = ev.button.x;
+					_right_button_down_pos.y = ev.button.y;
 					break;
 
 				default: break;
