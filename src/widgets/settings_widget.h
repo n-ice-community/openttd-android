@@ -13,6 +13,7 @@
 /** Widgets of the #GameOptionsWindow class. */
 enum GameOptionsWidgets : WidgetID {
 	WID_GO_TAB_GENERAL,            ///< General tab.
+	WID_GO_TAB_INTERFACE,          ///< Interface tab.
 	WID_GO_TAB_GRAPHICS,           ///< Graphics tab.
 	WID_GO_TAB_SOUND,              ///< Sound tab.
 	WID_GO_TAB_SOCIAL,             ///< Social tab.

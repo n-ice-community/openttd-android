@@ -945,6 +945,8 @@ STR_GAME_OPTIONS_CAPTION                                        :{WHITE}Game Opt
 
 STR_GAME_OPTIONS_TAB_GENERAL                                    :General
 STR_GAME_OPTIONS_TAB_GENERAL_TT                                 :{BLACK}Choose general settings
+STR_GAME_OPTIONS_TAB_INTERFACE                                  :Interface
+STR_GAME_OPTIONS_TAB_INTERFACE_TT                               :{BLACK}Choose interface settings
 STR_GAME_OPTIONS_TAB_GRAPHICS                                   :Graphics
 STR_GAME_OPTIONS_TAB_GRAPHICS_TT                                :{BLACK}Choose graphics settings
 STR_GAME_OPTIONS_TAB_SOUND                                      :Sound
