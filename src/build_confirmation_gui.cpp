@@ -208,11 +208,11 @@ struct BuildConfirmationWindow : Window {
 		DrawFrameRect(x, y, x + w, y + h, COLOUR_GREY, FR_BORDERONLY);
 		Dimension d = GetStringBoundingBox(str);
 		DrawFrameRect(x + w / 2 - d.width / 2 - 1,
-						CenterBounds(y, h, d.height) - 2,
+						y + h / 2 - d.height / 2 - 2,
 						x + w / 2 + d.width / 2 + 1,
-						CenterBounds(y, h, d.height) + d.height,
+						y + h / 2 - d.height / 2 + d.height,
 						COLOUR_GREY, FR_NONE);
-		DrawString(x, x + w, CenterBounds(y, h, d.height), str, TC_FROMSTRING, SA_HOR_CENTER);
+		DrawString(x, x + w, y + h / 2 - d.height / 2 - 2, str, TC_FROMSTRING, SA_HOR_CENTER);
 	}
 };
 
