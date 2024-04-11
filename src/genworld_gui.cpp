@@ -90,7 +90,7 @@ static constexpr NWidgetPart _nested_generate_landscape_widgets[] = {
 				NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0), SetPIPRatio(1, 1, 1),
 					/* Generation options. */
 					NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
-						/* Left side (land generation options) */
+						/* Left half (land generation options) */
 						NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
 							/* Labels on the left side (global column 1). */
 							NWidget(NWID_VERTICAL, NC_EQUALSIZE), SetPIP(0, WidgetDimensions::unscaled.vsep_sparse, 0),
@@ -98,6 +98,8 @@ static constexpr NWidgetPart _nested_generate_landscape_widgets[] = {
 								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_TERRAIN_TYPE, STR_CONFIG_SETTING_TERRAIN_TYPE_HELPTEXT), SetFill(1, 1),
 								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_VARIETY, STR_CONFIG_SETTING_VARIETY_HELPTEXT), SetFill(1, 1),
 								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_SMOOTHNESS, STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_HELPTEXT), SetFill(1, 1),
+								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_QUANTITY_OF_RIVERS, STR_CONFIG_SETTING_RIVER_AMOUNT_HELPTEXT), SetFill(1, 1),
+								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_BORDER_TYPE, STR_MAPGEN_BORDER_TYPE_TOOLTIP), SetFill(1, 1),
 							EndContainer(),
 
 							/* Widgets on the right side (global column 2). */
@@ -111,10 +113,12 @@ static constexpr NWidgetPart _nested_generate_landscape_widgets[] = {
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_TERRAIN_PULLDOWN), SetDataTip(STR_JUST_STRING1, STR_CONFIG_SETTING_TERRAIN_TYPE_HELPTEXT), SetFill(1, 1),
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_VARIETY_PULLDOWN), SetDataTip(STR_JUST_STRING, STR_CONFIG_SETTING_VARIETY_HELPTEXT), SetFill(1, 1),
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_SMOOTHNESS_PULLDOWN), SetDataTip(STR_JUST_STRING, STR_CONFIG_SETTING_ROUGHNESS_OF_TERRAIN_HELPTEXT), SetFill(1, 1),
+								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_RIVER_PULLDOWN), SetDataTip(STR_JUST_STRING, STR_CONFIG_SETTING_RIVER_AMOUNT_HELPTEXT), SetFill(1, 1),
+								NWidget(WWT_TEXTBTN, COLOUR_ORANGE, WID_GL_BORDERS_RANDOM), SetDataTip(STR_JUST_STRING, STR_MAPGEN_BORDER_TYPE_TOOLTIP), SetFill(1, 1),
 							EndContainer(),
 						EndContainer(),
 
-						/* Center half */
+						/* Right half (all other options) */
 						NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
 							/* Labels on the left side (global column 3). */
 							NWidget(NWID_VERTICAL, NC_EQUALSIZE), SetPIP(0, WidgetDimensions::unscaled.vsep_sparse, 0),
@@ -127,6 +131,8 @@ static constexpr NWidgetPart _nested_generate_landscape_widgets[] = {
 								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_TOWN_NAME_LABEL, STR_MAPGEN_TOWN_NAME_DROPDOWN_TOOLTIP), SetFill(1, 1),
 								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_NUMBER_OF_TOWNS, STR_MAPGEN_NUMBER_OF_TOWNS_TOOLTIP), SetFill(1, 1),
 								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_NUMBER_OF_INDUSTRIES, STR_MAPGEN_NUMBER_OF_INDUSTRIES_TOOLTIP), SetFill(1, 1),
+								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_SEA_LEVEL, STR_MAPGEN_SEA_LEVEL_TOOLTIP), SetFill(1, 1),
+								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_NUMBER_OF_TOWNS, STR_NULL), SetFill(1, 1),
 							EndContainer(),
 
 							/* Widgets on the right side (global column 4). */
@@ -157,23 +163,8 @@ static constexpr NWidgetPart _nested_generate_landscape_widgets[] = {
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_TOWNNAME_DROPDOWN), SetDataTip(STR_JUST_STRING, STR_MAPGEN_TOWN_NAME_DROPDOWN_TOOLTIP), SetFill(1, 1),
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_TOWN_PULLDOWN), SetDataTip(STR_JUST_STRING1, STR_MAPGEN_NUMBER_OF_TOWNS_TOOLTIP), SetFill(1, 1),
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_INDUSTRY_PULLDOWN), SetDataTip(STR_JUST_STRING1, STR_MAPGEN_NUMBER_OF_INDUSTRIES_TOOLTIP), SetFill(1, 1),
-							EndContainer(),
-						EndContainer(),
-
-						NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
-							/* Labels on the left side (global column 5). */
-							NWidget(NWID_VERTICAL, NC_EQUALSIZE), SetPIP(0, WidgetDimensions::unscaled.vsep_sparse, 0),
-								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_SEA_LEVEL, STR_MAPGEN_SEA_LEVEL_TOOLTIP), SetFill(1, 1),
-								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_NUMBER_OF_TOWNS, STR_NULL), SetFill(1, 1),
-								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_QUANTITY_OF_RIVERS, STR_CONFIG_SETTING_RIVER_AMOUNT_HELPTEXT), SetFill(1, 1),
-								NWidget(WWT_TEXT, COLOUR_ORANGE), SetDataTip(STR_MAPGEN_BORDER_TYPE, STR_MAPGEN_BORDER_TYPE_TOOLTIP), SetFill(1, 1),
-							EndContainer(),
-							/* Widgets on the right side (global column 4). */
-							NWidget(NWID_VERTICAL, NC_EQUALSIZE), SetPIP(0, WidgetDimensions::unscaled.vsep_sparse, 0),
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_WATER_PULLDOWN), SetDataTip(STR_JUST_STRING1, STR_MAPGEN_SEA_LEVEL_TOOLTIP), SetFill(1, 1),
 								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_TOWN_PULLDOWN), SetDataTip(STR_JUST_STRING, STR_NULL), SetFill(1, 0),
-								NWidget(WWT_DROPDOWN, COLOUR_ORANGE, WID_GL_RIVER_PULLDOWN), SetDataTip(STR_JUST_STRING, STR_CONFIG_SETTING_RIVER_AMOUNT_HELPTEXT), SetFill(1, 1),
-								NWidget(WWT_TEXTBTN, COLOUR_ORANGE, WID_GL_BORDERS_RANDOM), SetDataTip(STR_JUST_STRING, STR_MAPGEN_BORDER_TYPE_TOOLTIP), SetFill(1, 1),
 							EndContainer(),
 						EndContainer(),
 					EndContainer(),
