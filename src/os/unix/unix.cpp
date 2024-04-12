@@ -22,6 +22,10 @@
 #include <signal.h>
 #include <pthread.h>
 
+#ifdef __ANDROID__
+	#include <SDL_android.h>
+#endif
+
 #ifdef WITH_SDL2
 #include <SDL.h>
 #endif
@@ -245,26 +249,18 @@ void OSOpenBrowser(const std::string &url)
 #elif !defined( __APPLE__)
 void OSOpenBrowser(const std::string &url)
 {
+#ifdef __ANDROID__
+	SDL_ANDROID_OpenExternalWebBrowser(url.c_str());
+	return;
+#endif
+
 	pid_t child_pid = fork();
 	if (child_pid != 0) return;
 
-#ifdef __ANDROID__
-	const char *args[9];
-	args[0] = "/system/bin/am";
-	args[1] = "start";
-	args[2] = "-a";
-	args[3] = "android.intent.action.VIEW";
-	args[4] = "--user";
-	args[5] = "0";
-	args[6] = "-d";
-	args[7] = url.c_str();
-	args[8] = NULL;
-#else
 	const char *args[3];
 	args[0] = "xdg-open";
 	args[1] = url.c_str();
 	args[2] = nullptr;
-#endif
 	execvp(args[0], const_cast<char * const *>(args));
 	Debug(misc, 0, "Failed to open url: {}", url);
 	exit(0);
