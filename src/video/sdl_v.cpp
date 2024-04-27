@@ -706,11 +706,6 @@ void VideoDriver_SDL::InputLoop()
 	int numkeys;
 	Uint8 *keys = SDL_GetKeyState(&numkeys);
 
-	bool old_ctrl_pressed = _ctrl_pressed;
-
-	_ctrl_pressed  = !!(mod & KMOD_CTRL);
-	_shift_pressed = !!(mod & KMOD_SHIFT);
-
 	/* Speedup when pressing tab, except when using ALT+TAB
 	 * to switch to another application. */
 	this->fast_forward_key_pressed = keys[SDLK_TAB] && (mod & KMOD_ALT) == 0;
@@ -723,6 +718,7 @@ void VideoDriver_SDL::InputLoop()
 		(keys[SDLK_DOWN]  ? 8 : 0);
 
 	if (old_ctrl_pressed != _ctrl_pressed) HandleCtrlChanged();
+  old_ctrl_pressed = _ctrl_pressed;
 
 #ifdef __ANDROID__
 	if (!this->set_clipboard_text.empty()) {
