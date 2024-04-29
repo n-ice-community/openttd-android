@@ -644,6 +644,7 @@ protected:
 	uint min_number_of_fixed_rows; ///< Minimal number of rows in the legends for the fixed layouts only (all except #SMT_INDUSTRY).
 	uint column_width;             ///< Width of a column in the #WID_SM_LEGEND widget.
 	uint legend_width;             ///< Width of legend 'blob'.
+	Point lmb_scroll_pt;           ///< Starting point for scrolling minimap with left mouse button.
 
 	int32_t scroll_x;  ///< Horizontal world coordinate of the base tile left of the top-left corner of the smallmap display.
 	int32_t scroll_y;  ///< Vertical world coordinate of the base tile left of the top-left corner of the smallmap display.
@@ -1646,6 +1647,18 @@ public:
 				Window *w = GetMainWindow();
 				int sub;
 				pt = this->PixelToTile(pt.x - wid->pos_x, pt.y - wid->pos_y, &sub);
+
+				if (_settings_client.gui.scroll_mode == VSM_MAP_LMB) {
+					if (click_count > 0) {
+						this->lmb_scroll_pt.x = this->scroll_x + pt.x * TILE_SIZE;
+						this->lmb_scroll_pt.y = this->scroll_y + pt.y * TILE_SIZE;
+					} else {
+						this->SetNewScroll(this->lmb_scroll_pt.x - pt.x * TILE_SIZE, this->lmb_scroll_pt.y - pt.y * TILE_SIZE, 0);
+						this->SetDirty();
+						break;
+					}
+				}
+
 				ScrollWindowTo(this->scroll_x + pt.x * TILE_SIZE, this->scroll_y + pt.y * TILE_SIZE, -1, w);
 
 				this->SetDirty();
