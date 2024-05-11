@@ -117,7 +117,7 @@ void DebugPrint(const char *category, int level, const std::string &message)
 #ifdef __ANDROID__
 	__android_log_print(ANDROID_LOG_INFO, "OpenTTD", "[%s] %s", level, message.c_str());
 #endif
-	if (strcmp(category, "desync") == 0) {
+	if (strcmp(category, "desync") == 0 && level != 0) {
 		static FILE *f = FioFOpenFile("commands-out.log", "wb", AUTOSAVE_DIR);
 		if (f == nullptr) return;
 

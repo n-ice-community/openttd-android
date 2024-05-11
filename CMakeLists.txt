@@ -357,7 +357,7 @@ if(NOT OPTION_DEDICATED)
     endif()
 endif()
 
-include(CheckAtomic)
+include(3rdparty/llvm/CheckAtomic)
 
 if(ANDROID)
     target_link_libraries(openttd_lib
