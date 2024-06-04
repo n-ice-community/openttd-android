@@ -49,6 +49,8 @@ DECLARE_ENUM_AS_ADDABLE(ZoomLevel)
 
 extern int _gui_scale;
 extern int _gui_scale_cfg;
+extern int _button_ratio;
+extern int _button_ratio_cfg;
 
 extern ZoomLevel _gui_zoom;
 extern ZoomLevel _font_zoom;
