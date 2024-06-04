@@ -32,6 +32,7 @@ enum GameOptionsWidgets : WidgetID {
 	WID_GO_MOUSE_CURSOR,           ///< Show mouse cursor.
 	WID_GO_GUI_SCALE,              ///< GUI Scale slider.
 	WID_GO_GUI_SCALE_AUTO,         ///< Autodetect GUI scale button.
+	WID_GO_GUI_BUTTON_RATIO,       ///< Button ratio
 	WID_GO_GUI_SCALE_BEVEL_BUTTON, ///< Toggle for chunky bevels.
 	WID_GO_GUI_FONT_SPRITE,        ///< Toggle whether to prefer the sprite font over TTF fonts.
 	WID_GO_GUI_FONT_AA,            ///< Toggle whether to anti-alias fonts.

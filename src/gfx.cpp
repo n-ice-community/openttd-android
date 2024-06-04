@@ -64,6 +64,8 @@ ZoomLevel _gui_zoom  = ZOOM_LVL_OUT_4X;     ///< GUI Zoom level
 ZoomLevel _font_zoom = _gui_zoom;           ///< Sprite font Zoom level (not clamped)
 int _gui_scale       = MIN_INTERFACE_SCALE; ///< GUI scale, 100 is 100%.
 int _gui_scale_cfg;                         ///< GUI scale in config.
+int _button_ratio = MIN_INTERFACE_SCALE;    ///< Button ratio
+int _button_ratio_cfg;                      ///< Button ratio in config
 
 /**
  * The rect for repaint.
@@ -1792,6 +1794,8 @@ void UpdateGUIZoom()
 		_gui_scale = Clamp(_gui_scale_cfg, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE);
 	}
 
+	_button_ratio = Clamp(_button_ratio_cfg, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE);
+
 	int8_t new_zoom = ScaleGUITrad(1) <= 1 ? ZOOM_LVL_OUT_4X : ScaleGUITrad(1) >= 4 ? ZOOM_LVL_MIN : ZOOM_LVL_OUT_2X;
 	/* Font glyphs should not be clamped to min/max zoom. */
 	_font_zoom = static_cast<ZoomLevel>(new_zoom);
@@ -1811,8 +1815,9 @@ bool AdjustGUIZoom(bool automatic)
 	ZoomLevel old_gui_zoom = _gui_zoom;
 	ZoomLevel old_font_zoom = _font_zoom;
 	int old_scale = _gui_scale;
+	int old_ratio = _button_ratio;
 	UpdateGUIZoom();
-	if (old_scale == _gui_scale && old_gui_zoom == _gui_zoom) return false;
+	if (old_scale == _gui_scale && old_gui_zoom == _gui_zoom && old_ratio == _button_ratio) return false;
 
 	/* Update cursors if sprite zoom level has changed. */
 	if (old_gui_zoom != _gui_zoom) {
