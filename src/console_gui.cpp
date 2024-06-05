@@ -446,13 +446,14 @@ void IConsoleSwitch()
 #ifdef __ANDROID__
 			{
 				char buf[1024] = "";
+				char *pos = &buf;
 
 				for (IConsoleLine &line : _iconsole_buffer) {
 					if (!line.buffer.empty()) {
-						fmt::format_to_n(buf, sizeof(buf), "{}\n", line.buffer);
+						pos = fmt::format_to(pos, "{}\n", line.buffer);
 					}
 				}
-				fmt::format_to_n(buf, sizeof(buf), "\n\n\n\n\n\n\n\n");
+				pos = fmt::format_to(pos, "\n\n\n\n\n\n\n\n");
 				SDL_ANDROID_SetScreenKeyboardHintMesage(buf);
 				char text[512] = "";
 				SDL_ANDROID_GetScreenKeyboardTextInput(text, sizeof(text) - 1); /* Invoke Android built-in screen keyboard */
