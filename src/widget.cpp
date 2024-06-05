@@ -1034,7 +1034,7 @@ void NWidgetResizeBase::SetMinimalSizeForSizingType()
 			min_size = GetMinButtonSize();
 			break;
 		case NWST_VIEWPORT:
-			min_size = (5 * _gui_scale) / 2;
+			min_size = GetMinButtonSize() * 3;
 			break;
 		default: NOT_REACHED();
 	}
