@@ -446,7 +446,7 @@ void IConsoleSwitch()
 #ifdef __ANDROID__
 			{
 				char buf[1024] = "";
-				char *pos = &buf;
+				char *pos = &buf[0];
 
 				for (IConsoleLine &line : _iconsole_buffer) {
 					if (!line.buffer.empty()) {
