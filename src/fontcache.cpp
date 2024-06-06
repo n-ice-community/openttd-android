@@ -98,6 +98,7 @@ bool GetFontAAState(FontSize size, bool check_blitter)
 	return _fcsettings.global_aa || GetFontCacheSubSetting(size)->aa;
 }
 
+
 void SetFont(FontSize fontsize, const std::string &font, uint size, bool aa)
 {
 	FontCacheSubSetting *setting = GetFontCacheSubSetting(fontsize);
@@ -141,6 +142,12 @@ void SetFont(FontSize fontsize, const std::string &font, uint size, bool aa)
 	if (_save_config) SaveToConfig();
 }
 
+void ResizeFont(FontSize fontsize, uint size)
+{
+	FontCacheSubSetting *setting = GetFontCacheSubSetting(fontsize);
+	SetFont(fontsize, setting->font, size, setting->aa);
+}
+
 #ifdef WITH_FREETYPE
 extern void LoadFreeTypeFont(FontSize fs);
 extern void UninitFreeType();
@@ -149,6 +156,7 @@ extern void LoadWin32Font(FontSize fs);
 #elif defined(WITH_COCOA)
 extern void LoadCoreTextFont(FontSize fs);
 #endif
+
 
 #if defined(WITH_FREETYPE) || defined(_WIN32) || defined(WITH_COCOA)
 /**
