@@ -242,6 +242,7 @@ inline FontCacheSubSetting *GetFontCacheSubSetting(FontSize fs)
 
 void InitFontCache(bool monospace);
 void UninitFontCache();
+void ResizeFont(FontSize font_size, uint32_t size);
 bool HasAntialiasedFonts();
 
 bool GetFontAAState(FontSize size, bool check_blitter = true);

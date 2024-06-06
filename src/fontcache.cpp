@@ -99,6 +99,7 @@ bool GetFontAAState(FontSize size, bool check_blitter)
 	return _fcsettings.global_aa || GetFontCacheSubSetting(size)->aa;
 }
 
+
 void SetFont(FontSize fontsize, const std::string &font, uint size, bool aa)
 {
 	FontCacheSubSetting *setting = GetFontCacheSubSetting(fontsize);
@@ -142,6 +143,12 @@ void SetFont(FontSize fontsize, const std::string &font, uint size, bool aa)
 	if (_save_config) SaveToConfig();
 }
 
+void ResizeFont(FontSize fontsize, uint size)
+{
+	FontCacheSubSetting *setting = GetFontCacheSubSetting(fontsize);
+	SetFont(fontsize, setting->font, size, setting->aa);
+}
+
 #ifdef WITH_FREETYPE
 extern void LoadFreeTypeFont(FontSize fs);
 extern void LoadFreeTypeFont(FontSize fs, const std::string &file_name, uint size);
@@ -154,40 +161,50 @@ extern void LoadCoreTextFont(FontSize fs);
 extern void LoadCoreTextFont(FontSize fs, const std::string &file_name, uint size);
 #endif
 
-static void TryLoadDefaultTrueTypeFont([[maybe_unused]] FontSize fs)
-{
 #if defined(WITH_FREETYPE) || defined(_WIN32) || defined(WITH_COCOA)
-	std::string font_name{};
+/**
+ * Get name of default font file for a given font size.
+ * @param fs Font size.
+ * @return Name of default font file.
+ */
+static std::string GetDefaultTruetypeFont(FontSize fs)
+{
 	switch (fs) {
-		case FS_NORMAL:
-			font_name = "OpenTTD-Sans.ttf";
-			break;
-		case FS_SMALL:
-			font_name = "OpenTTD-Small.ttf";
-			break;
-		case FS_LARGE:
-			font_name = "OpenTTD-Serif.ttf";
-			break;
-		case FS_MONO:
-			font_name = "OpenTTD-Mono.ttf";
-			break;
-
+		case FS_NORMAL: return "OpenTTD-Sans.ttf";
+		case FS_SMALL: return "OpenTTD-Small.ttf";
+		case FS_LARGE: return "OpenTTD-Serif.ttf";
+		case FS_MONO: return "OpenTTD-Mono.ttf";
 		default: NOT_REACHED();
 	}
-
-	/* Find font file. */
-	std::string full_font = FioFindFullPath(BASESET_DIR, font_name);
-	if (!full_font.empty()) {
-		int size = FontCache::GetDefaultFontHeight(fs);
-#ifdef WITH_FREETYPE
-		LoadFreeTypeFont(fs, full_font, size);
-#elif defined(_WIN32)
-		LoadWin32Font(fs, full_font, size);
-#elif defined(WITH_COCOA)
-		LoadCoreTextFont(fs, full_font, size);
-#endif
-	}
+}
 #endif /* defined(WITH_FREETYPE) || defined(_WIN32) || defined(WITH_COCOA) */
+
+/**
+ * Get path of default font file for a given font size.
+ * @param fs Font size.
+ * @return Full path of default font file.
+ */
+static std::string GetDefaultTruetypeFontFile([[maybe_unused]] FontSize fs)
+{
+#if defined(WITH_FREETYPE) || defined(_WIN32) || defined(WITH_COCOA)
+	/* Find font file. */
+	return FioFindFullPath(BASESET_DIR, GetDefaultTruetypeFont(fs));
+#else
+	return {};
+#endif /* defined(WITH_FREETYPE) || defined(_WIN32) || defined(WITH_COCOA) */
+}
+
+/**
+ * Get font to use for a given font size.
+ * @param fs Font size.
+ * @return If configured, the font name to use, or the path of the default TrueType font if sprites are not preferred.
+ */
+std::string GetFontCacheFontName(FontSize fs)
+{
+	const FontCacheSubSetting *settings = GetFontCacheSubSetting(fs);
+	if (!settings->font.empty()) return settings->font;
+	if (_fcsettings.prefer_sprite) return {};
+	return GetDefaultTruetypeFontFile(fs);
 }
 
 /**

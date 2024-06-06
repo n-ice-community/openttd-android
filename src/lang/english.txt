@@ -947,6 +947,8 @@ STR_GAME_OPTIONS_TAB_GENERAL                                    :General
 STR_GAME_OPTIONS_TAB_GENERAL_TT                                 :{BLACK}Choose general settings
 STR_GAME_OPTIONS_TAB_INTERFACE                                  :Interface
 STR_GAME_OPTIONS_TAB_INTERFACE_TT                               :{BLACK}Choose interface settings
+STR_GAME_OPTIONS_TAB_FONTS                                      :Fonts
+STR_GAME_OPTIONS_TAB_FONTS_TT                                   :{BLACK}Choose font settings
 STR_GAME_OPTIONS_TAB_GRAPHICS                                   :Graphics
 STR_GAME_OPTIONS_TAB_GRAPHICS_TT                                :{BLACK}Choose graphics settings
 STR_GAME_OPTIONS_TAB_SOUND                                      :Sound
@@ -1073,6 +1075,11 @@ STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK                        :{BLACK}About su
 STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK_TOOLTIP                :{BLACK}This opens a browser with more information about the automated survey
 STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW                     :{BLACK}Preview survey result
 STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW_TOOLTIP             :{BLACK}Show the survey result of the current running game
+
+STR_GAME_OPTIONS_FONT_MONO                                      :{BLACK}Mono font
+STR_GAME_OPTIONS_FONT_SMALL                                     :{BLACK}Small font
+STR_GAME_OPTIONS_FONT_NORMAL                                    :{BLACK}Normal font
+STR_GAME_OPTIONS_FONT_LARGE                                     :{BLACK}Large font
 
 STR_GAME_OPTIONS_GRAPHICS                                       :{BLACK}Graphics
 
