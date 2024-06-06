@@ -22,6 +22,9 @@
 
 #include "safeguards.h"
 
+static void LoadFontHelper([[maybe_unused]] FontSize fs);
+static void TryLoadDefaultTrueTypeFont([[maybe_unused]] FontSize fs);
+
 /** Default heights for the different sizes of fonts. */
 static const int _default_font_height[FS_END]   = {10, 6, 18, 10};
 static const int _default_font_ascender[FS_END] = { 8, 5, 15,  8};
@@ -99,6 +102,30 @@ bool GetFontAAState(FontSize size, bool check_blitter)
 	return _fcsettings.global_aa || GetFontCacheSubSetting(size)->aa;
 }
 
+void ResizeFont(FontSize font_size, uint size)
+{
+	FontCacheSubSetting *setting = GetFontCacheSubSetting(font_size);
+
+	if (setting->size == size) {
+		return;
+	}
+
+	setting->size = size;
+
+	// Default fonts are empty here. We will allow the user to resize the default font:
+	if (setting->font.empty()){
+		TryLoadDefaultTrueTypeFont(font_size);
+	} else {
+		LoadFontHelper(font_size);
+	}
+
+	LoadStringWidthTable();
+	UpdateAllVirtCoords();
+	ReInitAllWindows(true);
+
+	if (_save_config) SaveToConfig();
+}
+
 void SetFont(FontSize fontsize, const std::string &font, uint size, bool aa)
 {
 	FontCacheSubSetting *setting = GetFontCacheSubSetting(fontsize);
@@ -153,6 +180,18 @@ extern void LoadWin32Font(FontSize fs, const std::string &file_name, uint size);
 extern void LoadCoreTextFont(FontSize fs);
 extern void LoadCoreTextFont(FontSize fs, const std::string &file_name, uint size);
 #endif
+
+static void LoadFontHelper([[maybe_unused]] FontSize fs)
+{
+#ifdef WITH_FREETYPE
+		LoadFreeTypeFont(fs);
+#elif defined(_WIN32)
+		LoadWin32Font(fs);
+#elif defined(WITH_COCOA)
+		LoadCoreTextFont(fs);
+#endif
+}
+
 
 static void TryLoadDefaultTrueTypeFont([[maybe_unused]] FontSize fs)
 {
