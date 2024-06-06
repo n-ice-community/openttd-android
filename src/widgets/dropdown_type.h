@@ -32,8 +32,8 @@ public:
 	virtual ~DropDownListItem() = default;
 
 	virtual bool Selectable() const { return true; }
-	virtual uint Height() const { return 0; }
-	virtual uint Width() const { return 0; }
+	virtual uint Height() const { return GetMinButtonSize(); }
+	virtual uint Width() const { return GetMinButtonSize(); }
 
 	virtual void Draw(const Rect &full, const Rect &, bool, Colours bg_colour) const
 	{
