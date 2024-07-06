@@ -465,13 +465,30 @@ static CallBackFunction MenuClickMap(int index)
 
 /* --- Town button menu --- */
 
+enum TownMenuEntries {
+	TME_SHOW_TOWNDIRECTORY,
+	TME_SHOW_SUBSIDIES,
+	TME_SHOW_INDUSTRYDIRECTORY,
+	TME_SHOW_CARGOESWINDOW,
+	TME_SHOW_BUILD_INDUSTRYWINDOW,
+	TME_SHOW_FOUND_TOWNWINDOW,
+};
+
 static CallBackFunction ToolbarTownClick(Window *w)
 {
-	if (_settings_game.economy.found_town == TF_FORBIDDEN) {
-		PopupMainToolbarMenu(w, WID_TN_TOWNS, {STR_TOWN_MENU_TOWN_DIRECTORY});
-	} else {
-		PopupMainToolbarMenu(w, WID_TN_TOWNS, {STR_TOWN_MENU_TOWN_DIRECTORY, STR_TOWN_MENU_FOUND_TOWN});
+	DropDownList list;
+	list.push_back(std::make_unique<DropDownListStringItem>(STR_TOWN_MENU_TOWN_DIRECTORY, TME_SHOW_TOWNDIRECTORY, false));
+	list.push_back(std::make_unique<DropDownListStringItem>(STR_SUBSIDIES_MENU_SUBSIDIES, TME_SHOW_SUBSIDIES, false));
+	list.push_back(std::make_unique<DropDownListStringItem>(STR_INDUSTRY_MENU_INDUSTRY_DIRECTORY, TME_SHOW_INDUSTRYDIRECTORY, false));
+	list.push_back(std::make_unique<DropDownListStringItem>(STR_INDUSTRY_MENU_INDUSTRY_CHAIN, TME_SHOW_CARGOESWINDOW, false));
+	if (_local_company != COMPANY_SPECTATOR) {
+		list.push_back(std::make_unique<DropDownListStringItem>(STR_INDUSTRY_MENU_FUND_NEW_INDUSTRY, TME_SHOW_BUILD_INDUSTRYWINDOW, false));
 	}
+	if (_settings_game.economy.found_town != TF_FORBIDDEN) {
+		list.push_back(std::make_unique<DropDownListStringItem>(STR_TOWN_MENU_FOUND_TOWN, TME_SHOW_FOUND_TOWNWINDOW, false));
+	}
+	PopupMainToolbarMenu(w, WID_TN_TOWNS, std::move(list), 0);
+
 	return CBF_NONE;
 }
 
@@ -484,10 +501,12 @@ static CallBackFunction ToolbarTownClick(Window *w)
 static CallBackFunction MenuClickTown(int index)
 {
 	switch (index) {
-		case 0: ShowTownDirectory(); break;
-		case 1: // setting could be changed when the dropdown was open
-			if (_settings_game.economy.found_town != TF_FORBIDDEN) ShowFoundTownWindow();
-			break;
+		case TME_SHOW_TOWNDIRECTORY: ShowTownDirectory(); break;
+		case TME_SHOW_SUBSIDIES: ShowSubsidiesList(); break;
+		case TME_SHOW_INDUSTRYDIRECTORY: ShowIndustryDirectory(); break;
+		case TME_SHOW_CARGOESWINDOW: ShowIndustryCargoesWindow(); break;
+		case TME_SHOW_BUILD_INDUSTRYWINDOW: ShowBuildIndustryWindow(); break;
+		case TME_SHOW_FOUND_TOWNWINDOW: ShowFoundTownWindow(); break;
 	}
 	return CBF_NONE;
 }
