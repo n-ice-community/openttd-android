@@ -405,6 +405,24 @@ bool VideoDriver_SDL::ClaimMousePointer()
 	return true;
 }
 
+#ifdef __ANDROID__
+float VideoDriver_SDL::GetDPIScale()
+{
+	const auto metrics = SDL_ANDROID_GetDisplayMetrics();
+
+	// Simple cross-multiplication to determine the current dpi, given the native dpi and the current resolution
+	// max returned as it is better to be a bit too small than a bit too big
+	return std::max( (_cur_resolution.width * metrics.density) / metrics.width,
+	                 (_cur_resolution.height * metrics.density) / metrics.height);
+}
+
+Dimension VideoDriver_SDL::GetScreenSize() const
+{
+	const auto metrics = SDL_ANDROID_GetDisplayMetrics();
+	return { static_cast<uint>(metrics.width), static_cast<uint>(metrics.height) };
+}
+#endif
+
 struct SDLVkMapping {
 	uint16_t vk_from;
 	byte vk_count;

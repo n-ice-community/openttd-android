@@ -3570,9 +3570,9 @@ std::unique_ptr<NWidgetBase> MakeCompanyButtonRows(WidgetID widget_first, Widget
  */
 uint32_t GetMinButtonSize(uint32_t min_1)
 {
-	if (_button_ratio_cfg == 0) _button_ratio_cfg = 25;
+	if (_button_ratio_cfg <= 0) _button_ratio_cfg = 100;
 
-	uint32_t min_sizing = 0.25 * _gui_scale + 0.25 * _button_ratio_cfg;
+	uint32_t min_sizing = 0.25 * _button_ratio_cfg;
 
 	return std::max(min_sizing, min_1);
 }

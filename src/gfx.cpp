@@ -1794,11 +1794,12 @@ void UpdateGUIZoom()
 	/* Determine real GUI zoom to use. */
 	if (_gui_scale_cfg == -1) {
 		_gui_scale = VideoDriver::GetInstance()->GetSuggestedUIScale();
+		_button_ratio = Clamp(_gui_scale * 2 , MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE);
 	} else {
 		_gui_scale = Clamp(_gui_scale_cfg, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE);
+		_button_ratio = Clamp(_button_ratio_cfg, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE);
 	}
 
-	_button_ratio = Clamp(_button_ratio_cfg, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE);
 
 	int8_t new_zoom = ScaleGUITrad(1) <= 1 ? ZOOM_LVL_OUT_4X : ScaleGUITrad(1) >= 4 ? ZOOM_LVL_MIN : ZOOM_LVL_OUT_2X;
 	/* Font glyphs should not be clamped to min/max zoom. */

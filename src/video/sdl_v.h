@@ -33,6 +33,11 @@ public:
 
 	const char *GetName() const override { return "sdl"; }
 
+#ifdef __ANDROID__
+	float GetDPIScale() override;
+	Dimension GetScreenSize() const override;
+#endif
+
 protected:
 	void InputLoop() override;
 	void Paint() override;
