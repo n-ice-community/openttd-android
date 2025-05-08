@@ -24,8 +24,8 @@
 #include "../safeguards.h"
 
 /* static */ uint AI::frame_counter = 0;
-/* static */ AIScannerInfo *AI::scanner_info = nullptr;
-/* static */ AIScannerLibrary *AI::scanner_library = nullptr;
+/* static */ std::unique_ptr<AIScannerInfo> AI::scanner_info = nullptr;
+/* static */ std::unique_ptr<AIScannerLibrary> AI::scanner_library = nullptr;
 
 /* static */ bool AI::CanStartNew()
 {
@@ -45,7 +45,7 @@
 
 	AIConfig *config = c->ai_config.get();
 	if (config == nullptr) {
-		c->ai_config = std::make_unique<AIConfig>(AIConfig::GetConfig(company, AIConfig::SSS_FORCE_GAME));
+		c->ai_config = std::make_unique<AIConfig>(*AIConfig::GetConfig(company, AIConfig::SSS_FORCE_GAME));
 		config = c->ai_config.get();
 	}
 
@@ -60,7 +60,7 @@
 
 	c->ai_info = info;
 	assert(c->ai_instance == nullptr);
-	c->ai_instance = new AIInstance();
+	c->ai_instance = std::make_unique<AIInstance>();
 	c->ai_instance->Initialize(info);
 	c->ai_instance->LoadOnStack(config->GetToLoadData());
 	config->SetToLoadData(nullptr);
@@ -112,8 +112,7 @@
 	Backup<CompanyID> cur_company(_current_company, company);
 	Company *c = Company::Get(company);
 
-	delete c->ai_instance;
-	c->ai_instance = nullptr;
+	c->ai_instance.reset();
 	c->ai_info = nullptr;
 	c->ai_config.reset();
 
@@ -169,10 +168,10 @@
 
 	AI::frame_counter = 0;
 	if (AI::scanner_info == nullptr) {
-		TarScanner::DoScan(TarScanner::AI);
-		AI::scanner_info = new AIScannerInfo();
+		TarScanner::DoScan(TarScanner::Mode::AI);
+		AI::scanner_info = std::make_unique<AIScannerInfo>();
 		AI::scanner_info->Initialize();
-		AI::scanner_library = new AIScannerLibrary();
+		AI::scanner_library = std::make_unique<AIScannerLibrary>();
 		AI::scanner_library->Initialize();
 	}
 }
@@ -186,20 +185,12 @@
 		 *  still load all the AIS, while keeping the configs in place */
 		Rescan();
 	} else {
-		delete AI::scanner_info;
-		delete AI::scanner_library;
-		AI::scanner_info = nullptr;
-		AI::scanner_library = nullptr;
+		AI::scanner_info.reset();
+		AI::scanner_library.reset();
 
-		for (CompanyID c = COMPANY_FIRST; c < MAX_COMPANIES; c++) {
-			if (_settings_game.ai_config[c] != nullptr) {
-				delete _settings_game.ai_config[c];
-				_settings_game.ai_config[c] = nullptr;
-			}
-			if (_settings_newgame.ai_config[c] != nullptr) {
-				delete _settings_newgame.ai_config[c];
-				_settings_newgame.ai_config[c] = nullptr;
-			}
+		for (CompanyID c = CompanyID::Begin(); c < MAX_COMPANIES; ++c) {
+			_settings_game.script_config.ai[c].reset();
+			_settings_newgame.script_config.ai[c].reset();
 		}
 	}
 }
@@ -209,18 +200,18 @@
 	/* Check for both newgame as current game if we can reload the AIInfo inside
 	 *  the AIConfig. If not, remove the AI from the list (which will assign
 	 *  a random new AI on reload). */
-	for (CompanyID c = COMPANY_FIRST; c < MAX_COMPANIES; c++) {
-		if (_settings_game.ai_config[c] != nullptr && _settings_game.ai_config[c]->HasScript()) {
-			if (!_settings_game.ai_config[c]->ResetInfo(true)) {
-				Debug(script, 0, "After a reload, the AI by the name '{}' was no longer found, and removed from the list.", _settings_game.ai_config[c]->GetName());
-				_settings_game.ai_config[c]->Change(std::nullopt);
+	for (CompanyID c = CompanyID::Begin(); c < MAX_COMPANIES; ++c) {
+		if (_settings_game.script_config.ai[c] != nullptr && _settings_game.script_config.ai[c]->HasScript()) {
+			if (!_settings_game.script_config.ai[c]->ResetInfo(true)) {
+				Debug(script, 0, "After a reload, the AI by the name '{}' was no longer found, and removed from the list.", _settings_game.script_config.ai[c]->GetName());
+				_settings_game.script_config.ai[c]->Change(std::nullopt);
 			}
 		}
 
-		if (_settings_newgame.ai_config[c] != nullptr && _settings_newgame.ai_config[c]->HasScript()) {
-			if (!_settings_newgame.ai_config[c]->ResetInfo(false)) {
-				Debug(script, 0, "After a reload, the AI by the name '{}' was no longer found, and removed from the list.", _settings_newgame.ai_config[c]->GetName());
-				_settings_newgame.ai_config[c]->Change(std::nullopt);
+		if (_settings_newgame.script_config.ai[c] != nullptr && _settings_newgame.script_config.ai[c]->HasScript()) {
+			if (!_settings_newgame.script_config.ai[c]->ResetInfo(false)) {
+				Debug(script, 0, "After a reload, the AI by the name '{}' was no longer found, and removed from the list.", _settings_newgame.script_config.ai[c]->GetName());
+				_settings_newgame.script_config.ai[c]->Change(std::nullopt);
 			}
 		}
 
@@ -243,18 +234,15 @@
 
 /* static */ void AI::NewEvent(CompanyID company, ScriptEvent *event)
 {
-	/* AddRef() and Release() need to be called at least once, so do it here */
-	event->AddRef();
+	ScriptObjectRef counter(event);
 
 	/* Clients should ignore events */
 	if (_networking && !_network_server) {
-		event->Release();
 		return;
 	}
 
 	/* Only AIs can have an event-queue */
 	if (!Company::IsValidAiID(company)) {
-		event->Release();
 		return;
 	}
 
@@ -262,27 +250,21 @@
 	Backup<CompanyID> cur_company(_current_company, company);
 	Company::Get(_current_company)->ai_instance->InsertEvent(event);
 	cur_company.Restore();
-
-	event->Release();
 }
 
 /* static */ void AI::BroadcastNewEvent(ScriptEvent *event, CompanyID skip_company)
 {
-	/* AddRef() and Release() need to be called at least once, so do it here */
-	event->AddRef();
+	ScriptObjectRef counter(event);
 
 	/* Clients should ignore events */
 	if (_networking && !_network_server) {
-		event->Release();
 		return;
 	}
 
 	/* Try to send the event to all AIs */
-	for (CompanyID c = COMPANY_FIRST; c < MAX_COMPANIES; c++) {
+	for (CompanyID c = CompanyID::Begin(); c < MAX_COMPANIES; ++c) {
 		if (c != skip_company) AI::NewEvent(c, event);
 	}
-
-	event->Release();
 }
 
 /* static */ void AI::Save(CompanyID company)
@@ -335,7 +317,7 @@
 
 /* static */ void AI::Rescan()
 {
-	TarScanner::DoScan(TarScanner::AI);
+	TarScanner::DoScan(TarScanner::Mode::AI);
 
 	AI::scanner_info->RescanDir();
 	AI::scanner_library->RescanDir();
@@ -352,23 +334,23 @@
  * @param md5sum whether to check the MD5 checksum
  * @return true iff we have an AI (library) matching.
  */
-/* static */ bool AI::HasAI(const ContentInfo *ci, bool md5sum)
+/* static */ bool AI::HasAI(const ContentInfo &ci, bool md5sum)
 {
 	return AI::scanner_info->HasScript(ci, md5sum);
 }
 
-/* static */ bool AI::HasAILibrary(const ContentInfo *ci, bool md5sum)
+/* static */ bool AI::HasAILibrary(const ContentInfo &ci, bool md5sum)
 {
 	return AI::scanner_library->HasScript(ci, md5sum);
 }
 
 /* static */ AIScannerInfo *AI::GetScannerInfo()
 {
-	return AI::scanner_info;
+	return AI::scanner_info.get();
 }
 
 /* static */ AIScannerLibrary *AI::GetScannerLibrary()
 {
-	return AI::scanner_library;
+	return AI::scanner_library.get();
 }
 

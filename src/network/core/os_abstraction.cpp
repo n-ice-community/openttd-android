@@ -16,7 +16,7 @@
  * that the behaviour is usually Unix/BSD-like with occasional variation.
  */
 
-#include "stdafx.h"
+#include "../../stdafx.h"
 #include "os_abstraction.h"
 #include "../../string_func.h"
 #include "../../3rdparty/fmt/format.h"
@@ -27,8 +27,9 @@
 /**
  * Construct the network error with the given error code.
  * @param error The error code.
+ * @param message The error message. Leave empty to determine this automatically based on the error number.
  */
-NetworkError::NetworkError(int error) : error(error)
+NetworkError::NetworkError(int error, const std::string &message) : error(error), message(message)
 {
 }
 
@@ -83,7 +84,7 @@ const std::string &NetworkError::AsString() const
 #if defined(_WIN32)
 		wchar_t buffer[512];
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, this->error,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, lengthof(buffer), nullptr) == 0) {
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer, static_cast<DWORD>(std::size(buffer)), nullptr) == 0) {
 			this->message.assign(fmt::format("Unknown error {}", this->error));
 		} else {
 			this->message.assign(FS2OTTD(buffer));
@@ -181,7 +182,7 @@ NetworkError GetSocketError(SOCKET d)
 {
 	int err;
 	socklen_t len = sizeof(err);
-	getsockopt(d, SOL_SOCKET, SO_ERROR, (char *)&err, &len);
+	if (getsockopt(d, SOL_SOCKET, SO_ERROR, (char *)&err, &len) != 0) return NetworkError(-1, "Could not get error for socket");
 
 	return NetworkError(err);
 }

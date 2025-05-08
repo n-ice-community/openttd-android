@@ -20,7 +20,7 @@
  */
 inline bool HasRailCatenary(RailType rt)
 {
-	return HasBit(GetRailTypeInfo(rt)->flags, RTF_CATENARY);
+	return GetRailTypeInfo(rt)->flags.Test(RailTypeFlag::Catenary);
 }
 
 /**
@@ -37,5 +37,6 @@ void DrawRailCatenaryOnTunnel(const TileInfo *ti);
 void DrawRailCatenaryOnBridge(const TileInfo *ti);
 
 void SettingsDisableElrail(int32_t new_value); ///< _settings_game.disable_elrail callback
+void UpdateDisableElrailSettingState(bool disable, bool update_vehicles);
 
 #endif /* ELRAIL_FUNC_H */

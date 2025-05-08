@@ -11,6 +11,7 @@
 #define SCRIPT_CONTROLLER_HPP
 
 #include "script_types.hpp"
+#include "../../company_type.h"
 
 /**
  * The Controller, the class each Script should extend. It creates the Script,
@@ -51,7 +52,7 @@ public:
 	 * Initializer of the ScriptController.
 	 * @param company The company this Script is normally serving.
 	 */
-	ScriptController(CompanyID company);
+	ScriptController(::CompanyID company);
 
 #else
 	/**
@@ -76,9 +77,8 @@ public:
 	 *   - booleans, and
 	 *   - nulls.
 	 *
-	 * In particular, instances of classes can't be saved including
-	 *   ScriptList. Such a list should be converted to an array or table on
-	 *   save and converted back on load.
+	 * In particular, instances of classes can't be saved with the exception of
+	 *   ScriptList.
 	 *
 	 * The function is called as soon as the user saves the game,
 	 *   independently of other activities of the script. The script is not
@@ -92,7 +92,7 @@ public:
 	 *
 	 * @return Data of the script that should be stored in the save game.
 	 */
-	SquirrelTable Save();
+	table Save();
 
 	/**
 	 * Load saved data just before calling #Start.
@@ -100,7 +100,7 @@ public:
 	 * @param version Version number of the script that created the \a data.
 	 * @param data Data that was saved (return value of #Save).
 	 */
-	void Load(int version, SquirrelTable data);
+	void Load(int version, table data);
 #endif /* DOXYGEN_API */
 
 	/**
@@ -208,11 +208,6 @@ private:
 	uint ticks;                       ///< The amount of ticks we're sleeping.
 	LoadedLibraryList loaded_library; ///< The libraries we loaded.
 	int loaded_library_count;         ///< The amount of libraries.
-
-	/**
-	 * Register all classes that are known inside the script API.
-	 */
-	void RegisterClasses();
 };
 
 #endif /* SCRIPT_CONTROLLER_HPP */

@@ -22,12 +22,12 @@ static const uint SNOW_LINE_DAYS   = 32; ///< Number of days in each month in th
  */
 struct SnowLine {
 	uint8_t table[SNOW_LINE_MONTHS][SNOW_LINE_DAYS]; ///< Height of the snow line each day of the year
-	uint8_t highest_value; ///< Highest snow line of the year
-	uint8_t lowest_value;  ///< Lowest snow line of the year
+	uint8_t highest_value = 0; ///< Highest snow line of the year
+	uint8_t lowest_value = UINT8_MAX; ///< Lowest snow line of the year
 };
 
 bool IsSnowLineSet();
-void SetSnowLine(uint8_t table[SNOW_LINE_MONTHS][SNOW_LINE_DAYS]);
+void SetSnowLine(std::unique_ptr<SnowLine> &&snow_line);
 uint8_t GetSnowLine();
 uint8_t HighestSnowLine();
 uint8_t LowestSnowLine();
@@ -79,8 +79,8 @@ inline std::tuple<Slope, int> GetFoundationPixelSlope(TileIndex tile)
 inline Point RemapCoords(int x, int y, int z)
 {
 	Point pt;
-	pt.x = (y - x) * 2 * ZOOM_LVL_BASE;
-	pt.y = (y + x - z) * ZOOM_LVL_BASE;
+	pt.x = (y - x) * 2 * ZOOM_BASE;
+	pt.y = (y + x - z) * ZOOM_BASE;
 	return pt;
 }
 
@@ -108,7 +108,7 @@ inline Point RemapCoords2(int x, int y)
  */
 inline Point InverseRemapCoords(int x, int y)
 {
-	Point pt = {(y * 2 - x) >> (2 + ZOOM_LVL_SHIFT), (y * 2 + x) >> (2 + ZOOM_LVL_SHIFT)};
+	Point pt = {(y * 2 - x) >> (2 + ZOOM_BASE_SHIFT), (y * 2 + x) >> (2 + ZOOM_BASE_SHIFT)};
 	return pt;
 }
 

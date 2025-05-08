@@ -15,19 +15,19 @@
 /** Implementation of the allegro sound driver. */
 class SoundDriver_Allegro : public SoundDriver {
 public:
-	const char *Start(const StringList &param) override;
+	std::optional<std::string_view> Start(const StringList &param) override;
 
 	void Stop() override;
 
 	void MainLoop() override;
-	const char *GetName() const override { return "allegro"; }
+	std::string_view GetName() const override { return "allegro"; }
 };
 
 /** Factory for the allegro sound driver. */
 class FSoundDriver_Allegro : public DriverFactoryBase {
 public:
 	FSoundDriver_Allegro() : DriverFactoryBase(Driver::DT_SOUND, 4, "allegro", "Allegro Sound Driver (param hz,samples)") {}
-	Driver *CreateInstance() const override { return new SoundDriver_Allegro(); }
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<SoundDriver_Allegro>(); }
 };
 
 #endif /* SOUND_ALLEGRO_H */

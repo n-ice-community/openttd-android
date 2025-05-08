@@ -8,11 +8,9 @@
 /** @file music.cpp The songs that OpenTTD knows. */
 
 #include "stdafx.h"
-
-
-/** The type of set we're replacing */
-#define SET_TYPE "music"
+#include "string_func.h"
 #include "base_media_func.h"
+#include "base_media_music.h"
 #include "random_access_file_type.h"
 
 #include "safeguards.h"
@@ -22,61 +20,54 @@
  * Read the name of a music CAT file entry.
  * @param filename Name of CAT file to read from
  * @param entrynum Index of entry whose name to read
- * @return Pointer to string, caller is responsible for freeing memory,
- *         nullptr if entrynum does not exist.
+ * @return Name of CAT file entry if it could be read.
  */
-char *GetMusicCatEntryName(const std::string &filename, size_t entrynum)
+std::optional<std::string> GetMusicCatEntryName(const std::string &filename, size_t entrynum)
 {
-	if (!FioCheckFileExists(filename, BASESET_DIR)) return nullptr;
+	if (!FioCheckFileExists(filename, BASESET_DIR)) return std::nullopt;
 
 	RandomAccessFile file(filename, BASESET_DIR);
 	uint32_t ofs = file.ReadDword();
 	size_t entry_count = ofs / 8;
-	if (entrynum < entry_count) {
-		file.SeekTo(entrynum * 8, SEEK_SET);
-		file.SeekTo(file.ReadDword(), SEEK_SET);
-		uint8_t namelen = file.ReadByte();
-		char *name = MallocT<char>(namelen + 1);
-		file.ReadBlock(name, namelen);
-		name[namelen] = '\0';
-		return name;
-	}
-	return nullptr;
+	if (entrynum >= entry_count) return std::nullopt;
+
+	file.SeekTo(entrynum * 8, SEEK_SET);
+	file.SeekTo(file.ReadDword(), SEEK_SET);
+	uint8_t namelen = file.ReadByte();
+
+	std::string name(namelen, '\0');
+	file.ReadBlock(name.data(), namelen);
+	return StrMakeValid(name);
 }
 
 /**
  * Read the full data of a music CAT file entry.
  * @param filename Name of CAT file to read from.
  * @param entrynum Index of entry to read
- * @param[out] entrylen Receives length of data read
- * @return Pointer to buffer with data read, caller is responsible for freeind memory,
- *         nullptr if entrynum does not exist.
+ * @return Data of CAT file entry.
  */
-uint8_t *GetMusicCatEntryData(const std::string &filename, size_t entrynum, size_t &entrylen)
+std::optional<std::vector<uint8_t>> GetMusicCatEntryData(const std::string &filename, size_t entrynum)
 {
-	entrylen = 0;
-	if (!FioCheckFileExists(filename, BASESET_DIR)) return nullptr;
+	if (!FioCheckFileExists(filename, BASESET_DIR)) return std::nullopt;
 
 	RandomAccessFile file(filename, BASESET_DIR);
 	uint32_t ofs = file.ReadDword();
 	size_t entry_count = ofs / 8;
-	if (entrynum < entry_count) {
-		file.SeekTo(entrynum * 8, SEEK_SET);
-		size_t entrypos = file.ReadDword();
-		entrylen = file.ReadDword();
-		file.SeekTo(entrypos, SEEK_SET);
-		file.SkipBytes(file.ReadByte());
-		uint8_t *data = MallocT<uint8_t>(entrylen);
-		file.ReadBlock(data, entrylen);
-		return data;
-	}
-	return nullptr;
+	if (entrynum >= entry_count) return std::nullopt;
+
+	file.SeekTo(entrynum * 8, SEEK_SET);
+	size_t entrypos = file.ReadDword();
+	size_t entrylen = file.ReadDword();
+	file.SeekTo(entrypos, SEEK_SET);
+	file.SkipBytes(file.ReadByte());
+
+	std::vector<uint8_t> data(entrylen);
+	file.ReadBlock(data.data(), entrylen);
+	return data;
 }
 
-INSTANTIATE_BASE_MEDIA_METHODS(BaseMedia<MusicSet>, MusicSet)
-
 /** Names corresponding to the music set's files */
-static const char * const _music_file_names[] = {
+static const std::string_view _music_file_names[] = {
 	"theme",
 	"old_0", "old_1", "old_2", "old_3", "old_4", "old_5", "old_6", "old_7", "old_8", "old_9",
 	"new_0", "new_1", "new_2", "new_3", "new_4", "new_5", "new_6", "new_7", "new_8", "new_9",
@@ -85,22 +76,25 @@ static const char * const _music_file_names[] = {
 /** Make sure we aren't messing things up. */
 static_assert(lengthof(_music_file_names) == NUM_SONGS_AVAILABLE);
 
-template <class T, size_t Tnum_files, bool Tsearch_in_tars>
-/* static */ const char * const *BaseSet<T, Tnum_files, Tsearch_in_tars>::file_names = _music_file_names;
+template <>
+/* static */ std::span<const std::string_view> BaseSet<MusicSet>::GetFilenames()
+{
+	return _music_file_names;
+}
 
-template <class Tbase_set>
-/* static */ const char *BaseMedia<Tbase_set>::GetExtension()
+template <>
+/* static */ const char *BaseMedia<MusicSet>::GetExtension()
 {
 	return ".obm"; // OpenTTD Base Music
 }
 
-template <class Tbase_set>
-/* static */ bool BaseMedia<Tbase_set>::DetermineBestSet()
+template <>
+/* static */ bool BaseMedia<MusicSet>::DetermineBestSet()
 {
-	if (BaseMedia<Tbase_set>::used_set != nullptr) return true;
+	if (BaseMedia<MusicSet>::used_set != nullptr) return true;
 
-	const Tbase_set *best = nullptr;
-	for (const Tbase_set *c = BaseMedia<Tbase_set>::available_sets; c != nullptr; c = c->next) {
+	const MusicSet *best = nullptr;
+	for (const MusicSet *c = BaseMedia<MusicSet>::available_sets; c != nullptr; c = c->next) {
 		if (c->GetNumMissing() != 0) continue;
 
 		if (best == nullptr ||
@@ -112,13 +106,15 @@ template <class Tbase_set>
 		}
 	}
 
-	BaseMedia<Tbase_set>::used_set = best;
-	return BaseMedia<Tbase_set>::used_set != nullptr;
+	BaseMedia<MusicSet>::used_set = best;
+	return BaseMedia<MusicSet>::used_set != nullptr;
 }
+
+template class BaseMedia<MusicSet>;
 
 bool MusicSet::FillSetDetails(const IniFile &ini, const std::string &path, const std::string &full_filename)
 {
-	bool ret = this->BaseSet<MusicSet, NUM_SONGS_AVAILABLE, false>::FillSetDetails(ini, path, full_filename);
+	bool ret = this->BaseSet<MusicSet>::FillSetDetails(ini, path, full_filename);
 	if (ret) {
 		this->num_available = 0;
 		const IniGroup *names = ini.GetGroup("names");
@@ -138,13 +134,12 @@ bool MusicSet::FillSetDetails(const IniFile &ini, const std::string &path, const
 				/* Song has a CAT file index, assume it's MPS MIDI format */
 				this->songinfo[i].filetype = MTT_MPSMIDI;
 				this->songinfo[i].cat_index = atoi(item->value->c_str());
-				char *songname = GetMusicCatEntryName(filename, this->songinfo[i].cat_index);
-				if (songname == nullptr) {
+				auto songname = GetMusicCatEntryName(filename, this->songinfo[i].cat_index);
+				if (!songname.has_value()) {
 					Debug(grf, 0, "Base music set song missing from CAT file: {}/{}", filename, this->songinfo[i].cat_index);
 					continue;
 				}
-				this->songinfo[i].songname = songname;
-				free(songname);
+				this->songinfo[i].songname = *songname;
 			} else {
 				this->songinfo[i].filetype = MTT_STANDARDMIDI;
 			}

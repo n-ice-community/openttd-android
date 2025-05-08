@@ -36,7 +36,7 @@ StationPool _station_pool("Station");
 INSTANTIATE_POOL_METHODS(Station)
 
 
-StationKdtree _station_kdtree(Kdtree_StationXYFunc);
+StationKdtree _station_kdtree{};
 
 void RebuildStationKdtree()
 {
@@ -52,10 +52,10 @@ BaseStation::~BaseStation()
 {
 	if (CleaningPool()) return;
 
-	CloseWindowById(WC_TRAINS_LIST,   VehicleListIdentifier(VL_STATION_LIST, VEH_TRAIN,    this->owner, this->index).Pack());
-	CloseWindowById(WC_ROADVEH_LIST,  VehicleListIdentifier(VL_STATION_LIST, VEH_ROAD,     this->owner, this->index).Pack());
-	CloseWindowById(WC_SHIPS_LIST,    VehicleListIdentifier(VL_STATION_LIST, VEH_SHIP,     this->owner, this->index).Pack());
-	CloseWindowById(WC_AIRCRAFT_LIST, VehicleListIdentifier(VL_STATION_LIST, VEH_AIRCRAFT, this->owner, this->index).Pack());
+	CloseWindowById(WC_TRAINS_LIST,   VehicleListIdentifier(VL_STATION_LIST, VEH_TRAIN,    this->owner, this->index).ToWindowNumber());
+	CloseWindowById(WC_ROADVEH_LIST,  VehicleListIdentifier(VL_STATION_LIST, VEH_ROAD,     this->owner, this->index).ToWindowNumber());
+	CloseWindowById(WC_SHIPS_LIST,    VehicleListIdentifier(VL_STATION_LIST, VEH_SHIP,     this->owner, this->index).ToWindowNumber());
+	CloseWindowById(WC_AIRCRAFT_LIST, VehicleListIdentifier(VL_STATION_LIST, VEH_AIRCRAFT, this->owner, this->index).ToWindowNumber());
 
 	this->sign.MarkDirty();
 }
@@ -84,7 +84,8 @@ Station::~Station()
 {
 	if (CleaningPool()) {
 		for (GoodsEntry &ge : this->goods) {
-			ge.cargo.OnCleanPool();
+			if (!ge.HasData()) continue;
+			ge.GetData().cargo.OnCleanPool();
 		}
 		return;
 	}
@@ -95,22 +96,23 @@ Station::~Station()
 
 	for (Aircraft *a : Aircraft::Iterate()) {
 		if (!a->IsNormalAircraft()) continue;
-		if (a->targetairport == this->index) a->targetairport = INVALID_STATION;
+		if (a->targetairport == this->index) a->targetairport = StationID::Invalid();
 	}
 
-	for (CargoID c = 0; c < NUM_CARGO; ++c) {
-		LinkGraph *lg = LinkGraph::GetIfValid(this->goods[c].link_graph);
+	for (CargoType cargo = 0; cargo < NUM_CARGO; ++cargo) {
+		LinkGraph *lg = LinkGraph::GetIfValid(this->goods[cargo].link_graph);
 		if (lg == nullptr) continue;
 
 		for (NodeID node = 0; node < lg->Size(); ++node) {
 			Station *st = Station::Get((*lg)[node].station);
-			st->goods[c].flows.erase(this->index);
-			if ((*lg)[node].HasEdgeTo(this->goods[c].node) && (*lg)[node][this->goods[c].node].LastUpdate() != EconomyTime::INVALID_DATE) {
-				st->goods[c].flows.DeleteFlows(this->index);
-				RerouteCargo(st, c, this->index, st->index);
+			if (!st->goods[cargo].HasData()) continue;
+			st->goods[cargo].GetData().flows.erase(this->index);
+			if ((*lg)[node].HasEdgeTo(this->goods[cargo].node) && (*lg)[node][this->goods[cargo].node].LastUpdate() != EconomyTime::INVALID_DATE) {
+				st->goods[cargo].GetData().flows.DeleteFlows(this->index);
+				RerouteCargo(st, cargo, this->index, st->index);
 			}
 		}
-		lg->RemoveNode(this->goods[c].node);
+		lg->RemoveNode(this->goods[cargo].node);
 		if (lg->Size() == 0) {
 			LinkGraphSchedule::instance.Unqueue(lg);
 			delete lg;
@@ -120,10 +122,10 @@ Station::~Station()
 	for (Vehicle *v : Vehicle::Iterate()) {
 		/* Forget about this station if this station is removed */
 		if (v->last_station_visited == this->index) {
-			v->last_station_visited = INVALID_STATION;
+			v->last_station_visited = StationID::Invalid();
 		}
 		if (v->last_loading_station == this->index) {
-			v->last_loading_station = INVALID_STATION;
+			v->last_loading_station = StationID::Invalid();
 		}
 	}
 
@@ -149,7 +151,8 @@ Station::~Station()
 	DeleteStationNews(this->index);
 
 	for (GoodsEntry &ge : this->goods) {
-		ge.cargo.Truncate();
+		if (!ge.HasData()) continue;
+		ge.GetData().cargo.Truncate();
 	}
 
 	CargoPacket::InvalidateAllFrom(this->index);
@@ -168,16 +171,14 @@ void BaseStation::PostDestructor(size_t)
 	InvalidateWindowData(WC_SELECT_STATION, 0, 0);
 }
 
-void BaseStation::SetRoadStopTileData(TileIndex tile, uint8_t data, bool animation)
+bool BaseStation::SetRoadStopTileData(TileIndex tile, uint8_t data, bool animation)
 {
 	for (RoadStopTileData &tile_data : this->custom_roadstop_tile_data) {
 		if (tile_data.tile == tile) {
-			if (animation) {
-				tile_data.animation_frame = data;
-			} else {
-				tile_data.random_bits = data;
-			}
-			return;
+			uint8_t &v = animation ? tile_data.animation_frame : tile_data.random_bits;
+			if (v == data) return false;
+			v = data;
+			return true;
 		}
 	}
 	RoadStopTileData tile_data;
@@ -185,6 +186,7 @@ void BaseStation::SetRoadStopTileData(TileIndex tile, uint8_t data, bool animati
 	tile_data.animation_frame = animation ? data : 0;
 	tile_data.random_bits = animation ? 0 : data;
 	this->custom_roadstop_tile_data.push_back(tile_data);
+	return data != 0;
 }
 
 void BaseStation::RemoveRoadStopTileData(TileIndex tile)
@@ -205,7 +207,7 @@ void BaseStation::RemoveRoadStopTileData(TileIndex tile)
  */
 RoadStop *Station::GetPrimaryRoadStop(const RoadVehicle *v) const
 {
-	RoadStop *rs = this->GetPrimaryRoadStop(v->IsBus() ? ROADSTOP_BUS : ROADSTOP_TRUCK);
+	RoadStop *rs = this->GetPrimaryRoadStop(v->IsBus() ? RoadStopType::Bus : RoadStopType::Truck);
 
 	for (; rs != nullptr; rs = rs->next) {
 		/* The vehicle cannot go to this roadstop (different roadtype) */
@@ -226,11 +228,11 @@ RoadStop *Station::GetPrimaryRoadStop(const RoadVehicle *v) const
  */
 void Station::AddFacility(StationFacility new_facility_bit, TileIndex facil_xy)
 {
-	if (this->facilities == FACIL_NONE) {
+	if (this->facilities == StationFacilities{}) {
 		this->MoveSign(facil_xy);
 		this->random_bits = Random();
 	}
-	this->facilities |= new_facility_bit;
+	this->facilities.Set(new_facility_bit);
 	this->owner = _current_company;
 	this->build_date = TimerGameCalendar::date;
 	SetWindowClassesDirty(WC_VEHICLE_ORDERS);
@@ -243,10 +245,7 @@ void Station::AddFacility(StationFacility new_facility_bit, TileIndex facil_xy)
  */
 void Station::MarkTilesDirty(bool cargo_change) const
 {
-	TileIndex tile = this->train_station.tile;
-	int w, h;
-
-	if (tile == INVALID_TILE) return;
+	if (this->train_station.tile == INVALID_TILE) return;
 
 	/* cargo_change is set if we're refreshing the tiles due to cargo moving
 	 * around. */
@@ -257,14 +256,10 @@ void Station::MarkTilesDirty(bool cargo_change) const
 		if (this->speclist.empty()) return;
 	}
 
-	for (h = 0; h < train_station.h; h++) {
-		for (w = 0; w < train_station.w; w++) {
-			if (this->TileBelongsToRailStation(tile)) {
-				MarkTileDirtyByTile(tile);
-			}
-			tile += TileDiffXY(1, 0);
+	for (TileIndex tile : this->train_station) {
+		if (this->TileBelongsToRailStation(tile)) {
+			MarkTileDirtyByTile(tile);
 		}
-		tile += TileDiffXY(-w, 1);
 	}
 }
 
@@ -272,7 +267,7 @@ void Station::MarkTilesDirty(bool cargo_change) const
 {
 	assert(this->TileBelongsToRailStation(tile));
 
-	TileIndexDiff delta = (GetRailStationAxis(tile) == AXIS_X ? TileDiffXY(1, 0) : TileDiffXY(0, 1));
+	TileIndexDiff delta = TileOffsByAxis(GetRailStationAxis(tile));
 
 	TileIndex t = tile;
 	uint len = 0;
@@ -318,22 +313,24 @@ static uint GetTileCatchmentRadius(TileIndex tile, const Station *st)
 
 	if (_settings_game.station.modified_catchment) {
 		switch (GetStationType(tile)) {
-			case STATION_RAIL:    return CA_TRAIN;
-			case STATION_OILRIG:  return CA_UNMODIFIED;
-			case STATION_AIRPORT: return st->airport.GetSpec()->catchment;
-			case STATION_TRUCK:   return CA_TRUCK;
-			case STATION_BUS:     return CA_BUS;
-			case STATION_DOCK:    return CA_DOCK;
+			case StationType::Rail:    return CA_TRAIN;
+			case StationType::Oilrig:  return CA_UNMODIFIED;
+			case StationType::Airport: return st->airport.GetSpec()->catchment;
+			case StationType::Truck:   return CA_TRUCK;
+			case StationType::Bus:     return CA_BUS;
+			case StationType::Dock:    return CA_DOCK;
 
 			default: NOT_REACHED();
-			case STATION_BUOY:
-			case STATION_WAYPOINT: return CA_NONE;
+			case StationType::Buoy:
+			case StationType::RailWaypoint:
+			case StationType::RoadWaypoint: return CA_NONE;
 		}
 	} else {
 		switch (GetStationType(tile)) {
 			default:               return CA_UNMODIFIED;
-			case STATION_BUOY:
-			case STATION_WAYPOINT: return CA_NONE;
+			case StationType::Buoy:
+			case StationType::RailWaypoint:
+			case StationType::RoadWaypoint: return CA_NONE;
 		}
 	}
 }
@@ -394,7 +391,7 @@ void Station::AddIndustryToDeliver(Industry *ind, TileIndex tile)
 	uint distance = DistanceMax(this->xy, tile);
 
 	/* Don't check further if this industry is already in the list but update the distance if it's closer */
-	auto pos = std::find_if(this->industries_near.begin(), this->industries_near.end(), [&](const IndustryListEntry &e) { return e.industry->index == ind->index; });
+	auto pos = std::ranges::find(this->industries_near, ind, &IndustryListEntry::industry);
 	if (pos != this->industries_near.end()) {
 		if (pos->distance > distance) {
 			auto node = this->industries_near.extract(pos);
@@ -416,7 +413,7 @@ void Station::AddIndustryToDeliver(Industry *ind, TileIndex tile)
  */
 void Station::RemoveIndustryToDeliver(Industry *ind)
 {
-	auto pos = std::find_if(this->industries_near.begin(), this->industries_near.end(), [&](const IndustryListEntry &e) { return e.industry->index == ind->index; });
+	auto pos = std::ranges::find(this->industries_near, ind, &IndustryListEntry::industry);
 	if (pos != this->industries_near.end()) {
 		this->industries_near.erase(pos);
 	}
@@ -594,7 +591,7 @@ CommandCost StationRect::BeforeAddTile(TileIndex tile, StationRectMode mode)
 		int h = new_rect.Height();
 		if (mode != ADD_FORCE && (w > _settings_game.station.station_spread || h > _settings_game.station.station_spread)) {
 			assert(mode != ADD_TRY);
-			return_cmd_error(STR_ERROR_STATION_TOO_SPREAD_OUT);
+			return CommandCost(STR_ERROR_STATION_TOO_SPREAD_OUT);
 		}
 
 		/* spread-out ok, return true */
@@ -717,7 +714,7 @@ Money AirportMaintenanceCost(Owner owner)
 	Money total_cost = 0;
 
 	for (const Station *st : Station::Iterate()) {
-		if (st->owner == owner && (st->facilities & FACIL_AIRPORT)) {
+		if (st->owner == owner && st->facilities.Test(StationFacility::Airport)) {
 			total_cost += _price[PR_INFRASTRUCTURE_AIRPORT] * st->airport.GetSpec()->maintenance_cost;
 		}
 	}

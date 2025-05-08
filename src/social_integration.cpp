@@ -63,7 +63,7 @@ public:
 		std::string extension = "-social.so";
 #endif
 
-		this->FileScanner::Scan(extension.c_str(), SOCIAL_INTEGRATION_DIR, false);
+		this->FileScanner::Scan(extension, SOCIAL_INTEGRATION_DIR, false);
 	}
 
 	bool AddFile(const std::string &filename, size_t basepath_length, const std::string &) override
@@ -118,7 +118,7 @@ public:
 			Debug(misc, 0, "[Social Integration: {}] Another plugin for {} is already loaded", basepath, plugin->plugin_info.social_platform);
 			return false;
 		}
-		_loaded_social_platform.insert(lc_social_platform);
+		_loaded_social_platform.insert(std::move(lc_social_platform));
 
 		auto state = init_func(&plugin->plugin_api, &plugin->openttd_info);
 		switch (state) {

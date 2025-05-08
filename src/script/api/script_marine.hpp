@@ -11,6 +11,7 @@
 #define SCRIPT_MARINE_HPP
 
 #include "script_error.hpp"
+#include "../../station_type.h"
 
 /**
  * Class that handles all marine related functions.
@@ -20,6 +21,8 @@ class ScriptMarine : public ScriptObject {
 public:
 	/**
 	 * All marine related error messages.
+	 *
+	 * @see ScriptErrorType
 	 */
 	enum ErrorMessages {
 		/** Base for marine related errors */

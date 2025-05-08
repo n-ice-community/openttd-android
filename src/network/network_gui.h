@@ -17,12 +17,11 @@
 #include "network_type.h"
 #include "network_gamelist.h"
 
-void ShowNetworkNeedPassword(NetworkPasswordType npt, std::shared_ptr<class NetworkAuthenticationPasswordRequest> request);
+void ShowNetworkNeedPassword(std::shared_ptr<class NetworkAuthenticationPasswordRequest> request);
 void ShowNetworkChatQueryWindow(DestType type, int dest);
 void ShowJoinStatusWindow();
 void ShowNetworkGameWindow();
 void ShowClientList();
-void ShowNetworkCompanyPasswordWindow(Window *parent);
 void ShowNetworkAskRelay(const std::string &server_connection_string, const std::string &relay_connection_string, const std::string &token);
 void ShowNetworkAskSurvey();
 void ShowSurveyResultTextfileWindow();
@@ -39,7 +38,7 @@ struct NetworkCompanyInfo : NetworkCompanyStats {
 	std::string clients;      ///< The clients that control this company (Name1, name2, ..)
 };
 
-enum NetworkRelayWindowCloseData {
+enum NetworkRelayWindowCloseData : uint8_t {
 	NRWCD_UNHANDLED = 0, ///< Relay request is unhandled.
 	NRWCD_HANDLED = 1, ///< Relay request is handled, either by user or by timeout.
 };

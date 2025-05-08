@@ -15,16 +15,17 @@
 #include "../town.h"
 #include "../newgrf.h"
 #include "../timer/timer_game_calendar.h"
+#include "saveload_internal.h"
 
 #include "table/strings.h"
 
-#include "saveload_internal.h"
-
 #include "../safeguards.h"
+
+using OldWaypointID = uint16_t;
 
 /** Helper structure to convert from the old waypoint system. */
 struct OldWaypoint {
-	size_t index;
+	OldWaypointID index;
 	TileIndex xy;
 	TownID town_index;
 	Town *town;
@@ -38,7 +39,7 @@ struct OldWaypoint {
 	const StationSpec *spec;
 	Owner owner;
 
-	size_t new_index;
+	StationID new_index;
 };
 
 /** Temporary array with old waypoints. */
@@ -55,7 +56,7 @@ static void UpdateWaypointOrder(Order *o)
 	for (OldWaypoint &wp : _old_waypoints) {
 		if (wp.index != o->GetDestination()) continue;
 
-		o->SetDestination((DestinationID)wp.new_index);
+		o->SetDestination(wp.new_index);
 		return;
 	}
 }
@@ -76,7 +77,7 @@ void MoveWaypointsToBaseStations()
 
 			/* Waypoint indices were not added to the map prior to this. */
 			Tile tile = wp.xy;
-			tile.m2() = (StationID)wp.index;
+			tile.m2() = wp.index;
 
 			if (HasBit(tile.m3(), 4)) {
 				wp.spec = StationClass::Get(STAT_CLASS_WAYP)->GetSpec(tile.m4() + 1);
@@ -86,14 +87,9 @@ void MoveWaypointsToBaseStations()
 		/* As of version 17, we recalculate the custom graphic ID of waypoints
 		 * from the GRF ID / station index. */
 		for (OldWaypoint &wp : _old_waypoints) {
-			StationClass *stclass = StationClass::Get(STAT_CLASS_WAYP);
-			for (uint i = 0; i < stclass->GetSpecCount(); i++) {
-				const StationSpec *statspec = stclass->GetSpec(i);
-				if (statspec != nullptr && statspec->grf_prop.grffile->grfid == wp.grfid && statspec->grf_prop.local_id == wp.localidx) {
-					wp.spec = statspec;
-					break;
-				}
-			}
+			const auto specs = StationClass::Get(STAT_CLASS_WAYP)->Specs();
+			auto found = std::ranges::find_if(specs, [&wp](const StationSpec *spec) { return spec != nullptr && spec->grf_prop.grfid == wp.grfid && spec->grf_prop.local_id == wp.localidx; });
+			if (found != std::end(specs)) wp.spec = *found;
 		}
 	}
 
@@ -106,14 +102,16 @@ void MoveWaypointsToBaseStations()
 		 * the map array. If this is the case, try to locate the actual location in the map array */
 		if (!IsTileType(t, MP_RAILWAY) || GetRailTileType(t) != 2 /* RAIL_TILE_WAYPOINT */ || Tile(t).m2() != wp.index) {
 			Debug(sl, 0, "Found waypoint tile {} with invalid position", t);
-			for (t = 0; t < Map::Size(); t++) {
-				if (IsTileType(t, MP_RAILWAY) && GetRailTileType(t) == 2 /* RAIL_TILE_WAYPOINT */ && Tile(t).m2() == wp.index) {
-					Debug(sl, 0, "Found actual waypoint position at {}", t);
+			t = INVALID_TILE;
+			for (auto tile : Map::Iterate()) {
+				if (IsTileType(tile, MP_RAILWAY) && GetRailTileType(tile) == 2 /* RAIL_TILE_WAYPOINT */ && tile.m2() == wp.index) {
+					t = TileIndex(tile);
+					Debug(sl, 0, "Found actual waypoint position at {}", TileIndex(tile));
 					break;
 				}
 			}
 		}
-		if (t == Map::Size()) {
+		if (t == INVALID_TILE) {
 			SlErrorCorrupt("Waypoint with invalid tile");
 		}
 
@@ -132,7 +130,7 @@ void MoveWaypointsToBaseStations()
 
 		/* The tile really has our waypoint, so reassign the map array */
 		MakeRailWaypoint(tile, GetTileOwner(tile), new_wp->index, (Axis)GB(tile.m5(), 0, 1), 0, GetRailType(tile));
-		new_wp->facilities |= FACIL_TRAIN;
+		new_wp->facilities.Set(StationFacility::Train);
 		new_wp->owner = GetTileOwner(tile);
 
 		SetRailStationReservation(tile, reserved);
@@ -198,7 +196,7 @@ struct CHKPChunkHandler : ChunkHandler {
 		while ((index = SlIterateArray()) != -1) {
 			OldWaypoint *wp = &_old_waypoints.emplace_back();
 
-			wp->index = index;
+			wp->index = static_cast<OldWaypointID>(index);
 			SlObject(wp, _old_waypoint_desc);
 		}
 	}

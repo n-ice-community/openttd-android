@@ -15,7 +15,7 @@
 #include "vehicle_type.h"
 
 /** Events at which a sound might be played. */
-enum VehicleSoundEvent {
+enum VehicleSoundEvent : uint8_t {
 	VSE_START         = 1, ///< Vehicle starting, i.e. leaving, the station.
 	VSE_TUNNEL        = 2, ///< Train entering a tunnel.
 	VSE_BREAKDOWN     = 3, ///< Vehicle breaking down.
@@ -30,10 +30,11 @@ enum VehicleSoundEvent {
 
 SoundEntry *AllocateSound(uint num);
 void InitializeSoundPool();
-bool LoadNewGRFSound(SoundEntry *sound);
+bool LoadNewGRFSound(SoundEntry &sound, SoundID sound_id);
 SoundID GetNewGRFSoundID(const struct GRFFile *file, SoundID sound_id);
 SoundEntry *GetSound(SoundID sound_id);
 uint GetNumSounds();
+size_t GetSoundPoolAllocatedMemory();
 bool PlayVehicleSound(const Vehicle *v, VehicleSoundEvent event, bool force  = false);
 void PlayTileSound(const struct GRFFile *file, SoundID sound_id, TileIndex tile);
 

@@ -10,6 +10,8 @@ What is simple to some might appear very complicated to others. Documentation he
 * Function names use [CamelCase](http://www.wikipedia.org/wiki/Camelcase) without underscores.
 * Opening curly bracket **{** for a function starts on the next line.
 * Use Foo() instead of Foo(void).
+* Prefer using "const" for reference and compound parameters when appropriate.
+* If a member function can be a const function, make it so.
 ```c++
 void ThisIsAFunction()
 {
@@ -254,11 +256,44 @@ int Func();
 
 * If you are writing one or more template class in the dedicated header file, use file.hpp for its name instead of file.h. This will let others know that it is template library (includes also implementation), not just header with declarations.
 
+### Code Comment Vertical Alignment
+
+When adding code or comments to an existing formatted section, follow the existing style if possible without editing the preexisting lines.
+
+If your addition cannot be aligned with existing code, do not align the comments with anything and use only a single space between the code and the comment.
+
+Good:
+
+```c++
+enum Vehicle {
+	BUS,  ///< Take the bus.
++	CAR,  ///< Drive your car.
+	BIKE, ///< Ride your bike
++	TRAIN, ///< Catch the train.
+}
+```
+
+"Car" is shorter than Bike which allows you to easily align the new comment. "Train" is longer.  It is *NOT* desirable to change the vertical comment alignment of this enum.
+
+Bad:
+
+```c++
+enum Vehicle {
+-	BUS,  ///< Take the bus.
+-	BIKE, ///< Ride your bike
++	BUS,   ///< Take the bus.
++	CAR,   ///< Drive your car.
++	BIKE,  ///< Ride your bike
++	TRAIN, ///< Catch the train.
+}
+```
+
+OpenTTD used to vertically-align inline Doxygen comments as shown above. OpenTTD has since stopped strictly following this rule to keep diffs smaller and reduce pollution to the git blame history for non-functional changes.
+
 ### Other important rules
 * Put a space before and after binary operators: "a + b", "a == b", "a & b", "a <<= b", etc.. Exceptions are ".", "->" and "[]" (no spaces) and "," (just space after it).
 * Put parenthesis where it improves readability: "*(b++)" instead of "*b++", and "if ((a & b) && c == 2)" instead of "if (a & b && c == 2)".
 * Do not put external declarations in implementation (i.e. cpp) files.
-* Use const where possible.
 * Do not typedef enums and structs.
 * Don't treat non-flags as flags: use "if (char_pointer != nullptr && *char_pointer != '\0')", not "if (char_pointer && *char_pointer)".
 * Use "free(p)" instead of "if (p != nullptr) free(p)". "free(nullptr)" doesn't hurt anyone.
@@ -448,7 +483,7 @@ Do not mention two keywords; if two apply, pick one that best represents the com
 
 The `<details>` part starts with a capital and does not end with a dot.
 Try to be descriptive to what the player will notice, not to what is actually being changed in the code.
-See `changelog.txt` for inspiration.
+See `changelog.md` for inspiration.
 
 To further structure the changelog, you can add components. Example are:
 * "Network" for network specific changes.

@@ -15,7 +15,7 @@
 /** The dedicated server video driver. */
 class VideoDriver_Dedicated : public VideoDriver {
 public:
-	const char *Start(const StringList &param) override;
+	std::optional<std::string_view> Start(const StringList &param) override;
 
 	void Stop() override;
 
@@ -26,7 +26,7 @@ public:
 	bool ChangeResolution(int w, int h) override;
 
 	bool ToggleFullscreen(bool fullscreen) override;
-	const char *GetName() const override { return "dedicated"; }
+	std::string_view GetName() const override { return "dedicated"; }
 	bool HasGUI() const override { return false; }
 };
 
@@ -41,7 +41,7 @@ public:
 	static const int PRIORITY = 0;
 #endif
 	FVideoDriver_Dedicated() : DriverFactoryBase(Driver::DT_VIDEO, PRIORITY, "dedicated", "Dedicated Video Driver") {}
-	Driver *CreateInstance() const override { return new VideoDriver_Dedicated(); }
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_Dedicated>(); }
 };
 
 #endif /* VIDEO_DEDICATED_H */

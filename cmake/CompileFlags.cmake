@@ -10,6 +10,7 @@ macro(compile_flags)
 
         if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
             add_compile_options(
+                /Zc:preprocessor # Needed for __VA_OPT__() in macros.
                 /MP # Enable multi-threaded compilation.
                 /FC # Display the full path of source code files passed to the compiler in diagnostics.
             )
@@ -55,6 +56,11 @@ macro(compile_flags)
             # This flag disables the broken optimisation to work around the bug
             add_compile_options(/d2ssa-rse-)
         endif()
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            add_compile_options(
+                -Wno-multichar
+            )
+        endif()
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         add_compile_options(
             -W
@@ -74,6 +80,10 @@ macro(compile_flags)
 
             # We use 'ABCD' multichar for SaveLoad chunks identifiers
             -Wno-multichar
+
+            # Prevent optimisation supposing enums are in a range specified by the standard
+            # For details, see http://gcc.gnu.org/PR43680 and PR#5246.
+            -fno-strict-enums
         )
 
         # Ninja processes the output so the output from the compiler
@@ -99,10 +109,6 @@ macro(compile_flags)
                 # sure that they will not happen. It furthermore complains
                 # about its own optimized code in some places.
                 "-fno-strict-overflow"
-
-                # Prevent optimisation supposing enums are in a range specified by the standard
-                # For details, see http://gcc.gnu.org/PR43680
-                "-fno-tree-vrp"
 
                 # -flifetime-dse=2 (default since GCC 6) doesn't play
                 # well with our custom pool item allocator

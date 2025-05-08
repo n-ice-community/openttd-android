@@ -61,45 +61,62 @@ void NewGRFMappingChunkHandler::Load() const
 	}
 }
 
-
-static const SaveLoad _grfconfig_desc[] = {
-	   SLE_SSTR(GRFConfig, filename,         SLE_STR),
-	    SLE_VAR(GRFConfig, ident.grfid,      SLE_UINT32),
-	    SLE_ARR(GRFConfig, ident.md5sum,     SLE_UINT8,  16),
-	SLE_CONDVAR(GRFConfig, version,          SLE_UINT32, SLV_151, SL_MAX_VERSION),
-	    SLE_ARR(GRFConfig, param,            SLE_UINT32, 0x80),
-	    SLE_VAR(GRFConfig, num_params,       SLE_UINT8),
-	SLE_CONDVAR(GRFConfig, palette,          SLE_UINT8,  SLV_101, SL_MAX_VERSION),
-};
-
-
 struct NGRFChunkHandler : ChunkHandler {
 	NGRFChunkHandler() : ChunkHandler('NGRF', CH_TABLE) {}
 
+	static inline std::array<uint32_t, GRFConfig::MAX_NUM_PARAMS> param;
+	static inline uint8_t num_params;
+
+	static inline const SaveLoad description[] = {
+		   SLE_SSTR(GRFConfig, filename,         SLE_STR),
+		    SLE_VAR(GRFConfig, ident.grfid,      SLE_UINT32),
+		    SLE_ARR(GRFConfig, ident.md5sum,     SLE_UINT8,  16),
+		SLE_CONDVAR(GRFConfig, version,          SLE_UINT32, SLV_151, SL_MAX_VERSION),
+		   SLEG_ARR("param", param,              SLE_UINT32, std::size(param)),
+		   SLEG_VAR("num_params", num_params,    SLE_UINT8),
+		SLE_CONDVAR(GRFConfig, palette,          SLE_UINT8,  SLV_101, SL_MAX_VERSION),
+	};
+
+	void SaveParameters(const GRFConfig &config) const
+	{
+		/* Transfer config to fixed array, ensure unused entries are blanked. */
+		param.fill(0);
+		num_params = static_cast<uint8_t>(std::size(config.param));
+		std::copy(std::begin(config.param), std::end(config.param), std::begin(param));
+	}
+
 	void Save() const override
 	{
-		SlTableHeader(_grfconfig_desc);
+		SlTableHeader(description);
 
 		int index = 0;
 
-		for (GRFConfig *c = _grfconfig; c != nullptr; c = c->next) {
-			if (HasBit(c->flags, GCF_STATIC) || HasBit(c->flags, GCF_INIT_ONLY)) continue;
+		for (const auto &c : _grfconfig) {
+			if (c->flags.Any({GRFConfigFlag::Static, GRFConfigFlag::InitOnly})) continue;
+			this->SaveParameters(*c);
 			SlSetArrayIndex(index++);
-			SlObject(c, _grfconfig_desc);
+			SlObject(c.get(), description);
 		}
 	}
 
-
-	void LoadCommon(GRFConfig *&grfconfig) const
+	void LoadParameters(GRFConfig &config) const
 	{
-		const std::vector<SaveLoad> slt = SlCompatTableHeader(_grfconfig_desc, _grfconfig_sl_compat);
+		/* Transfer used part of fixed array to config. */
+		auto last = std::begin(param) + std::min<size_t>(std::size(param), num_params);
+		config.param.assign(std::begin(param), last);
+	}
 
-		ClearGRFConfigList(&grfconfig);
+	void LoadCommon(GRFConfigList &grfconfig) const
+	{
+		const std::vector<SaveLoad> slt = SlCompatTableHeader(description, _grfconfig_sl_compat);
+
+		ClearGRFConfigList(grfconfig);
 		while (SlIterateArray() != -1) {
-			GRFConfig *c = new GRFConfig();
-			SlObject(c, slt);
+			auto c = std::make_unique<GRFConfig>();
+			SlObject(c.get(), slt);
 			if (IsSavegameVersionBefore(SLV_101)) c->SetSuitablePalette();
-			AppendToGRFConfigList(&grfconfig, c);
+			this->LoadParameters(*c);
+			AppendToGRFConfigList(grfconfig, std::move(c));
 		}
 	}
 
@@ -109,13 +126,13 @@ struct NGRFChunkHandler : ChunkHandler {
 
 		if (_game_mode == GM_MENU) {
 			/* Intro game must not have NewGRF. */
-			if (_grfconfig != nullptr) SlErrorCorrupt("The intro game must not use NewGRF");
+			if (!_grfconfig.empty()) SlErrorCorrupt("The intro game must not use NewGRF");
 
 			/* Activate intro NewGRFs (townnames) */
 			ResetGRFConfig(false);
 		} else {
 			/* Append static NewGRF configuration */
-			AppendStaticGRFConfigs(&_grfconfig);
+			AppendStaticGRFConfigs(_grfconfig);
 		}
 	}
 

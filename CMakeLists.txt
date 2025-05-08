@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.17)
 
 if(NOT BINARY_NAME)
     set(BINARY_NAME openttd)
@@ -50,9 +50,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
 # An empty target for the tools
 add_custom_target(tools)
-
-include(Endian)
-add_endian_definition()
 
 include(CompileFlags)
 compile_flags()
@@ -140,27 +137,27 @@ endif()
 
 # Breakpad doesn't support emscripten.
 if(NOT EMSCRIPTEN)
-    find_package(unofficial-breakpad)
+    find_package(unofficial-breakpad NO_MODULE)
 endif()
 
 if(NOT OPTION_DEDICATED)
-    if(NOT WIN32)
+    if(WIN32)
+        find_package(Xaudio2)
+    else()
         find_package(Allegro)
         if(NOT APPLE)
             find_package(Freetype)
             find_package(SDL2)
-            if(NOT SDL2_FOUND)
-                find_package(SDL)
-            endif()
             find_package(Fluidsynth)
             find_package(Timidity)
             if(Freetype_FOUND)
                 find_package(Fontconfig)
             endif()
             find_package(Harfbuzz)
-            find_package(ICU OPTIONAL_COMPONENTS i18n)
+            find_package(ICU OPTIONAL_COMPONENTS i18n uc)
         endif()
     endif()
+    find_package(OpusFile)
 endif()
 if(APPLE)
     enable_language(OBJCXX)
@@ -182,7 +179,6 @@ if(MSVC)
 endif()
 
 find_package(SSE)
-find_package(Xaudio2)
 
 find_package(Grfcodec)
 
@@ -192,8 +188,8 @@ check_ipo_supported(RESULT IPO_FOUND)
 show_options()
 
 if(UNIX AND NOT APPLE AND NOT OPTION_DEDICATED)
-    if(NOT SDL_FOUND AND NOT SDL2_FOUND AND NOT ALLEGRO_FOUND)
-        message(FATAL_ERROR "SDL, SDL2 or Allegro is required for this platform")
+    if(NOT SDL2_FOUND AND NOT ALLEGRO_FOUND)
+        message(FATAL_ERROR "SDL2 or Allegro is required for this platform")
     endif()
     if(HARFBUZZ_FOUND AND NOT ICU_i18n_FOUND)
         message(WARNING "HarfBuzz depends on ICU i18n to function; HarfBuzz will be disabled")
@@ -241,8 +237,6 @@ endif()
 include(CTest)
 include(SourceList)
 
-# Needed by rev.cpp
-include_directories(${CMAKE_SOURCE_DIR}/src)
 # Needed by everything that uses Squirrel
 include_directories(${CMAKE_SOURCE_DIR}/src/3rdparty/squirrel/include)
 
@@ -279,6 +273,7 @@ target_precompile_headers(openttd_lib
     src/stdafx.h
     src/core/format.hpp
 )
+set_source_files_properties(src/3rdparty/fmt/format.cc PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/bin)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
@@ -318,7 +313,6 @@ if(IPO_FOUND)
     set_target_properties(openttd PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO True)
 endif()
 set_target_properties(openttd PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
-process_compile_flags()
 
 include(LinkPackage)
 link_package(PNG TARGET PNG::PNG ENCOURAGED)
@@ -332,7 +326,7 @@ if(NOT WIN32 AND NOT EMSCRIPTEN)
 endif()
 
 if(NOT EMSCRIPTEN)
-    link_package(unofficial-breakpad TARGET unofficial::breakpad::libbreakpad_client ENCOURAGED)
+    link_package(unofficial-breakpad TARGET unofficial::breakpad::libbreakpad_client)
 endif()
 
 if(NOT OPTION_DEDICATED)
@@ -345,6 +339,8 @@ if(NOT OPTION_DEDICATED)
     link_package(Fontconfig TARGET Fontconfig::Fontconfig)
     link_package(Harfbuzz TARGET harfbuzz::harfbuzz)
     link_package(ICU_i18n)
+    link_package(ICU_uc)
+    link_package(OpusFile TARGET OpusFile::opusfile)
 
     if(SDL2_FOUND AND OPENGL_FOUND AND UNIX)
         # SDL2 dynamically loads OpenGL if needed, so do not link to OpenGL when
@@ -357,7 +353,7 @@ if(NOT OPTION_DEDICATED)
     endif()
 endif()
 
-include(CheckAtomic)
+include(3rdparty/llvm/CheckAtomic)
 
 if(ANDROID)
     target_link_libraries(openttd_lib
@@ -413,13 +409,14 @@ if(EMSCRIPTEN)
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/CREDITS.md@/CREDITS.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/CONTRIBUTING.md@/CONTRIBUTING.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/COPYING.md@/COPYING.md")
-    target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/known-bugs.txt@/known-bugs.txt")
-    target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/changelog.txt@/changelog.txt")
+    target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/known-bugs.md@/known-bugs.md")
+    target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/changelog.md@/changelog.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/admin_network.md@/docs/admin_network.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/debugging_desyncs.md@/docs/debugging_desyncs.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/desync.md@/docs/desync.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/directory_structure.md@/docs/directory_structure.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/eints.md@/docs/eints.md")
+    target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/fonts.md@/docs/fonts.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/linkgraph.md@/docs/linkgraph.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/logging_and_performance_metrics.md@/docs/logging_and_performance_metrics.md")
     target_link_libraries(WASM::WASM INTERFACE "--preload-file ${CMAKE_SOURCE_DIR}/docs/multiplayer.md@/docs/multiplayer.md")

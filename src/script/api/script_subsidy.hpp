@@ -12,6 +12,7 @@
 
 #include "script_company.hpp"
 #include "script_date.hpp"
+#include "../../subsidy_type.h"
 
 /**
  * Class that handles all subsidy related functions.
@@ -63,7 +64,7 @@ public:
 	 * @pre (to_type   == SPT_INDUSTRY && ScriptIndustry::IsValidIndustry(to_id))   || (to_type   == SPT_TOWN && ScriptTown::IsValidTown(to_id))
 	 * @api -ai
 	 */
-	static bool Create(CargoID cargo_type, SubsidyParticipantType from_type, SQInteger from_id, SubsidyParticipantType to_type, SQInteger to_id);
+	static bool Create(CargoType cargo_type, SubsidyParticipantType from_type, SQInteger from_id, SubsidyParticipantType to_type, SQInteger to_id);
 
 	/**
 	 * Get the company index of the company this subsidy is awarded to.
@@ -74,14 +75,15 @@ public:
 	static ScriptCompany::CompanyID GetAwardedTo(SubsidyID subsidy_id);
 
 	/**
-	 * Get the date this subsidy expires. In case the subsidy is already
-	 *  awarded, return the date the subsidy expires, else, return the date the
+	 * Get the economy-date this subsidy expires. In case the subsidy is already
+	 *  awarded, return the economy-date the subsidy expires, else, return the economy-date the
 	 *  offer expires.
 	 * @param subsidy_id The SubsidyID to check.
 	 * @pre IsValidSubsidy(subsidy_id).
-	 * @return The last valid date of this subsidy.
+	 * @return The last valid economy-date of this subsidy.
 	 * @note The return value of this function will change if the subsidy is
 	 *  awarded.
+	 * @see \ref ScriptEconomyTime
 	 */
 	static ScriptDate::Date GetExpireDate(SubsidyID subsidy_id);
 
@@ -92,7 +94,7 @@ public:
 	 * @pre IsValidSubsidy(subsidy_id).
 	 * @return The cargo type to transport.
 	 */
-	static CargoID GetCargoType(SubsidyID subsidy_id);
+	static CargoType GetCargoType(SubsidyID subsidy_id);
 
 	/**
 	 * Returns the type of source of subsidy.

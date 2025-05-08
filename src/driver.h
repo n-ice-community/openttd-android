@@ -23,9 +23,9 @@ public:
 	/**
 	 * Start this driver.
 	 * @param parm Parameters passed to the driver.
-	 * @return nullptr if everything went okay, otherwise an error message.
+	 * @return std::nullopt if everything went okay, otherwise an error message.
 	 */
-	virtual const char *Start(const StringList &parm) = 0;
+	virtual std::optional<std::string_view> Start(const StringList &parm) = 0;
 
 	/**
 	 * Stop this driver.
@@ -35,7 +35,7 @@ public:
 	virtual ~Driver() = default;
 
 	/** The type of driver */
-	enum Type {
+	enum Type : uint8_t {
 		DT_BEGIN = 0, ///< Helper for iteration
 		DT_MUSIC = 0, ///< A music driver, needs to be before sound to properly shut down extmidi forked music players
 		DT_SOUND,     ///< A sound driver
@@ -47,10 +47,10 @@ public:
 	 * Get the name of this driver.
 	 * @return The name of the driver.
 	 */
-	virtual const char *GetName() const = 0;
+	virtual std::string_view GetName() const = 0;
 };
 
-DECLARE_POSTFIX_INCREMENT(Driver::Type)
+DECLARE_INCREMENT_DECREMENT_OPERATORS(Driver::Type)
 
 
 /** Base for all driver factories. */
@@ -62,8 +62,8 @@ private:
 
 	Driver::Type type;       ///< The type of driver.
 	int priority;            ///< The priority of this factory.
-	const char *name;        ///< The name of the drivers of this factory.
-	const char *description; ///< The description of this driver.
+	std::string_view name;        ///< The name of the drivers of this factory.
+	std::string_view description; ///< The description of this driver.
 
 	typedef std::map<std::string, DriverFactoryBase *> Drivers; ///< Type for a map of drivers.
 
@@ -81,10 +81,10 @@ private:
 	 * @param type The type to get the driver for.
 	 * @return The active driver.
 	 */
-	static Driver **GetActiveDriver(Driver::Type type)
+	static std::unique_ptr<Driver> &GetActiveDriver(Driver::Type type)
 	{
-		static Driver *s_driver[3] = { nullptr, nullptr, nullptr };
-		return &s_driver[type];
+		static std::array<std::unique_ptr<Driver>, Driver::DT_END> s_driver{};
+		return s_driver[type];
 	}
 
 	/**
@@ -92,9 +92,9 @@ private:
 	 * @param type The type of driver to get the name of.
 	 * @return The name of the type.
 	 */
-	static const char *GetDriverTypeName(Driver::Type type)
+	static std::string_view GetDriverTypeName(Driver::Type type)
 	{
-		static const char * const driver_type_name[] = { "music", "sound", "video" };
+		static const std::string_view driver_type_name[] = { "music", "sound", "video" };
 		return driver_type_name[type];
 	}
 
@@ -123,7 +123,7 @@ public:
 	static void ShutdownDrivers()
 	{
 		for (Driver::Type dt = Driver::DT_BEGIN; dt < Driver::DT_END; dt++) {
-			Driver *driver = *GetActiveDriver(dt);
+			auto &driver = GetActiveDriver(dt);
 			if (driver != nullptr) driver->Stop();
 		}
 	}
@@ -135,7 +135,7 @@ public:
 	 * Get a nice description of the driver-class.
 	 * @return The description.
 	 */
-	const char *GetDescription() const
+	std::string_view GetDescription() const
 	{
 		return this->description;
 	}
@@ -144,7 +144,7 @@ public:
 	 * Create an instance of this driver-class.
 	 * @return The instance.
 	 */
-	virtual Driver *CreateInstance() const = 0;
+	virtual std::unique_ptr<Driver> CreateInstance() const = 0;
 };
 
 #endif /* DRIVER_H */

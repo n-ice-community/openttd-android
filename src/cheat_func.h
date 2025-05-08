@@ -12,10 +12,7 @@
 
 #include "cheat_type.h"
 
-extern Cheats _cheats;
-
 void ShowCheatWindow();
 
-bool CheatHasBeenUsed();
 
 #endif /* CHEAT_FUNC_H */

@@ -22,7 +22,7 @@ struct Sprite {
 	uint8_t data[];   ///< Sprite data.
 };
 
-enum SpriteCacheCtrlFlags {
+enum SpriteCacheCtrlFlags : uint8_t {
 	SCCF_ALLOW_ZOOM_MIN_1X_PAL    = 0, ///< Allow use of sprite min zoom setting at 1x in palette mode.
 	SCCF_ALLOW_ZOOM_MIN_1X_32BPP  = 1, ///< Allow use of sprite min zoom setting at 1x in 32bpp mode.
 	SCCF_ALLOW_ZOOM_MIN_2X_PAL    = 2, ///< Allow use of sprite min zoom setting at 2x in palette mode.
@@ -31,17 +31,22 @@ enum SpriteCacheCtrlFlags {
 
 extern uint _sprite_cache_size;
 
-typedef void *AllocatorProc(size_t size);
+/** SpriteAllocator that allocates memory via a unique_ptr array. */
+class UniquePtrSpriteAllocator : public SpriteAllocator {
+public:
+	std::unique_ptr<uint8_t[]> data;
+protected:
+	void *AllocatePtr(size_t size) override;
+};
 
-void *SimpleSpriteAlloc(size_t size);
-void *GetRawSprite(SpriteID sprite, SpriteType type, AllocatorProc *allocator = nullptr, SpriteEncoder *encoder = nullptr);
+void *GetRawSprite(SpriteID sprite, SpriteType type, SpriteAllocator *allocator = nullptr, SpriteEncoder *encoder = nullptr);
 bool SpriteExists(SpriteID sprite);
 
 SpriteType GetSpriteType(SpriteID sprite);
 SpriteFile *GetOriginFile(SpriteID sprite);
 uint32_t GetSpriteLocalID(SpriteID sprite);
 uint GetSpriteCountForFile(const std::string &filename, SpriteID begin, SpriteID end);
-uint GetMaxSpriteID();
+SpriteID GetMaxSpriteID();
 
 
 inline const Sprite *GetSprite(SpriteID sprite, SpriteType type)
@@ -62,10 +67,11 @@ void GfxClearFontSpriteCache();
 void IncreaseSpriteLRU();
 
 SpriteFile &OpenCachedSpriteFile(const std::string &filename, Subdirectory subdir, bool palette_remap);
+std::span<const std::unique_ptr<SpriteFile>> GetCachedSpriteFiles();
 
 void ReadGRFSpriteOffsets(SpriteFile &file);
 size_t GetGRFSpriteOffset(uint32_t id);
-bool LoadNextSprite(int load_index, SpriteFile &file, uint file_sprite_id);
+bool LoadNextSprite(SpriteID load_index, SpriteFile &file, uint file_sprite_id);
 bool SkipSpriteData(SpriteFile &file, uint8_t type, uint16_t num);
 void DupSprite(SpriteID old_spr, SpriteID new_spr);
 

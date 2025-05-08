@@ -39,10 +39,10 @@ private:
 	 * Get the currently active blitter.
 	 * @return The currently active blitter.
 	 */
-	static Blitter **GetActiveBlitter()
+	static std::unique_ptr<Blitter> &GetActiveBlitter()
 	{
-		static Blitter *s_blitter = nullptr;
-		return &s_blitter;
+		static std::unique_ptr<Blitter> s_blitter = nullptr;
+		return s_blitter;
 	}
 
 protected:
@@ -93,17 +93,15 @@ public:
 	 * @param name the blitter to select.
 	 * @post Sets the blitter so GetCurrentBlitter() returns it too.
 	 */
-	static Blitter *SelectBlitter(const std::string &name)
+	static Blitter *SelectBlitter(const std::string_view name)
 	{
 		BlitterFactory *b = GetBlitterFactory(name);
 		if (b == nullptr) return nullptr;
 
-		Blitter *newb = b->CreateInstance();
-		delete *GetActiveBlitter();
-		*GetActiveBlitter() = newb;
+		GetActiveBlitter() = b->CreateInstance();
 
-		Debug(driver, 1, "Successfully {} blitter '{}'", name.empty() ? "probed" : "loaded", newb->GetName());
-		return newb;
+		Debug(driver, 1, "Successfully {} blitter '{}'", name.empty() ? "probed" : "loaded", GetCurrentBlitter()->GetName());
+		return GetCurrentBlitter();
 	}
 
 	/**
@@ -111,17 +109,17 @@ public:
 	 * @param name the blitter factory to select.
 	 * @return The blitter factory, or nullptr when there isn't one with the wanted name.
 	 */
-	static BlitterFactory *GetBlitterFactory(const std::string &name)
+	static BlitterFactory *GetBlitterFactory(const std::string_view name)
 	{
 #if defined(DEDICATED)
-		const char *default_blitter = "null";
+		const std::string_view default_blitter = "null";
 #elif defined(WITH_COCOA)
-		const char *default_blitter = "32bpp-anim";
+		const std::string_view default_blitter = "32bpp-anim";
 #else
-		const char *default_blitter = "8bpp-optimized";
+		const std::string_view default_blitter = "8bpp-optimized";
 #endif
 		if (GetBlitters().empty()) return nullptr;
-		const char *bname = name.empty() ? default_blitter : name.c_str();
+		const std::string_view bname = name.empty() ? default_blitter : name;
 
 		for (auto &it : GetBlitters()) {
 			BlitterFactory *b = it.second;
@@ -137,7 +135,7 @@ public:
 	 */
 	static Blitter *GetCurrentBlitter()
 	{
-		return *GetActiveBlitter();
+		return GetActiveBlitter().get();
 	}
 
 	/**
@@ -159,7 +157,7 @@ public:
 	/**
 	 * Get the long, human readable, name for the Blitter-class.
 	 */
-	const std::string &GetName() const
+	std::string_view GetName() const
 	{
 		return this->name;
 	}
@@ -167,7 +165,7 @@ public:
 	/**
 	 * Get a nice description of the blitter-class.
 	 */
-	const std::string &GetDescription() const
+	std::string_view GetDescription() const
 	{
 		return this->description;
 	}
@@ -175,7 +173,7 @@ public:
 	/**
 	 * Create an instance of this Blitter-class.
 	 */
-	virtual Blitter *CreateInstance() = 0;
+	virtual std::unique_ptr<Blitter> CreateInstance() = 0;
 };
 
 extern std::string _ini_blitter;

@@ -41,9 +41,9 @@ static const SaveLoad _ai_running_desc[] = {
 	 SLEG_CONDVAR("running_version",  _ai_saveload_version,  SLE_UINT32, SLV_AI_LOCAL_CONFIG, SL_MAX_VERSION),
 };
 
-static void SaveReal_AIPL(int *index_ptr)
+static void SaveReal_AIPL(int arg)
 {
-	CompanyID index = (CompanyID)*index_ptr;
+	CompanyID index = static_cast<CompanyID>(arg);
 	AIConfig *config = AIConfig::GetConfig(index, AIConfig::SSS_FORCE_GAME);
 
 	if (config->HasScript()) {
@@ -80,7 +80,7 @@ struct AIPLChunkHandler : ChunkHandler {
 		const std::vector<SaveLoad> slt = SlCompatTableHeader(_ai_company_desc, _ai_company_sl_compat);
 
 		/* Free all current data */
-		for (CompanyID c = COMPANY_FIRST; c < MAX_COMPANIES; c++) {
+		for (CompanyID c = CompanyID::Begin(); c < MAX_COMPANIES; ++c) {
 			AIConfig::GetConfig(c, AIConfig::SSS_FORCE_GAME)->Change(std::nullopt);
 		}
 
@@ -160,9 +160,9 @@ struct AIPLChunkHandler : ChunkHandler {
 	{
 		SlTableHeader(_ai_company_desc);
 
-		for (int i = COMPANY_FIRST; i < MAX_COMPANIES; i++) {
+		for (CompanyID i = CompanyID::Begin(); i < MAX_COMPANIES; ++i) {
 			SlSetArrayIndex(i);
-			SlAutolength((AutolengthProc *)SaveReal_AIPL, &i);
+			SlAutolength(SaveReal_AIPL, i.base());
 		}
 	}
 };

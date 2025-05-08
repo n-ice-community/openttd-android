@@ -17,6 +17,7 @@ add_subdirectory(linkgraph)
 add_subdirectory(misc)
 add_subdirectory(music)
 add_subdirectory(network)
+add_subdirectory(newgrf)
 add_subdirectory(os)
 add_subdirectory(pathfinder)
 add_subdirectory(saveload)
@@ -40,6 +41,16 @@ add_files(
 )
 
 add_files(
+    screenshot_png.cpp
+    CONDITION PNG_FOUND
+)
+
+add_files(
+    soundloader_opus.cpp
+    CONDITION OpusFile_FOUND
+)
+
+add_files(
     aircraft.h
     aircraft_cmd.cpp
     aircraft_cmd.h
@@ -50,6 +61,7 @@ add_files(
     airport_gui.cpp
     animated_tile.cpp
     animated_tile_func.h
+    animated_tile_map.h
     articulated_vehicles.cpp
     articulated_vehicles.h
     autocompletion.cpp
@@ -67,6 +79,9 @@ add_files(
     base_consist.h
     base_media_base.h
     base_media_func.h
+    base_media_graphics.h
+    base_media_music.h
+    base_media_sounds.h
     base_station_base.h
     build_confirmation_func.h
     build_confirmation_gui.cpp
@@ -79,6 +94,7 @@ add_files(
     bridge_map.cpp
     bridge_map.h
     build_vehicle_gui.cpp
+    cachecheck.cpp
     cargo_type.h
     cargoaction.cpp
     cargoaction.h
@@ -256,12 +272,16 @@ add_files(
     music_gui.cpp
     newgrf.cpp
     newgrf.h
+    newgrf_act5.h
     newgrf_airport.cpp
     newgrf_airport.h
     newgrf_airporttiles.cpp
     newgrf_airporttiles.h
     newgrf_animation_base.h
     newgrf_animation_type.h
+    newgrf_badge.cpp
+    newgrf_badge.h
+    newgrf_badge_type.h
     newgrf_callbacks.h
     newgrf_canal.cpp
     newgrf_canal.h
@@ -307,6 +327,7 @@ add_files(
     newgrf_storage.h
     newgrf_text.cpp
     newgrf_text.h
+    newgrf_text_type.h
     newgrf_town.cpp
     newgrf_town.h
     newgrf_townname.cpp
@@ -338,8 +359,12 @@ add_files(
     palette_func.h
     pbs.cpp
     pbs.h
+    picker_func.h
+    picker_gui.cpp
+    picker_gui.h
     progress.cpp
     progress.h
+    provider_manager.h
     querystring_gui.h
     rail.cpp
     rail.h
@@ -370,10 +395,15 @@ add_files(
     roadveh_cmd.h
     roadveh_gui.cpp
     safeguards.h
+    screenshot_bmp.cpp
     screenshot_gui.cpp
     screenshot_gui.h
     screenshot.cpp
     screenshot.h
+    screenshot_type.h
+    screenshot_pcx.cpp
+    settingentry_gui.cpp
+    settingentry_gui.h
     settings.cpp
     settings_cmd.h
     settings_func.h
@@ -411,6 +441,12 @@ add_files(
     sound.cpp
     sound_func.h
     sound_type.h
+    soundloader.cpp
+    soundloader_func.h
+    soundloader_type.h
+    soundloader_raw.cpp
+    soundloader_wav.cpp
+    source_type.h
     sprite.cpp
     sprite.h
     spritecache.cpp
@@ -476,7 +512,6 @@ add_files(
     tilearea_type.h
     tilehighlight_func.h
     tilehighlight_type.h
-    tilematrix_type.hpp
     timetable.h
     timetable_cmd.cpp
     timetable_cmd.h

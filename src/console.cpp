@@ -34,13 +34,13 @@ static const uint ICON_MAX_RECURSE = 10;     ///< Maximum number of recursion
 	return aliases;
 }
 
-FILE *_iconsole_output_file;
+std::optional<FileHandle> _iconsole_output_file;
 
 void IConsoleInit()
 {
-	_iconsole_output_file = nullptr;
+	_iconsole_output_file = std::nullopt;
 	_redirect_console_to_client = INVALID_CLIENT_ID;
-	_redirect_console_to_admin  = INVALID_ADMIN_ID;
+	_redirect_console_to_admin  = AdminID::Invalid();
 
 	IConsoleGUIInit();
 
@@ -49,13 +49,12 @@ void IConsoleInit()
 
 static void IConsoleWriteToLogFile(const std::string &string)
 {
-	if (_iconsole_output_file != nullptr) {
+	if (_iconsole_output_file.has_value()) {
 		/* if there is an console output file ... also print it there */
 		try {
-			fmt::print(_iconsole_output_file, "{}{}\n", GetLogPrefix(), string);
+			fmt::print(*_iconsole_output_file, "{}{}\n", GetLogPrefix(), string);
 		} catch (const std::system_error &) {
-			fclose(_iconsole_output_file);
-			_iconsole_output_file = nullptr;
+			_iconsole_output_file.reset();
 			IConsolePrint(CC_ERROR, "Cannot write to console log file; closing the log file.");
 		}
 	}
@@ -63,10 +62,9 @@ static void IConsoleWriteToLogFile(const std::string &string)
 
 bool CloseConsoleLogIfActive()
 {
-	if (_iconsole_output_file != nullptr) {
+	if (_iconsole_output_file.has_value()) {
 		IConsolePrint(CC_INFO, "Console log file closed.");
-		fclose(_iconsole_output_file);
-		_iconsole_output_file = nullptr;
+		_iconsole_output_file.reset();
 		return true;
 	}
 
@@ -98,14 +96,14 @@ void IConsolePrint(TextColour colour_code, const std::string &string)
 		return;
 	}
 
-	if (_redirect_console_to_admin != INVALID_ADMIN_ID) {
+	if (_redirect_console_to_admin != AdminID::Invalid()) {
 		NetworkServerSendAdminRcon(_redirect_console_to_admin, colour_code, string);
 		return;
 	}
 
 	/* Create a copy of the string, strip it of colours and invalid
 	 * characters and (when applicable) assign it to the console buffer */
-	std::string str = StrMakeValid(string, SVS_NONE);
+	std::string str = StrMakeValid(string, {});
 
 	if (_network_dedicated) {
 		NetworkAdminConsole("console", str);

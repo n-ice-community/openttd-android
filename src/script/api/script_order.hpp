@@ -21,6 +21,8 @@ class ScriptOrder : public ScriptObject {
 public:
 	/**
 	 * All order related error messages.
+	 *
+	 * @see ScriptErrorType
 	 */
 	enum ErrorMessages {
 		/** Base for all order related errors */
@@ -55,9 +57,9 @@ public:
 		/** Never unload the vehicle; only for stations. Cannot be set when OF_UNLOAD, OF_TRANSFER or OF_NO_LOAD is set. */
 		OF_NO_UNLOAD         = 1 << 4,
 
-		/** Wt till the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
+		/** Wait till the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
 		OF_FULL_LOAD         = 2 << 5,
-		/** Wt till at least one cargo of the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
+		/** Wait till at least one cargo of the vehicle is fully loaded; only for stations. Cannot be set when OF_NO_LOAD is set. */
 		OF_FULL_LOAD_ANY     = 3 << 5,
 		/** Do not load any cargo; only for stations. Cannot be set when OF_NO_UNLOAD, OF_FULL_LOAD or OF_FULL_LOAD_ANY is set. */
 		OF_NO_LOAD           = 1 << 7,
@@ -91,10 +93,10 @@ public:
 		OC_RELIABILITY         = ::OCV_RELIABILITY,        ///< Skip based on the reliability, value is percent (0..100).
 		OC_MAX_RELIABILITY     = ::OCV_MAX_RELIABILITY,    ///< Skip based on the maximum reliability.  Value in percent
 		OC_MAX_SPEED           = ::OCV_MAX_SPEED,          ///< Skip based on the maximum speed, value is in OpenTTD's internal speed unit, see ScriptEngine::GetMaxSpeed.
-		OC_AGE                 = ::OCV_AGE,                ///< Skip based on the age, value is in years.
+		OC_AGE                 = ::OCV_AGE,                ///< Skip based on the age, value is in calender-years. @see \ref ScriptCalendarTime
 		OC_REQUIRES_SERVICE    = ::OCV_REQUIRES_SERVICE,   ///< Skip when the vehicle requires service, no value.
 		OC_UNCONDITIONALLY     = ::OCV_UNCONDITIONALLY,    ///< Always skip, no compare function, no value.
-		OC_REMAINING_LIFETIME  = ::OCV_REMAINING_LIFETIME, ///< Skip based on the remaining lifetime
+		OC_REMAINING_LIFETIME  = ::OCV_REMAINING_LIFETIME, ///< Skip based on the remaining lifetime in calendar-years. @see \ref ScriptCalendarTime
 
 		/* Custom added value, only valid for this API */
 		OC_INVALID             = -1,                       ///< An invalid condition, do not use.
@@ -346,7 +348,7 @@ public:
 	 *  in the orderlist, but they can be the current order of a vehicle.
 	 * @return The refit cargo of the order or CT_NO_REFIT if no refit is set.
 	 */
-	static CargoID GetOrderRefit(VehicleID vehicle_id, OrderPosition order_position);
+	static CargoType GetOrderRefit(VehicleID vehicle_id, OrderPosition order_position);
 
 	/**
 	 * Sets the OrderPosition to jump to if the check succeeds of the given order for the given vehicle.
@@ -425,7 +427,7 @@ public:
 	 * @game @pre ScriptCompanyMode::IsValid().
 	 * @return Whether the order has been/can be changed.
 	 */
-	static bool SetOrderRefit(VehicleID vehicle_id, OrderPosition order_position, CargoID refit_cargo);
+	static bool SetOrderRefit(VehicleID vehicle_id, OrderPosition order_position, CargoType refit_cargo);
 
 	/**
 	 * Appends an order to the end of the vehicle's order list.

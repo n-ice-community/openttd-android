@@ -10,14 +10,13 @@
 #ifndef NEWGRF_STORAGE_H
 #define NEWGRF_STORAGE_H
 
-#include "core/alloc_func.hpp"
 #include "core/pool_type.hpp"
 #include "tile_type.h"
 
 /**
  * Mode switches to the behaviour of persistent storage array.
  */
-enum PersistentStorageMode {
+enum PersistentStorageMode : uint8_t {
 	PSM_ENTER_GAMELOOP,   ///< Enter the gameloop, changes will be permanent.
 	PSM_LEAVE_GAMELOOP,   ///< Leave the gameloop, changes will be temporary.
 	PSM_ENTER_COMMAND,    ///< Enter command scope, changes will be permanent.
@@ -31,9 +30,9 @@ enum PersistentStorageMode {
  * so we have a generalised access to the virtual methods.
  */
 struct BasePersistentStorageArray {
-	uint32_t grfid;    ///< GRFID associated to this persistent storage. A value of zero means "default".
-	uint8_t feature;    ///< NOSAVE: Used to identify in the owner of the array in debug output.
-	TileIndex tile;  ///< NOSAVE: Used to identify in the owner of the array in debug output.
+	uint32_t grfid = 0; ///< GRFID associated to this persistent storage. A value of zero means "default".
+	uint8_t feature = 0; ///< NOSAVE: Used to identify in the owner of the array in debug output.
+	TileIndex tile = INVALID_TILE; ///< NOSAVE: Used to identify in the owner of the array in debug output.
 
 	virtual ~BasePersistentStorageArray();
 
@@ -136,7 +135,7 @@ struct TemporaryStorageArray {
 
 	StorageType storage{}; ///< Memory for the storage array
 	StorageInitType init{}; ///< Storage has been assigned, if this equals 'init_key'.
-	uint16_t init_key{1}; ///< Magic key to 'init'.
+	uint16_t init_key = 1; ///< Magic key to 'init'.
 
 	/**
 	 * Stores some value at a given position.
@@ -186,10 +185,10 @@ void AddChangedPersistentStorage(BasePersistentStorageArray *storage);
 
 typedef PersistentStorageArray<int32_t, 16> OldPersistentStorage;
 
-typedef uint32_t PersistentStorageID;
+using PersistentStorageID = PoolID<uint32_t, struct PersistentStorageIDTag, 0xFF000, 0xFFFFF>;
 
 struct PersistentStorage;
-typedef Pool<PersistentStorage, PersistentStorageID, 1, 0xFF000> PersistentStoragePool;
+using PersistentStoragePool = Pool<PersistentStorage, PersistentStorageID, 1>;
 
 extern PersistentStoragePool _persistent_storage_pool;
 
@@ -206,6 +205,6 @@ struct PersistentStorage : PersistentStorageArray<int32_t, 256>, PersistentStora
 	}
 };
 
-static_assert(cpp_lengthof(OldPersistentStorage, storage) <= cpp_lengthof(PersistentStorage, storage));
+static_assert(std::tuple_size_v<decltype(OldPersistentStorage::storage)> <= std::tuple_size_v<decltype(PersistentStorage::storage)>);
 
 #endif /* NEWGRF_STORAGE_H */

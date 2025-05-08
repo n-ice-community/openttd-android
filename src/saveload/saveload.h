@@ -379,11 +379,33 @@ enum SaveLoadVersion : uint16_t {
 	SLV_SCRIPT_RANDOMIZER,                  ///< 333  PR#12063 v14.0-RC1 Save script randomizers.
 	SLV_VEHICLE_ECONOMY_AGE,                ///< 334  PR#12141 v14.0 Add vehicle age in economy year, for profit stats minimum age
 
+	SLV_COMPANY_ALLOW_LIST,                 ///< 335  PR#12337 Saving of list of client keys that are allowed to join this company.
+	SLV_GROUP_NUMBERS,                      ///< 336  PR#12297 Add per-company group numbers.
+	SLV_INCREASE_STATION_TYPE_FIELD_SIZE,   ///< 337  PR#12572 Increase size of StationType field in map array
+	SLV_ROAD_WAYPOINTS,                     ///< 338  PR#12572 Road waypoints
+	SLV_COMPANY_INAUGURATED_PERIOD,         ///< 339  PR#12798 Companies show the period inaugurated in wallclock mode.
+
+	SLV_ROAD_STOP_TILE_DATA,                ///< 340  PR#12883 Move storage of road stop tile data, also save for road waypoints.
+	SLV_COMPANY_ALLOW_LIST_V2,              ///< 341  PR#12908 Fixed savegame format for saving of list of client keys that are allowed to join this company.
+	SLV_WATER_TILE_TYPE,                    ///< 342  PR#13030 Simplify water tile type.
+	SLV_PRODUCTION_HISTORY,                 ///< 343  PR#10541 Industry production history.
+	SLV_ROAD_TYPE_LABEL_MAP,                ///< 344  PR#13021 Add road type label map to allow upgrade/conversion of road types.
+
+	SLV_NONFLOODING_WATER_TILES,            ///< 345  PR#13013 Store water tile non-flooding state.
+	SLV_PATH_CACHE_FORMAT,                  ///< 346  PR#12345 Vehicle path cache format changed.
+	SLV_ANIMATED_TILE_STATE_IN_MAP,         ///< 347  PR#13082 Animated tile state saved for improved performance.
+	SLV_INCREASE_HOUSE_LIMIT,               ///< 348  PR#12288 Increase house limit to 4096.
+	SLV_COMPANY_INAUGURATED_PERIOD_V2,      ///< 349  PR#13448 Fix savegame storage for company inaugurated year in wallclock mode.
+
+	SLV_ENCODED_STRING_FORMAT,              ///< 350  PR#13499 Encoded String format changed.
+	SLV_PROTECT_PLACED_HOUSES,              ///< 351  PR#13270 Houses individually placed by players can be protected from town/AI removal.
+	SLV_SCRIPT_SAVE_INSTANCES,              ///< 352  PR#13556 Scripts are allowed to save instances.
+
 	SL_MAX_VERSION,                         ///< Highest possible saveload version
 };
 
 /** Save or load result codes. */
-enum SaveOrLoadResult {
+enum SaveOrLoadResult : uint8_t {
 	SL_OK     = 0, ///< completed successfully
 	SL_ERROR  = 1, ///< error that was caught before internal structures were modified
 	SL_REINIT = 2, ///< error that was caught in the middle of updating game state, need to clear it. (can only happen during load)
@@ -405,7 +427,7 @@ struct FileToSaveLoad {
 };
 
 /** Types of save games. */
-enum SavegameType {
+enum SavegameType : uint8_t {
 	SGT_TTD,    ///< TTD  savegame (can be detected incorrectly)
 	SGT_TTDP1,  ///< TTDP savegame ( -//- ) (data at NW border)
 	SGT_TTDP2,  ///< TTDP savegame in new format (data at SE border)
@@ -418,8 +440,8 @@ extern FileToSaveLoad _file_to_saveload;
 
 std::string GenerateDefaultSaveName();
 void SetSaveLoadError(StringID str);
-StringID GetSaveLoadErrorType();
-StringID GetSaveLoadErrorMessage();
+EncodedString GetSaveLoadErrorType();
+EncodedString GetSaveLoadErrorMessage();
 SaveOrLoadResult SaveOrLoad(const std::string &filename, SaveLoadOperation fop, DetailedFileType dft, Subdirectory sb, bool threaded = true);
 void WaitTillSaved();
 void ProcessAsyncSaveFinish();
@@ -430,10 +452,10 @@ void DoAutoOrNetsave(FiosNumberedSaveName &counter);
 SaveOrLoadResult SaveWithFilter(std::shared_ptr<struct SaveFilter> writer, bool threaded);
 SaveOrLoadResult LoadWithFilter(std::shared_ptr<struct LoadFilter> reader);
 
-typedef void AutolengthProc(void *arg);
+typedef void AutolengthProc(int);
 
 /** Type of a chunk. */
-enum ChunkType {
+enum ChunkType : uint8_t {
 	CH_RIFF = 0,
 	CH_ARRAY = 1,
 	CH_SPARSE_ARRAY = 2,
@@ -582,7 +604,7 @@ public:
 };
 
 /** Type of reference (#SLE_REF, #SLE_CONDREF). */
-enum SLRefType {
+enum SLRefType : uint8_t {
 	REF_ORDER          =  0, ///< Load/save a reference to an order.
 	REF_VEHICLE        =  1, ///< Load/save a reference to a vehicle.
 	REF_STATION        =  2, ///< Load/save a reference to a station.
@@ -605,7 +627,7 @@ enum SLRefType {
  * the first 8 bits (0-3 SLE_FILE, 4-7 SLE_VAR).
  * Bits 8-15 are reserved for various flags as explained below
  */
-enum VarTypes {
+enum VarTypes : uint16_t {
 	/* 4 bits allocated a maximum of 16 types for NumberType.
 	 * NOTE: the SLE_FILE_NNN values are stored in the savegame! */
 	SLE_FILE_END      =  0, ///< Used to mark end-of-header in tables.
@@ -692,6 +714,8 @@ enum SaveLoadType : uint8_t {
 
 	SL_SAVEBYTE    = 10, ///< Save (but not load) a byte.
 	SL_NULL        = 11, ///< Save null-bytes and load to nowhere.
+
+	SL_REFVECTOR   = 12, ///< Save/load a vector of #SL_REF elements.
 };
 
 typedef void *SaveLoadAddrProc(void *base, size_t extra);
@@ -704,7 +728,6 @@ struct SaveLoad {
 	uint16_t length;       ///< (Conditional) length of the variable (eg. arrays) (max array size is 65536 elements).
 	SaveLoadVersion version_from;   ///< Save/load the variable starting from this savegame version.
 	SaveLoadVersion version_to;     ///< Save/load the variable before this savegame version.
-	size_t size;                    ///< The sizeof size.
 	SaveLoadAddrProc *address_proc; ///< Callback proc the get the actual variable address in memory.
 	size_t extra_data;              ///< Extra data for the callback proc.
 	std::shared_ptr<SaveLoadHandler> handler; ///< Custom handler for Save/Load procs.
@@ -801,6 +824,7 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
 		case SL_DEQUE: return sizeof(std::deque<void *>) == size;
 		case SL_VECTOR: return sizeof(std::vector<void *>) == size;
 		case SL_REFLIST: return sizeof(std::list<void *>) == size;
+		case SL_REFVECTOR: return sizeof(std::vector<void *>) == size;
 		case SL_SAVEBYTE: return true;
 		default: NOT_REACHED();
 	}
@@ -820,7 +844,7 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
  * @note In general, it is better to use one of the SLE_* macros below.
  */
 #define SLE_GENERAL_NAME(cmd, name, base, variable, type, length, from, to, extra) \
-	SaveLoad {name, cmd, type, length, from, to, cpp_sizeof(base, variable), [] (void *b, size_t) -> void * { \
+	SaveLoad {name, cmd, type, length, from, to, [] (void *b, size_t) -> void * { \
 		static_assert(SlCheckVarSize(cmd, type, length, sizeof(static_cast<base *>(b)->variable))); \
 		assert(b != nullptr); \
 		return const_cast<void *>(static_cast<const void *>(std::addressof(static_cast<base *>(b)->variable))); \
@@ -937,6 +961,26 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
 #define SLE_CONDREFLIST(base, variable, type, from, to) SLE_GENERAL(SL_REFLIST, base, variable, type, 0, from, to, 0)
 
 /**
+ * Storage of a vector of #SL_REF elements in some savegame versions.
+ * @param base     Name of the class or struct containing the vector.
+ * @param variable Name of the variable in the class or struct referenced by \a base.
+ * @param type     Storage of the data in memory and in the savegame.
+ * @param from     First savegame version that has the vector.
+ * @param to       Last savegame version that has the vector.
+ */
+#define SLE_CONDREFVECTOR(base, variable, type, from, to) SLE_GENERAL(SL_REFVECTOR, base, variable, type, 0, from, to, 0)
+
+/**
+ * Storage of a vector of #SL_VAR elements in some savegame versions.
+ * @param base     Name of the class or struct containing the list.
+ * @param variable Name of the variable in the class or struct referenced by \a base.
+ * @param type     Storage of the data in memory and in the savegame.
+ * @param from     First savegame version that has the list.
+ * @param to       Last savegame version that has the list.
+ */
+#define SLE_CONDVECTOR(base, variable, type, from, to) SLE_GENERAL(SL_VECTOR, base, variable, type, 0, from, to, 0)
+
+/**
  * Storage of a deque of #SL_VAR elements in some savegame versions.
  * @param base     Name of the class or struct containing the list.
  * @param variable Name of the variable in the class or struct referenced by \a base.
@@ -945,6 +989,16 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
  * @param to       Last savegame version that has the list.
  */
 #define SLE_CONDDEQUE(base, variable, type, from, to) SLE_GENERAL(SL_DEQUE, base, variable, type, 0, from, to, 0)
+
+/**
+ * Storage of a vector of #SL_VAR elements in some savegame versions.
+ * @param base     Name of the class or struct containing the list.
+ * @param variable Name of the variable in the class or struct referenced by \a base.
+ * @param type     Storage of the data in memory and in the savegame.
+ * @param from     First savegame version that has the list.
+ * @param to       Last savegame version that has the list.
+ */
+#define SLE_CONDVECTOR(base, variable, type, from, to) SLE_GENERAL(SL_VECTOR, base, variable, type, 0, from, to, 0)
 
 /**
  * Storage of a variable in every version of a savegame.
@@ -1016,6 +1070,14 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
 #define SLE_REFLIST(base, variable, type) SLE_CONDREFLIST(base, variable, type, SL_MIN_VERSION, SL_MAX_VERSION)
 
 /**
+ * Storage of a vector of #SL_REF elements in every savegame version.
+ * @param base     Name of the class or struct containing the vector.
+ * @param variable Name of the variable in the class or struct referenced by \a base.
+ * @param type     Storage of the data in memory and in the savegame.
+ */
+#define SLE_REFVECTOR(base, variable, type) SLE_CONDREFVECTOR(base, variable, type, SL_MIN_VERSION, SL_MAX_VERSION)
+
+/**
  * Only write byte during saving; never read it during loading.
  * When using SLE_SAVEBYTE you will have to read this byte before the table
  * this is in is read. This also means SLE_SAVEBYTE can only be used at the
@@ -1039,7 +1101,7 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
  * @note In general, it is better to use one of the SLEG_* macros below.
  */
 #define SLEG_GENERAL(name, cmd, variable, type, length, from, to, extra) \
-	SaveLoad {name, cmd, type, length, from, to, sizeof(variable), [] (void *, size_t) -> void * { \
+	SaveLoad {name, cmd, type, length, from, to, [] (void *, size_t) -> void * { \
 		static_assert(SlCheckVarSize(cmd, type, length, sizeof(variable))); \
 		return static_cast<void *>(std::addressof(variable)); }, extra, nullptr}
 
@@ -1091,7 +1153,7 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
  * @param from     First savegame version that has the struct.
  * @param to       Last savegame version that has the struct.
  */
-#define SLEG_CONDSTRUCT(name, handler, from, to) SaveLoad {name, SL_STRUCT, 0, 0, from, to, 0, nullptr, 0, std::make_shared<handler>()}
+#define SLEG_CONDSTRUCT(name, handler, from, to) SaveLoad {name, SL_STRUCT, 0, 0, from, to, nullptr, 0, std::make_shared<handler>()}
 
 /**
  * Storage of a global reference list in some savegame versions.
@@ -1120,7 +1182,7 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
  * @param from     First savegame version that has the list.
  * @param to       Last savegame version that has the list.
  */
-#define SLEG_CONDSTRUCTLIST(name, handler, from, to) SaveLoad {name, SL_STRUCTLIST, 0, 0, from, to, 0, nullptr, 0, std::make_shared<handler>()}
+#define SLEG_CONDSTRUCTLIST(name, handler, from, to) SaveLoad {name, SL_STRUCTLIST, 0, 0, from, to, nullptr, 0, std::make_shared<handler>()}
 
 /**
  * Storage of a global variable in every savegame version.
@@ -1143,8 +1205,9 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
  * @param name     The name of the field.
  * @param variable Name of the global variable.
  * @param type     Storage of the data in memory and in the savegame.
+ * @param length   Number of elements in the array.
  */
-#define SLEG_ARR(name, variable, type) SLEG_CONDARR(name, variable, type, lengthof(variable), SL_MIN_VERSION, SL_MAX_VERSION)
+#define SLEG_ARR(name, variable, type, length) SLEG_CONDARR(name, variable, type, length, SL_MIN_VERSION, SL_MAX_VERSION)
 
 /**
  * Storage of a global \c std::string in every savegame version.
@@ -1197,17 +1260,6 @@ inline constexpr bool SlCheckVarSize(SaveLoadType cmd, VarType type, size_t leng
  * @param to     Last savegame version that has the empty space.
  */
 #define SLC_NULL(length, from, to) {{}, SLE_FILE_U8, length, from, to}
-
-/**
- * Empty space in every savegame version that was filled with a string.
- * @param length Number of strings in the empty space.
- * @param from   First savegame version that has the empty space.
- * @param to     Last savegame version that has the empty space.
- */
-#define SLC_NULL_STR(length, from, to) {{}, SLE_FILE_STRING, length, from, to}
-
-/** End marker of compat variables save or load. */
-#define SLC_END() {{}, 0, 0, SL_MIN_VERSION, SL_MIN_VERSION}
 
 /**
  * Checks whether the savegame is below \a major.\a minor.
@@ -1270,18 +1322,20 @@ int64_t ReadValue(const void *ptr, VarType conv);
 void WriteValue(void *ptr, VarType conv, int64_t val);
 
 void SlSetArrayIndex(uint index);
+static void SlSetArrayIndex(const ConvertibleThroughBase auto &index) { SlSetArrayIndex(index.base()); }
 int SlIterateArray();
 
 void SlSetStructListLength(size_t length);
 size_t SlGetStructListLength(size_t limit);
 
-void SlAutolength(AutolengthProc *proc, void *arg);
+void SlAutolength(AutolengthProc *proc, int arg);
 size_t SlGetFieldLength();
 void SlSetLength(size_t length);
 size_t SlCalcObjMemberLength(const void *object, const SaveLoad &sld);
 size_t SlCalcObjLength(const void *object, const SaveLoadTable &slt);
 
 uint8_t SlReadByte();
+void SlReadString(std::string &str, size_t length);
 void SlWriteByte(uint8_t b);
 
 void SlGlobList(const SaveLoadTable &slt);
@@ -1304,5 +1358,56 @@ inline void SlSkipBytes(size_t length)
 
 extern std::string _savegame_format;
 extern bool _do_autosave;
+
+/**
+ * Default handler for saving/loading a vector to/from disk.
+ *
+ * This handles a few common things for handlers, meaning the actual handler
+ * needs less code.
+ *
+ * @tparam TImpl The class initializing this template.
+ * @tparam TObject The class of the object using this SaveLoadHandler.
+ * @tparam TElementType The type of the elements contained within the vector.
+ * @tparam MAX_LENGTH maximum number of elements to load.
+ */
+template <class TImpl, class TObject, class TElementType, size_t MAX_LENGTH = UINT32_MAX>
+class VectorSaveLoadHandler : public DefaultSaveLoadHandler<TImpl, TObject> {
+public:
+	/**
+	 * Get instance of vector to load/save.
+	 * @param object Object containing vector.
+	 * @returns Vector to load/save.
+	 */
+	virtual std::vector<TElementType> &GetVector(TObject *object) const = 0;
+
+	/**
+	 * Get number of elements to load into vector.
+	 * @returns Number of elements to load into the vector.
+	 * @note This is only overridden if the number of elements comes from a different location due to savegame changes.
+	 */
+	virtual size_t GetLength() const { return SlGetStructListLength(MAX_LENGTH); }
+
+	void Save(TObject *object) const override
+	{
+		auto &vector = this->GetVector(object);
+		SlSetStructListLength(vector.size());
+
+		for (auto &item : vector) {
+			SlObject(&item, this->GetDescription());
+		}
+	}
+
+	void Load(TObject *object) const override
+	{
+		auto &vector = this->GetVector(object);
+		size_t count = this->GetLength();
+
+		vector.reserve(count);
+		while (count-- > 0) {
+			auto &item = vector.emplace_back();
+			SlObject(&item, this->GetLoadDescription());
+		}
+	}
+};
 
 #endif /* SAVELOAD_H */

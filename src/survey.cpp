@@ -32,6 +32,9 @@
 #include "video/video_driver.hpp"
 
 #include "base_media_base.h"
+#include "base_media_graphics.h"
+#include "base_media_music.h"
+#include "base_media_sounds.h"
 #include "blitter/factory.hpp"
 
 #include "social_integration.h"
@@ -63,9 +66,9 @@
 #ifdef WITH_LZO
 #include <lzo/lzo1x.h>
 #endif
-#if defined(WITH_SDL) || defined(WITH_SDL2)
-#	include <SDL.h>
-#endif /* WITH_SDL || WITH_SDL2 */
+#ifdef WITH_SDL2
+#include <SDL.h>
+#endif /* WITH_SDL2 */
 #ifdef WITH_ZLIB
 # include <zlib.h>
 #endif
@@ -146,7 +149,7 @@ static void SurveySettingsTable(nlohmann::json &survey, const SettingTable &tabl
 		/* Skip any old settings we no longer save/load. */
 		if (!SlIsObjectCurrentlyValid(sd->save.version_from, sd->save.version_to)) continue;
 
-		auto name = sd->GetName();
+		const auto &name = sd->GetName();
 		if (skip_if_default && sd->IsDefaultValue(object)) continue;
 		survey[name] = sd->FormatValue(object);
 	}
@@ -219,13 +222,8 @@ void SurveyOpenTTD(nlohmann::json &survey)
 			32
 #endif
 		;
-	survey["endian"] =
-#if (TTD_ENDIAN == TTD_LITTLE_ENDIAN)
-			"little"
-#else
-			"big"
-#endif
-		;
+	if constexpr (std::endian::native == std::endian::little) survey["endian"] = "little";
+	if constexpr (std::endian::native == std::endian::big) survey["endian"] = "big";
 	survey["dedicated_build"] =
 #ifdef DEDICATED
 			"yes"
@@ -258,7 +256,7 @@ void SurveyConfiguration(nlohmann::json &survey)
 {
 	survey["network"] = _networking ? (_network_server ? "server" : "client") : "no";
 	if (_current_language != nullptr) {
-		survey["language"]["filename"] = _current_language->file.filename().string();
+		survey["language"]["filename"] = FS2OTTD(_current_language->file.filename());
 		survey["language"]["name"] = _current_language->name;
 		survey["language"]["isocode"] = _current_language->isocode;
 	}
@@ -278,8 +276,8 @@ void SurveyConfiguration(nlohmann::json &survey)
 	if (BaseGraphics::GetUsedSet() != nullptr) {
 		survey["graphics_set"] = fmt::format("{}.{}", BaseGraphics::GetUsedSet()->name, BaseGraphics::GetUsedSet()->version);
 		const GRFConfig *extra_cfg = BaseGraphics::GetUsedSet()->GetExtraConfig();
-		if (extra_cfg != nullptr && extra_cfg->num_params > 0) {
-			survey["graphics_set_parameters"] = std::span<const uint32_t>(extra_cfg->param.data(), extra_cfg->num_params);
+		if (extra_cfg != nullptr && !extra_cfg->param.empty()) {
+			survey["graphics_set_parameters"] = std::span<const uint32_t>(extra_cfg->param);
 		} else {
 			survey["graphics_set_parameters"] = std::span<const uint32_t>();
 		}
@@ -313,7 +311,7 @@ void SurveyFont(nlohmann::json &survey)
 void SurveyCompanies(nlohmann::json &survey)
 {
 	for (const Company *c : Company::Iterate()) {
-		auto &company = survey[std::to_string(c->index)];
+		auto &company = survey[std::to_string(c->index.base())];
 		if (c->ai_info == nullptr) {
 			company["type"] = "human";
 		} else {
@@ -359,9 +357,9 @@ void SurveyTimers(nlohmann::json &survey)
  */
 void SurveyGrfs(nlohmann::json &survey)
 {
-	for (GRFConfig *c = _grfconfig; c != nullptr; c = c->next) {
-		auto grfid = fmt::format("{:08x}", BSWAP32(c->ident.grfid));
-		auto &grf = survey[grfid];
+	for (const auto &c : _grfconfig) {
+		auto grfid = fmt::format("{:08x}", std::byteswap(c->ident.grfid));
+		auto &grf = survey[std::move(grfid)];
 
 		grf["md5sum"] = FormatArrayAsHex(c->ident.md5sum);
 		grf["status"] = c->status;
@@ -374,8 +372,8 @@ void SurveyGrfs(nlohmann::json &survey)
 		if ((c->palette & GRFP_BLT_MASK) == GRFP_BLT_UNSET) grf["blitter"] = "unset";
 		if ((c->palette & GRFP_BLT_MASK) == GRFP_BLT_32BPP) grf["blitter"] = "32bpp";
 
-		grf["is_static"] = HasBit(c->flags, GCF_STATIC);
-		grf["parameters"] = std::span<const uint32_t>(c->param.data(), c->num_params);
+		grf["is_static"] = c->flags.Test(GRFConfigFlag::Static);
+		grf["parameters"] = std::span<const uint32_t>(c->param);
 	}
 }
 
@@ -441,10 +439,7 @@ void SurveyLibraries(nlohmann::json &survey)
 	survey["png"] = png_get_libpng_ver(nullptr);
 #endif /* WITH_PNG */
 
-#ifdef WITH_SDL
-	const SDL_version *sdl_v = SDL_Linked_Version();
-	survey["sdl"] = fmt::format("{}.{}.{}", sdl_v->major, sdl_v->minor, sdl_v->patch);
-#elif defined(WITH_SDL2)
+#ifdef WITH_SDL2
 	SDL_version sdl2_v;
 	SDL_GetVersion(&sdl2_v);
 	survey["sdl2"] = fmt::format("{}.{}.{}", sdl2_v.major, sdl2_v.minor, sdl2_v.patch);

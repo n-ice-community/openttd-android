@@ -15,17 +15,17 @@
 /** Implementation of the SDL sound driver. */
 class SoundDriver_SDL : public SoundDriver {
 public:
-	const char *Start(const StringList &param) override;
+	std::optional<std::string_view> Start(const StringList &param) override;
 
 	void Stop() override;
-	const char *GetName() const override { return "sdl"; }
+	std::string_view GetName() const override { return "sdl"; }
 };
 
 /** Factory for the SDL sound driver. */
 class FSoundDriver_SDL : public DriverFactoryBase {
 public:
 	FSoundDriver_SDL() : DriverFactoryBase(Driver::DT_SOUND, 5, "sdl", "SDL Sound Driver (param hz,samples)") {}
-	Driver *CreateInstance() const override { return new SoundDriver_SDL(); }
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<SoundDriver_SDL>(); }
 };
 
 #endif /* SOUND_SDL_H */

@@ -26,8 +26,8 @@ jobs:
       matrix:
         include:
         - name: Clang
-          compiler: clang-15
-          cxxcompiler: clang++-15
+          compiler: clang
+          cxxcompiler: clang++
           libraries: libsdl2-dev
         - name: GCC - SDL2
           compiler: gcc
@@ -80,10 +80,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - os: windows-latest
-          arch: x86
-        - os: windows-latest
-          arch: x64
+        - arch: x86
+        - arch: x64
 
     name: Windows (${{ matrix.arch }})
 
@@ -91,7 +89,6 @@ jobs:
     secrets: inherit
 
     with:
-      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
 
   check_annotations:

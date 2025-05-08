@@ -102,15 +102,15 @@ void VideoDriver_Allegro::CheckPaletteAnim()
 	Blitter *blitter = BlitterFactory::GetCurrentBlitter();
 
 	switch (blitter->UsePaletteAnimation()) {
-		case Blitter::PALETTE_ANIMATION_VIDEO_BACKEND:
+		case Blitter::PaletteAnimation::VideoBackend:
 			UpdatePalette(_local_palette.first_dirty, _local_palette.count_dirty);
 			break;
 
-		case Blitter::PALETTE_ANIMATION_BLITTER:
+		case Blitter::PaletteAnimation::Blitter:
 			blitter->PaletteAnimate(_local_palette);
 			break;
 
-		case Blitter::PALETTE_ANIMATION_NONE:
+		case Blitter::PaletteAnimation::None:
 			break;
 
 		default:
@@ -152,7 +152,7 @@ static void GetVideoModes()
 		uint w = modes[i].width;
 		uint h = modes[i].height;
 		if (w < 640 || h < 480) continue;
-		if (std::find(_resolutions.begin(), _resolutions.end(), Dimension(w, h)) != _resolutions.end()) continue;
+		if (std::ranges::find(_resolutions, Dimension(w, h)) != _resolutions.end()) continue;
 		_resolutions.emplace_back(w, h);
 	}
 
@@ -167,7 +167,7 @@ static void GetAvailableVideoMode(uint *w, uint *h)
 	if (_resolutions.empty()) return;
 
 	/* is the wanted mode among the available modes? */
-	if (std::find(_resolutions.begin(), _resolutions.end(), Dimension(*w, *h)) != _resolutions.end()) return;
+	if (std::ranges::find(_resolutions, Dimension(*w, *h)) != _resolutions.end()) return;
 
 	/* use the closest possible resolution */
 	uint best = 0;
@@ -251,8 +251,8 @@ struct AllegroVkMapping {
 	uint8_t map_to;
 };
 
-#define AS(x, z) {x, 0, z}
-#define AM(x, y, z, w) {x, y - x, z}
+#define AS(x, z) {x, 1, z}
+#define AM(x, y, z, w) {x, y - x + 1, z}
 
 static const AllegroVkMapping _vk_mapping[] = {
 	/* Pageup stuff + up/down */
@@ -312,12 +312,11 @@ static uint32_t ConvertAllegroKeyIntoMy(char32_t *character)
 	int scancode;
 	int unicode = ureadkey(&scancode);
 
-	const AllegroVkMapping *map;
 	uint key = 0;
 
-	for (map = _vk_mapping; map != endof(_vk_mapping); ++map) {
-		if ((uint)(scancode - map->vk_from) <= map->vk_count) {
-			key = scancode - map->vk_from + map->map_to;
+	for (const auto &map : _vk_mapping) {
+		if (IsInsideBS(scancode, map.vk_from, map.vk_count)) {
+			key = scancode - map.vk_from + map.map_to;
 			break;
 		}
 	}
@@ -421,7 +420,7 @@ bool VideoDriver_Allegro::PollEvent()
  */
 int _allegro_instance_count = 0;
 
-const char *VideoDriver_Allegro::Start(const StringList &param)
+std::optional<std::string_view> VideoDriver_Allegro::Start(const StringList &param)
 {
 	if (_allegro_instance_count == 0 && install_allegro(SYSTEM_AUTODETECT, &errno, nullptr)) {
 		Debug(driver, 0, "allegro: install_allegro failed '{}'", allegro_error);
@@ -451,7 +450,7 @@ const char *VideoDriver_Allegro::Start(const StringList &param)
 
 	this->is_game_threaded = !GetDriverParamBool(param, "no_threads") && !GetDriverParamBool(param, "no_thread");
 
-	return nullptr;
+	return std::nullopt;
 }
 
 void VideoDriver_Allegro::Stop()

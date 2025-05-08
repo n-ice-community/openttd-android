@@ -11,12 +11,9 @@
 #define STDAFX_H
 
 #if defined(_WIN32)
-	/* MinGW defaults to Windows 7 if none of these are set, and they must be set before any MinGW header is included */
-#	define NTDDI_VERSION NTDDI_WINXP // Windows XP
-#	define _WIN32_WINNT 0x501        // Windows XP
-#	define _WIN32_WINDOWS 0x501      // Windows XP
-#	define WINVER 0x0501             // Windows XP
-#	define _WIN32_IE_ 0x0600         // 6.0 (XP+)
+	/* Minimum supported version is Windows 7. */
+#	define NTDDI_VERSION NTDDI_WIN7
+#	define _WIN32_WINNT 0x0601 // _WIN32_WINNT_WIN7
 #endif
 
 #ifdef _MSC_VER
@@ -84,12 +81,6 @@
 #if defined(__GNUC__) || (defined(__clang__) && !defined(_MSC_VER))
 #	define CDECL
 #endif /* __GNUC__ || __clang__ */
-
-#if __GNUC__ > 11 || (__GNUC__ == 11 && __GNUC_MINOR__ >= 1)
-#      define NOACCESS(args) __attribute__ ((access (none, args)))
-#else
-#      define NOACCESS(args)
-#endif
 
 #if defined(_WIN32)
 #	define WIN32_LEAN_AND_MEAN     // Exclude rarely-used stuff from Windows headers
@@ -165,20 +156,13 @@
 #if !defined(STRGEN) && !defined(SETTINGSGEN)
 #	if defined(_WIN32)
 		char *getcwd(char *buf, size_t size);
-#		include <io.h>
-#		include <tchar.h>
-
-#		define fopen(file, mode) _wfopen(OTTD2FS(file).c_str(), _T(mode))
-#		define unlink(file) _wunlink(OTTD2FS(file).c_str())
 
 		std::string FS2OTTD(const std::wstring &name);
 		std::wstring OTTD2FS(const std::string &name);
 #	elif defined(WITH_ICONV)
-#		define fopen(file, mode) fopen(OTTD2FS(file).c_str(), mode)
 		std::string FS2OTTD(const std::string &name);
 		std::string OTTD2FS(const std::string &name);
 #	else
-		// no override of fopen() since no transformation is required of the filename
 		template <typename T> std::string FS2OTTD(T name) { return name; }
 		template <typename T> std::string OTTD2FS(T name) { return name; }
 #	endif /* _WIN32 or WITH_ICONV */
@@ -204,7 +188,7 @@
 
 /*
  * When making a (pure) debug build, the compiler will by default disable
- * inlining of functions. This has a detremental effect on the performance of
+ * inlining of functions. This has a detrimental effect on the performance of
  * debug builds, especially when more and more trivial (wrapper) functions get
  * added to the code base.
  * Take for example the savegame called "Wentbourne", when running this game
@@ -273,6 +257,9 @@ static_assert(SIZE_MAX >= UINT32_MAX);
 #define M_PI   3.14159265358979323846
 #endif /* M_PI_2 */
 
+template <typename T, size_t N>
+char (&ArraySizeHelper(T (&array)[N]))[N];
+
 /**
  * Return the length of an fixed size array.
  * Unlike sizeof this function returns the number of elements
@@ -281,23 +268,7 @@ static_assert(SIZE_MAX >= UINT32_MAX);
  * @param x The pointer to the first element of the array
  * @return The number of elements
  */
-#define lengthof(x) (sizeof(x) / sizeof(x[0]))
-
-/**
- * Get the end element of an fixed size array.
- *
- * @param x The pointer to the first element of the array
- * @return The pointer past to the last element of the array
- */
-#define endof(x) (&x[lengthof(x)])
-
-/**
- * Get the last element of an fixed size array.
- *
- * @param x The pointer to the first element of the array
- * @return The pointer to the last element of the array
- */
-#define lastof(x) (&x[lengthof(x) - 1])
+#define lengthof(array) (sizeof(ArraySizeHelper(array)))
 
 /**
  * Gets the size of a variable within a class.
@@ -306,14 +277,6 @@ static_assert(SIZE_MAX >= UINT32_MAX);
  * @return the size of the variable
  */
 #define cpp_sizeof(base, variable) (sizeof(std::declval<base>().variable))
-
-/**
- * Gets the length of an array variable within a class.
- * @param base     The class the variable is in.
- * @param variable The array variable to get the size of.
- * @return the length of the array
- */
-#define cpp_lengthof(base, variable) (cpp_sizeof(base, variable) / cpp_sizeof(base, variable[0]))
 
 
 /* take care of some name clashes on MacOS */
@@ -328,9 +291,6 @@ static_assert(SIZE_MAX >= UINT32_MAX);
 #else
 #	define GNU_TARGET(x)
 #endif /* __GNUC__ || __clang__ */
-
-/* For the FMT library we only want to use the headers, not link to some library. */
-#define FMT_HEADER_ONLY
 
 [[noreturn]] void NOT_REACHED(const std::source_location location = std::source_location::current());
 [[noreturn]] void AssertFailedError(const char *expression, const std::source_location location = std::source_location::current());
@@ -354,21 +314,6 @@ static_assert(SIZE_MAX >= UINT32_MAX);
 	/* If all else fails, hardcode something :( */
 #	define MAX_PATH 260
 #endif
-
-/**
- * Version of the standard free that accepts const pointers.
- * @param ptr The data to free.
- */
-inline void free(const void *ptr)
-{
-	free(const_cast<void *>(ptr));
-}
-
-/**
- * The largest value that can be entered in a variable
- * @param type the type of the variable
- */
-#define MAX_UVALUE(type) ((type)~(type)0)
 
 #if defined(_MSC_VER) && !defined(_DEBUG)
 #	define IGNORE_UNINITIALIZED_WARNING_START __pragma(warning(push)) __pragma(warning(disable:4700))

@@ -115,10 +115,7 @@ protected:
 	}
 
 public:
-	/** Some compilers really like this. */
-	virtual ~TileIterator()
-	{
-	}
+	virtual ~TileIterator() = default;
 
 	/**
 	 * Get the tile we are currently at.
@@ -155,13 +152,6 @@ public:
 	{
 		return this->tile == rhs.tile;
 	}
-	/**
-	 * Inequality comparison.
-	 */
-	bool operator !=(const TileIterator &rhs) const
-	{
-		return this->tile != rhs.tile;
-	}
 
 	/**
 	 * Equality comparison.
@@ -169,13 +159,6 @@ public:
 	bool operator ==(const TileIndex &rhs) const
 	{
 		return this->tile == rhs;
-	}
-	/**
-	 * Inequality comparison.
-	 */
-	bool operator !=(const TileIndex &rhs) const
-	{
-		return this->tile != rhs;
 	}
 
 	static std::unique_ptr<TileIterator> Create(TileIndex corner1, TileIndex corner2, bool diagonal);
@@ -218,7 +201,7 @@ public:
 			this->tile++;
 		} else if (--this->y > 0) {
 			this->x = this->w;
-			this->tile += TileDiffXY(1, 1) - this->w;
+			this->tile += TileDiffXY(1 - this->w, 1);
 		} else {
 			this->tile = INVALID_TILE;
 		}

@@ -35,34 +35,34 @@
 
 void StrgenWarningI(const std::string &msg)
 {
-	if (_show_todo > 0) {
-		fmt::print(stderr, LINE_NUM_FMT("warning"), _file, _cur_line, msg);
+	if (_strgen.translation) {
+		fmt::print(stderr, LINE_NUM_FMT("info"), _strgen.file, _strgen.cur_line, msg);
 	} else {
-		fmt::print(stderr, LINE_NUM_FMT("info"), _file, _cur_line, msg);
+		fmt::print(stderr, LINE_NUM_FMT("warning"), _strgen.file, _strgen.cur_line, msg);
 	}
-	_warnings++;
+	_strgen.warnings++;
 }
 
 void StrgenErrorI(const std::string &msg)
 {
-	fmt::print(stderr, LINE_NUM_FMT("error"), _file, _cur_line, msg);
-	_errors++;
+	fmt::print(stderr, LINE_NUM_FMT("error"), _strgen.file, _strgen.cur_line, msg);
+	_strgen.errors++;
 }
 
 [[noreturn]] void StrgenFatalI(const std::string &msg)
 {
-	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _file, _cur_line, msg);
+	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _strgen.file, _strgen.cur_line, msg);
 #ifdef _MSC_VER
-	fmt::print(stderr, LINE_NUM_FMT("warning"), _file, _cur_line, "language is not compiled");
+	fmt::print(stderr, LINE_NUM_FMT("warning"), _strgen.file, _strgen.cur_line, "language is not compiled");
 #endif
 	throw std::exception();
 }
 
 [[noreturn]] void FatalErrorI(const std::string &msg)
 {
-	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _file, _cur_line, msg);
+	fmt::print(stderr, LINE_NUM_FMT("FATAL"), _strgen.file, _strgen.cur_line, msg);
 #ifdef _MSC_VER
-	fmt::print(stderr, LINE_NUM_FMT("warning"), _file, _cur_line, "language is not compiled");
+	fmt::print(stderr, LINE_NUM_FMT("warning"), _strgen.file, _strgen.cur_line, "language is not compiled");
 #endif
 	exit(2);
 }
@@ -91,89 +91,89 @@ struct FileStringReader : StringReader {
 		return result;
 	}
 
-	void HandlePragma(char *str) override;
+	void HandlePragma(char *str, LanguagePackHeader &lang) override;
 
 	void ParseFile() override
 	{
 		this->StringReader::ParseFile();
 
-		if (StrEmpty(_lang.name) || StrEmpty(_lang.own_name) || StrEmpty(_lang.isocode)) {
+		if (StrEmpty(_strgen.lang.name) || StrEmpty(_strgen.lang.own_name) || StrEmpty(_strgen.lang.isocode)) {
 			FatalError("Language must include ##name, ##ownname and ##isocode");
 		}
 	}
 };
 
-void FileStringReader::HandlePragma(char *str)
+void FileStringReader::HandlePragma(char *str, LanguagePackHeader &lang)
 {
 	if (!memcmp(str, "id ", 3)) {
 		this->data.next_string_id = std::strtoul(str + 3, nullptr, 0);
 	} else if (!memcmp(str, "name ", 5)) {
-		strecpy(_lang.name, str + 5, lastof(_lang.name));
+		strecpy(lang.name, str + 5);
 	} else if (!memcmp(str, "ownname ", 8)) {
-		strecpy(_lang.own_name, str + 8, lastof(_lang.own_name));
+		strecpy(lang.own_name, str + 8);
 	} else if (!memcmp(str, "isocode ", 8)) {
-		strecpy(_lang.isocode, str + 8, lastof(_lang.isocode));
+		strecpy(lang.isocode, str + 8);
 	} else if (!memcmp(str, "textdir ", 8)) {
 		if (!memcmp(str + 8, "ltr", 3)) {
-			_lang.text_dir = TD_LTR;
+			lang.text_dir = TD_LTR;
 		} else if (!memcmp(str + 8, "rtl", 3)) {
-			_lang.text_dir = TD_RTL;
+			lang.text_dir = TD_RTL;
 		} else {
 			FatalError("Invalid textdir {}", str + 8);
 		}
 	} else if (!memcmp(str, "digitsep ", 9)) {
 		str += 9;
-		strecpy(_lang.digit_group_separator, strcmp(str, "{NBSP}") == 0 ? NBSP : str, lastof(_lang.digit_group_separator));
+		strecpy(lang.digit_group_separator, strcmp(str, "{NBSP}") == 0 ? NBSP : str);
 	} else if (!memcmp(str, "digitsepcur ", 12)) {
 		str += 12;
-		strecpy(_lang.digit_group_separator_currency, strcmp(str, "{NBSP}") == 0 ? NBSP : str, lastof(_lang.digit_group_separator_currency));
+		strecpy(lang.digit_group_separator_currency, strcmp(str, "{NBSP}") == 0 ? NBSP : str);
 	} else if (!memcmp(str, "decimalsep ", 11)) {
 		str += 11;
-		strecpy(_lang.digit_decimal_separator, strcmp(str, "{NBSP}") == 0 ? NBSP : str, lastof(_lang.digit_decimal_separator));
+		strecpy(lang.digit_decimal_separator, strcmp(str, "{NBSP}") == 0 ? NBSP : str);
 	} else if (!memcmp(str, "winlangid ", 10)) {
 		const char *buf = str + 10;
 		long langid = std::strtol(buf, nullptr, 16);
-		if (langid > (long)UINT16_MAX || langid < 0) {
+		if (langid > UINT16_MAX || langid < 0) {
 			FatalError("Invalid winlangid {}", buf);
 		}
-		_lang.winlangid = (uint16_t)langid;
+		lang.winlangid = static_cast<uint16_t>(langid);
 	} else if (!memcmp(str, "grflangid ", 10)) {
 		const char *buf = str + 10;
 		long langid = std::strtol(buf, nullptr, 16);
 		if (langid >= 0x7F || langid < 0) {
 			FatalError("Invalid grflangid {}", buf);
 		}
-		_lang.newgrflangid = (uint8_t)langid;
+		lang.newgrflangid = static_cast<uint8_t>(langid);
 	} else if (!memcmp(str, "gender ", 7)) {
 		if (this->master) FatalError("Genders are not allowed in the base translation.");
-		char *buf = str + 7;
+		const char *buf = str + 7;
 
 		for (;;) {
-			const char *s = ParseWord(&buf);
+			auto s = ParseWord(&buf);
 
-			if (s == nullptr) break;
-			if (_lang.num_genders >= MAX_NUM_GENDERS) FatalError("Too many genders, max {}", MAX_NUM_GENDERS);
-			strecpy(_lang.genders[_lang.num_genders], s, lastof(_lang.genders[_lang.num_genders]));
-			_lang.num_genders++;
+			if (!s.has_value()) break;
+			if (lang.num_genders >= MAX_NUM_GENDERS) FatalError("Too many genders, max {}", MAX_NUM_GENDERS);
+			s->copy(lang.genders[lang.num_genders], CASE_GENDER_LEN - 1);
+			lang.num_genders++;
 		}
 	} else if (!memcmp(str, "case ", 5)) {
 		if (this->master) FatalError("Cases are not allowed in the base translation.");
-		char *buf = str + 5;
+		const char *buf = str + 5;
 
 		for (;;) {
-			const char *s = ParseWord(&buf);
+			auto s = ParseWord(&buf);
 
-			if (s == nullptr) break;
-			if (_lang.num_cases >= MAX_NUM_CASES) FatalError("Too many cases, max {}", MAX_NUM_CASES);
-			strecpy(_lang.cases[_lang.num_cases], s, lastof(_lang.cases[_lang.num_cases]));
-			_lang.num_cases++;
+			if (!s.has_value()) break;
+			if (lang.num_cases >= MAX_NUM_CASES) FatalError("Too many cases, max {}", MAX_NUM_CASES);
+			s->copy(lang.cases[lang.num_cases], CASE_GENDER_LEN - 1);
+			lang.num_cases++;
 		}
 	} else {
-		StringReader::HandlePragma(str);
+		StringReader::HandlePragma(str, lang);
 	}
 }
 
-bool CompareFiles(const std::filesystem::path &path1, const std::filesystem::path &path2)
+static bool CompareFiles(const std::filesystem::path &path1, const std::filesystem::path &path2)
 {
 	/* Check for equal size, but ignore the error code for cases when a file does not exist. */
 	std::error_code error_code;
@@ -223,8 +223,8 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 	/** The real path we eventually want to write to. */
 	const std::filesystem::path real_path;
 	/** The previous string ID that was printed. */
-	int prev;
-	uint total_strings;
+	size_t prev;
+	size_t total_strings;
 
 	/**
 	 * Open a file to write to.
@@ -238,7 +238,7 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 		this->output_stream << "#define TABLE_STRINGS_H\n";
 	}
 
-	void WriteStringID(const std::string &name, int stringid) override
+	void WriteStringID(const std::string &name, size_t stringid) override
 	{
 		if (prev + 1 != stringid) this->output_stream << "\n";
 		fmt::print(this->output_stream, "static const StringID {} = 0x{:X};\n", name, stringid);
@@ -249,9 +249,9 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 	void Finalise(const StringData &data) override
 	{
 		/* Find the plural form with the most amount of cases. */
-		int max_plural_forms = 0;
-		for (uint i = 0; i < lengthof(_plural_forms); i++) {
-			max_plural_forms = std::max(max_plural_forms, _plural_forms[i].plural_count);
+		size_t max_plural_forms = 0;
+		for (const auto &pf : _plural_forms) {
+			max_plural_forms = std::max(max_plural_forms, pf.plural_count);
 		}
 
 		fmt::print(this->output_stream,
@@ -261,7 +261,7 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 			"static const uint LANGUAGE_MAX_PLURAL_FORMS = {};\n"
 			"static const uint LANGUAGE_TOTAL_STRINGS    = {};\n"
 			"\n",
-			data.Version(), lengthof(_plural_forms), max_plural_forms, total_strings
+			data.Version(), std::size(_plural_forms), max_plural_forms, total_strings
 		);
 
 		this->output_stream << "#endif /* TABLE_STRINGS_H */\n";
@@ -274,9 +274,6 @@ struct HeaderFileWriter : HeaderWriter, FileWriter {
 			std::filesystem::remove(this->path, error_code); // Just ignore the error
 		} else {
 			/* else rename tmp.xxx into filename */
-#	if defined(_WIN32)
-			std::filesystem::remove(this->real_path, error_code); // Just ignore the error, file probably doesn't exist
-#	endif
 			std::filesystem::rename(this->path, this->real_path, error_code);
 			if (error_code) FatalError("rename({}, {}) failed: {}", this->path, this->real_path, error_code.message());
 		}
@@ -295,7 +292,7 @@ struct LanguageFileWriter : LanguageWriter, FileWriter {
 
 	void WriteHeader(const LanguagePackHeader *header) override
 	{
-		this->Write((const uint8_t *)header, sizeof(*header));
+		this->Write(reinterpret_cast<const char *>(header), sizeof(*header));
 	}
 
 	void Finalise() override
@@ -304,24 +301,23 @@ struct LanguageFileWriter : LanguageWriter, FileWriter {
 		this->FileWriter::Finalise();
 	}
 
-	void Write(const uint8_t *buffer, size_t length) override
+	void Write(const char *buffer, size_t length) override
 	{
-		this->output_stream.write((const char *)buffer, length);
+		this->output_stream.write(buffer, length);
 	}
 };
 
 /** Options of strgen. */
 static const OptionData _opts[] = {
-	GETOPT_GENERAL('C', '\0', "-export-commands", ODF_NO_VALUE),
-	GETOPT_GENERAL('L', '\0', "-export-plurals",  ODF_NO_VALUE),
-	GETOPT_GENERAL('P', '\0', "-export-pragmas",  ODF_NO_VALUE),
-	  GETOPT_NOVAL(     't',  "--todo"),
-	  GETOPT_NOVAL(     'w',  "--warning"),
-	  GETOPT_NOVAL(     'h',  "--help"),
-	GETOPT_GENERAL('h', '?',  nullptr,            ODF_NO_VALUE),
-	  GETOPT_VALUE(     's',  "--source_dir"),
-	  GETOPT_VALUE(     'd',  "--dest_dir"),
-	GETOPT_END(),
+	{ .type = ODF_NO_VALUE, .id = 'C', .longname = "-export-commands" },
+	{ .type = ODF_NO_VALUE, .id = 'L', .longname = "-export-plurals" },
+	{ .type = ODF_NO_VALUE, .id = 'P', .longname = "-export-pragmas" },
+	{ .type = ODF_NO_VALUE, .id = 't', .shortname = 't', .longname = "--todo" },
+	{ .type = ODF_NO_VALUE, .id = 'w', .shortname = 'w', .longname = "--warning" },
+	{ .type = ODF_NO_VALUE, .id = 'h', .shortname = 'h', .longname = "--help" },
+	{ .type = ODF_NO_VALUE, .id = 'h', .shortname = '?' },
+	{ .type = ODF_HAS_VALUE, .id = 's', .shortname = 's', .longname = "--source_dir" },
+	{ .type = ODF_HAS_VALUE, .id = 'd', .shortname = 'd', .longname = "--dest_dir" },
 };
 
 int CDECL main(int argc, char *argv[])
@@ -329,7 +325,7 @@ int CDECL main(int argc, char *argv[])
 	std::filesystem::path src_dir(".");
 	std::filesystem::path dest_dir;
 
-	GetOptData mgo(argc - 1, argv + 1, _opts);
+	GetOptData mgo(std::span(argv + 1, argc - 1), _opts);
 	for (;;) {
 		int i = mgo.GetOpt();
 		if (i == -1) break;
@@ -337,42 +333,42 @@ int CDECL main(int argc, char *argv[])
 		switch (i) {
 			case 'C':
 				fmt::print("args\tflags\tcommand\treplacement\n");
-				for (const CmdStruct *cs = _cmd_structs; cs < endof(_cmd_structs); cs++) {
+				for (const auto &cs : _cmd_structs) {
 					char flags;
-					if (cs->proc == EmitGender) {
+					if (cs.proc == EmitGender) {
 						flags = 'g'; // Command needs number of parameters defined by number of genders
-					} else if (cs->proc == EmitPlural) {
+					} else if (cs.proc == EmitPlural) {
 						flags = 'p'; // Command needs number of parameters defined by plural value
-					} else if (cs->flags & C_DONTCOUNT) {
+					} else if (cs.flags.Test(CmdFlag::DontCount)) {
 						flags = 'i'; // Command may be in the translation when it is not in base
 					} else {
 						flags = '0'; // Command needs no parameters
 					}
-					fmt::print("{}\t{:c}\t\"{}\"\t\"{}\"\n", cs->consumes, flags, cs->cmd, strstr(cs->cmd, "STRING") ? "STRING" : cs->cmd);
+					fmt::print("{}\t{:c}\t\"{}\"\t\"{}\"\n", cs.consumes, flags, cs.cmd, cs.cmd.find("STRING") != std::string::npos ? "STRING" : cs.cmd);
 				}
 				return 0;
 
 			case 'L':
 				fmt::print("count\tdescription\tnames\n");
-				for (const PluralForm *pf = _plural_forms; pf < endof(_plural_forms); pf++) {
-					fmt::print("{}\t\"{}\"\t{}\n", pf->plural_count, pf->description, pf->names);
+				for (const auto &pf : _plural_forms) {
+					fmt::print("{}\t\"{}\"\t{}\n", pf.plural_count, pf.description, pf.names);
 				}
 				return 0;
 
 			case 'P':
 				fmt::print("name\tflags\tdefault\tdescription\n");
-				for (size_t j = 0; j < lengthof(_pragmas); j++) {
+				for (const auto &pragma : _pragmas) {
 					fmt::print("\"{}\"\t{}\t\"{}\"\t\"{}\"\n",
-							_pragmas[j][0], _pragmas[j][1], _pragmas[j][2], _pragmas[j][3]);
+							pragma[0], pragma[1], pragma[2], pragma[3]);
 				}
 				return 0;
 
 			case 't':
-				_show_todo |= 1;
+				_strgen.annotate_todos = true;
 				break;
 
 			case 'w':
-				_show_todo |= 2;
+				_strgen.show_warnings = true;
 				break;
 
 			case 'h':
@@ -413,15 +409,15 @@ int CDECL main(int argc, char *argv[])
 		 * strgen generates strings.h to the destination directory. If it is supplied
 		 * with a (free) parameter the program will translate that language to destination
 		 * directory. As input english.txt is parsed from the source directory */
-		if (mgo.numleft == 0) {
-			std::filesystem::path input_path = src_dir;
+		if (mgo.arguments.empty()) {
+			std::filesystem::path input_path = std::move(src_dir);
 			input_path /= "english.txt";
 
 			/* parse master file */
 			StringData data(TEXT_TAB_END);
 			FileStringReader master_reader(data, input_path, true, false);
 			master_reader.ParseFile();
-			if (_errors != 0) return 1;
+			if (_strgen.errors != 0) return 1;
 
 			/* write strings.h */
 			std::filesystem::path output_path = dest_dir;
@@ -431,9 +427,9 @@ int CDECL main(int argc, char *argv[])
 			HeaderFileWriter writer(output_path);
 			writer.WriteHeader(data);
 			writer.Finalise(data);
-			if (_errors != 0) return 1;
-		} else if (mgo.numleft >= 1) {
-			std::filesystem::path input_path = src_dir;
+			if (_strgen.errors != 0) return 1;
+		} else {
+			std::filesystem::path input_path = std::move(src_dir);
 			input_path /= "english.txt";
 
 			StringData data(TEXT_TAB_END);
@@ -441,13 +437,13 @@ int CDECL main(int argc, char *argv[])
 			FileStringReader master_reader(data, input_path, true, false);
 			master_reader.ParseFile();
 
-			for (int i = 0; i < mgo.numleft; i++) {
+			for (auto &argument: mgo.arguments) {
 				data.FreeTranslation();
 
-				std::filesystem::path lang_file = mgo.argv[i];
+				std::filesystem::path lang_file = argument;
 				FileStringReader translation_reader(data, lang_file, false, lang_file.filename() != "english.txt");
 				translation_reader.ParseFile(); // target file
-				if (_errors != 0) return 1;
+				if (_strgen.errors != 0) return 1;
 
 				/* get the targetfile, strip any directories and append to destination path */
 				std::filesystem::path output_file = dest_dir;
@@ -459,8 +455,8 @@ int CDECL main(int argc, char *argv[])
 				writer.Finalise();
 
 				/* if showing warnings, print a summary of the language */
-				if ((_show_todo & 2) != 0) {
-					fmt::print("{} warnings and {} errors for {}\n", _warnings, _errors, output_file);
+				if (_strgen.show_warnings) {
+					fmt::print("{} warnings and {} errors for {}\n", _strgen.warnings, _strgen.errors, output_file);
 				}
 			}
 		}

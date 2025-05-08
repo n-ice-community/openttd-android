@@ -25,19 +25,9 @@
  */
 class ScriptLeagueTable : public ScriptObject {
 public:
-	/**
-	 * The league table IDs.
-	 */
-	enum LeagueTableID {
-		LEAGUE_TABLE_INVALID = ::INVALID_LEAGUE_TABLE, ///< An invalid league table id.
-	};
+	static constexpr LeagueTableID LEAGUE_TABLE_INVALID = ::LeagueTableID::Invalid(); ///< An invalid league table id.
 
-	/**
-	 * The league table element IDs.
-	 */
-	enum LeagueTableElementID {
-		LEAGUE_TABLE_ELEMENT_INVALID = ::INVALID_LEAGUE_TABLE_ELEMENT, ///< An invalid league table element id.
-	};
+	static constexpr LeagueTableElementID LEAGUE_TABLE_ELEMENT_INVALID = ::LeagueTableElementID::Invalid(); ///< An invalid league table element id.
 
 	/**
 	 * The type of a link.
@@ -80,7 +70,7 @@ public:
 	 * Create a new league table element.
 	 * @param table Id of the league table this element belongs to.
 	 * @param rating Value that elements are ordered by.
-	 * @param company Company to show the color blob for or INVALID_COMPANY.
+	 * @param company Company to show the color blob for or COMPANY_INVALID.
 	 * @param text Text of the element (can be either a raw string, or ScriptText object).
 	 * @param score String representation of the score associated with the element (can be either a raw string, or ScriptText object).
 	 * @param link_type Type of the referenced object.
@@ -92,12 +82,12 @@ public:
 	 * @pre score != null && len(score) != 0.
 	 * @pre IsValidLink(Link(link_type, link_target)).
 	 */
-	static LeagueTableElementID NewElement(LeagueTableID table, SQInteger rating, ScriptCompany::CompanyID company, Text *text, Text *score, LinkType link_type, LinkTargetID link_target);
+	static LeagueTableElementID NewElement(LeagueTableID table, SQInteger rating, ScriptCompany::CompanyID company, Text *text, Text *score, LinkType link_type, SQInteger link_target);
 
 	/**
 	 * Update the attributes of a league table element.
 	 * @param element Id of the element to update
-	 * @param company Company to show the color blob for or INVALID_COMPANY.
+	 * @param company Company to show the color blob for or COMPANY_INVALID.
 	 * @param text Text of the element (can be either a raw string, or ScriptText object).
 	 * @param link_type Type of the referenced object.
 	 * @param link_target Id of the referenced object.
@@ -107,7 +97,7 @@ public:
 	 * @pre text != null && len(text) != 0.
 	 * @pre IsValidLink(Link(link_type, link_target)).
 	 */
-	static bool UpdateElementData(LeagueTableElementID element, ScriptCompany::CompanyID company, Text *text, LinkType link_type, LinkTargetID link_target);
+	static bool UpdateElementData(LeagueTableElementID element, ScriptCompany::CompanyID company, Text *text, LinkType link_type, SQInteger link_target);
 
 	/**
 	 * Create a new league table element.

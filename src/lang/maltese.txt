@@ -175,6 +175,7 @@ STR_UNITS_HEIGHT_SI                                             :{DECIMAL} m
 
 
 
+
 # Common window strings
 STR_LIST_FILTER_OSKTITLE                                        :{BLACK}Daħħal sentenza għall-iffiltrar
 STR_LIST_FILTER_TOOLTIP                                         :{BLACK}Daħħal kelma biex tiffiltra din il-lista għall-
@@ -272,8 +273,8 @@ STR_TOOLBAR_TOOLTIP_FUND_CONSTRUCTION_OF_NEW                    :{BLACK}Ibni ind
 ###length 7
 STR_SCENEDIT_FILE_MENU_SEPARATOR                                :
 
+
 # Settings menu
-###length 16
 
 # File menu
 
@@ -316,6 +317,7 @@ STR_GRAPH_X_LABEL_MONTH                                         :{TINY_FONT}{STR
 STR_GRAPH_X_LABEL_MONTH_YEAR                                    :{TINY_FONT}{STRING}{}{NUM}
 STR_GRAPH_Y_LABEL                                               :{TINY_FONT}{STRING}
 STR_GRAPH_Y_LABEL_NUMBER                                        :{TINY_FONT}{COMMA}
+
 
 
 
@@ -398,7 +400,7 @@ STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE
 
 
 
-###length 44
+###length 45
 
 
 # Autosave dropdown
@@ -407,6 +409,7 @@ STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE
 
 
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :oħrajn
+
 
 
 
@@ -559,6 +562,7 @@ STR_CONFIG_SETTING_WARN_LOST_VEHICLE                            :Avza jekk jinti
 ###length 2
 
 
+
 ###length 2
 
 
@@ -666,6 +670,8 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 
 
 
+###length 3
+
 ###setting-zero-is-special
 
 
@@ -691,6 +697,8 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 
 
 ###setting-zero-is-special
+
+###length 2
 
 ###length 3
 
@@ -704,6 +712,8 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 ###length 5
 
 
+
+###length 3
 
 ###length 3
 
@@ -740,7 +750,6 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 ###length 3
 
 
-###length 2
 
 
 # Config errors
@@ -812,8 +821,6 @@ STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} 
 
 
 
-# Network set password
-
 # Network company info join/password
 
 # Network chat
@@ -822,13 +829,13 @@ STR_NETWORK_CONNECTING_DOWNLOADING_2                            :{BLACK}{BYTES} 
 # Network messages
 
 
-###length 22
+###length 23
 STR_NETWORK_ERROR_CLIENT_WRONG_REVISION                         :reviżjoni ħażina
 STR_NETWORK_ERROR_CLIENT_NAME_IN_USE                            :isem diġa qed jintuża
 STR_NETWORK_ERROR_CLIENT_WRONG_PASSWORD                         :password ħażin
 
 # Network related errors
-STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
+STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 ###length 12
 
@@ -874,6 +881,10 @@ STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
 
 
 
+
+
+
+
 # Signal window
 
 # Bridge selection window
@@ -902,7 +913,6 @@ STR_NETWORK_SERVER_MESSAGE                                      :*** {1:STRING}
 # Landscaping toolbar
 
 # Object construction window
-STR_OBJECT_BUILD_CLASS_TOOLTIP                                  :{BLACK}Aghzel il-klassi tal-oggett li se tibni
 
 
 # Tree planting window (last eight for SE only)
@@ -962,6 +972,8 @@ STR_MAPGEN_BY                                                   :{BLACK}*
 
 
 # Map generation progress
+
+
 
 # NewGRF settings
 STR_NEWGRF_SETTINGS_INFO_TITLE                                  :{WHITE}Informazzjoni dettaljata dwar NewGRF
@@ -1226,9 +1238,6 @@ STR_VEHICLE_VIEW_CAPTION                                        :{WHITE}{VEHICLE
 
 
 # Vehicle stopped/started animations
-###length 2
-
-###length 2
 
 # Vehicle details
 
@@ -1290,12 +1299,11 @@ STR_ORDERS_DELETE_ALL_TOOLTIP                                   :{BLACK}Hassar l
 ###length 3
 ###next-name-looks-similar
 
-STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} {STRING} {STRING}
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 
 
-STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION} {STRING}
+STR_ORDER_GO_TO_STATION                                         :{STRING} {STATION}
 
 STR_ORDER_IMPLICIT                                              :(Awtomatiku)
 
@@ -1315,7 +1323,6 @@ STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Патуваа�
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :патуваат за {STRING} со најмногу {VELOCITY}
 
 STR_TIMETABLE_TOTAL_TIME                                        :{BLACK}Din l-iskeda ser iddum {STRING} biex titlesta
-
 
 
 
@@ -1464,7 +1471,12 @@ STR_ERROR_CAN_T_SELL_ROAD_VEHICLE                               :{WHITE}Ma tista
 STR_ERROR_CAN_T_SELL_SHIP                                       :{WHITE}Ma tistax tbigħ dan il-vapur...
 STR_ERROR_CAN_T_SELL_AIRCRAFT                                   :{WHITE}Ma tistax tbigħ dan l-ajruplan...
 
+###length VEHICLE_TYPES
+
+###length VEHICLE_TYPES
+
 STR_ERROR_TOO_MANY_VEHICLES_IN_GAME                             :{WHITE}Hemm wisq vetturi fil-logħba
+
 
 
 
@@ -1721,18 +1733,7 @@ STR_SAVEGAME_NAME_DEFAULT                                       :{COMPANY}, {STR
 
 # Viewport strings
 STR_VIEWPORT_TOWN_POP                                           :{WHITE}{TOWN} ({COMMA})
-STR_VIEWPORT_TOWN                                               :{WHITE}{TOWN}
-STR_VIEWPORT_TOWN_TINY_BLACK                                    :{TINY_FONT}{BLACK}{TOWN}
-STR_VIEWPORT_TOWN_TINY_WHITE                                    :{TINY_FONT}{WHITE}{TOWN}
-
-STR_VIEWPORT_SIGN_SMALL_BLACK                                   :{TINY_FONT}{BLACK}{SIGN}
-STR_VIEWPORT_SIGN_SMALL_WHITE                                   :{TINY_FONT}{WHITE}{SIGN}
-
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
-STR_VIEWPORT_STATION_TINY                                       :{TINY_FONT}{STATION}
-
-STR_VIEWPORT_WAYPOINT                                           :{WAYPOINT}
-STR_VIEWPORT_WAYPOINT_TINY                                      :{TINY_FONT}{WAYPOINT}
 
 # Simple strings to get specific types of data
 STR_COMPANY_NAME                                                :{COMPANY}
@@ -1783,3 +1784,4 @@ STR_PLANE                                                       :{BLACK}{PLANE}
 STR_SHIP                                                        :{BLACK}{SHIP}
 
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :{STRING} ({VELOCITY})
+

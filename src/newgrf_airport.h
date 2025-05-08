@@ -12,6 +12,7 @@
 
 #include "airport.h"
 #include "timer/timer_game_calendar.h"
+#include "newgrf_badge_type.h"
 #include "newgrf_class.h"
 #include "newgrf_commons.h"
 #include "newgrf_spritegroup.h"
@@ -67,7 +68,7 @@ public:
 };
 
 /** List of default airport classes. */
-enum AirportClassID {
+enum AirportClassID : uint8_t {
 	APC_BEGIN     = 0,  ///< Lowest valid airport class id
 	APC_SMALL     = 0,  ///< id for small airports class
 	APC_LARGE,          ///< id for large airports class
@@ -77,10 +78,10 @@ enum AirportClassID {
 };
 
 /** Allow incrementing of AirportClassID variables */
-DECLARE_POSTFIX_INCREMENT(AirportClassID)
+DECLARE_INCREMENT_DECREMENT_OPERATORS(AirportClassID)
 
 /** TTDP airport types. Used to map our types to TTDPatch's */
-enum TTDPAirportType {
+enum TTDPAirportType : uint8_t {
 	ATP_TTDP_SMALL,    ///< Same as AT_SMALL
 	ATP_TTDP_LARGE,    ///< Same as AT_LARGE
 	ATP_TTDP_HELIPORT, ///< Same as AT_HELIPORT
@@ -94,16 +95,18 @@ struct HangarTileTable {
 	uint8_t hangar_num;   ///< The hangar to which this tile belongs.
 };
 
+struct AirportTileLayout {
+	std::vector<AirportTileTable> tiles; ///< List of all tiles in this layout.
+	Direction rotation; ///< The rotation of this layout.
+};
+
 /**
  * Defines the data structure for an airport.
  */
-struct AirportSpec {
+struct AirportSpec : NewGRFSpecBase<AirportClassID> {
 	const struct AirportFTAClass *fsm;     ///< the finite statemachine for the default airports
-	const AirportTileTable * const *table; ///< list of the tiles composing the airport
-	const Direction *rotation;             ///< the rotation of each tiletable
-	uint8_t num_table;                        ///< number of elements in the table
-	const HangarTileTable *depot_table;    ///< gives the position of the depots on the airports
-	uint8_t nof_depots;                       ///< the number of hangar tiles in this airport
+	std::vector<AirportTileLayout> layouts; ///< List of layouts composing the airport.
+	std::span<const HangarTileTable> depots; ///< Position of the depots on the airports.
 	uint8_t size_x;                           ///< size of airport in x direction
 	uint8_t size_y;                           ///< size of airport in y direction
 	uint8_t noise_level;                      ///< noise that this airport generates
@@ -112,12 +115,12 @@ struct AirportSpec {
 	TimerGameCalendar::Year max_year;      ///< last year the airport is available
 	StringID name;                         ///< name of this airport
 	TTDPAirportType ttd_airport_type;      ///< ttdpatch airport type (Small/Large/Helipad/Oilrig)
-	AirportClassID cls_id;                 ///< the class to which this airport type belongs
 	SpriteID preview_sprite;               ///< preview sprite for this airport
 	uint16_t maintenance_cost;               ///< maintenance cost multiplier
 	/* Newgrf data */
 	bool enabled;                          ///< Entity still available (by default true). Newgrf can disable it, though.
 	struct GRFFileProps grf_prop;          ///< Properties related to the grf file.
+	std::vector<BadgeID> badges;
 
 	static const AirportSpec *Get(uint8_t type);
 	static AirportSpec *GetWithoutOverride(uint8_t type);
@@ -130,8 +133,8 @@ struct AirportSpec {
 	/** Get the index of this spec. */
 	uint8_t GetIndex() const
 	{
-		assert(this >= specs && this < endof(specs));
-		return (uint8_t)(this - specs);
+		assert(this >= std::begin(specs) && this < std::end(specs));
+		return static_cast<uint8_t>(std::distance(std::cbegin(specs), this));
 	}
 
 	static const AirportSpec dummy; ///< The dummy airport.
@@ -148,7 +151,7 @@ void BindAirportSpecs();
 /** Resolver for the airport scope. */
 struct AirportScopeResolver : public ScopeResolver {
 	struct Station *st; ///< Station of the airport for which the callback is run, or \c nullptr for build gui.
-	uint8_t airport_id;    ///< Type of airport for which the callback is run.
+	const AirportSpec *spec; ///< AirportSpec for which the callback is run.
 	uint8_t layout;        ///< Layout of the airport to build.
 	TileIndex tile;     ///< Tile for the callback, only valid for airporttile callbacks.
 
@@ -157,16 +160,16 @@ struct AirportScopeResolver : public ScopeResolver {
 	 * @param ro Surrounding resolver.
 	 * @param tile %Tile for the callback, only valid for airporttile callbacks.
 	 * @param st %Station of the airport for which the callback is run, or \c nullptr for build gui.
-	 * @param airport_id Type of airport for which the callback is run.
+	 * @param spec AirportSpec for which the callback is run.
 	 * @param layout Layout of the airport to build.
 	 */
-	AirportScopeResolver(ResolverObject &ro, TileIndex tile, Station *st, uint8_t airport_id, uint8_t layout)
-		: ScopeResolver(ro), st(st), airport_id(airport_id), layout(layout), tile(tile)
+	AirportScopeResolver(ResolverObject &ro, TileIndex tile, Station *st, const AirportSpec *spec, uint8_t layout)
+		: ScopeResolver(ro), st(st), spec(spec), layout(layout), tile(tile)
 	{
 	}
 
 	uint32_t GetRandomBits() const override;
-	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const override;
+	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const override;
 	void StorePSA(uint pos, int32_t value) override;
 };
 
@@ -174,9 +177,9 @@ struct AirportScopeResolver : public ScopeResolver {
 /** Resolver object for airports. */
 struct AirportResolverObject : public ResolverObject {
 	AirportScopeResolver airport_scope;
-	std::unique_ptr<TownScopeResolver> town_scope; ///< The town scope resolver (created on the first call).
+	std::optional<TownScopeResolver> town_scope = std::nullopt; ///< The town scope resolver (created on the first call).
 
-	AirportResolverObject(TileIndex tile, Station *st, uint8_t airport_id, uint8_t layout,
+	AirportResolverObject(TileIndex tile, Station *st, const AirportSpec *spec, uint8_t layout,
 			CallbackID callback = CBID_NO_CALLBACK, uint32_t callback_param1 = 0, uint32_t callback_param2 = 0);
 
 	TownScopeResolver *GetTown();

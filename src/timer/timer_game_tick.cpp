@@ -18,16 +18,16 @@
 
 TimerGameTick::TickCounter TimerGameTick::counter = 0;
 
-template<>
+template <>
 void IntervalTimer<TimerGameTick>::Elapsed(TimerGameTick::TElapsed delta)
 {
-	if (this->period == 0) return;
+	if (this->period.value == 0) return;
 
 	this->storage.elapsed += delta;
 
 	uint count = 0;
-	while (this->storage.elapsed >= this->period) {
-		this->storage.elapsed -= this->period;
+	while (this->storage.elapsed >= this->period.value) {
+		this->storage.elapsed -= this->period.value;
 		count++;
 	}
 
@@ -36,21 +36,21 @@ void IntervalTimer<TimerGameTick>::Elapsed(TimerGameTick::TElapsed delta)
 	}
 }
 
-template<>
+template <>
 void TimeoutTimer<TimerGameTick>::Elapsed(TimerGameTick::TElapsed delta)
 {
 	if (this->fired) return;
-	if (this->period == 0) return;
+	if (this->period.value == 0) return;
 
 	this->storage.elapsed += delta;
 
-	if (this->storage.elapsed >= this->period) {
+	if (this->storage.elapsed >= this->period.value) {
 		this->callback();
 		this->fired = true;
 	}
 }
 
-template<>
+template <>
 bool TimerManager<TimerGameTick>::Elapsed(TimerGameTick::TElapsed delta)
 {
 	TimerGameTick::counter++;
@@ -63,8 +63,17 @@ bool TimerManager<TimerGameTick>::Elapsed(TimerGameTick::TElapsed delta)
 }
 
 #ifdef WITH_ASSERT
-template<>
-void TimerManager<TimerGameTick>::Validate(TimerGameTick::TPeriod)
+template <>
+void TimerManager<TimerGameTick>::Validate(TimerGameTick::TPeriod period)
 {
+	if (period.priority == TimerGameTick::Priority::NONE) return;
+
+	/* Validate we didn't make a developer error and scheduled more than one
+	 * entry on the same priority. There can only be one timer on
+	 * a specific priority, to ensure we are deterministic, and to avoid
+	 * container sort order invariant issues with timer period saveload. */
+	for (const auto &timer : TimerManager<TimerGameTick>::GetTimers()) {
+		assert(timer->period.priority != period.priority);
+	}
 }
 #endif /* WITH_ASSERT */

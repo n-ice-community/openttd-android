@@ -13,11 +13,12 @@
 #include "core/enum_type.hpp"
 
 /** The different abstract types of files that the system knows about. */
-enum AbstractFileType {
+enum AbstractFileType : uint8_t {
 	FT_NONE,      ///< nothing to do
 	FT_SAVEGAME,  ///< old or new savegame
 	FT_SCENARIO,  ///< old or new scenario
 	FT_HEIGHTMAP, ///< heightmap file
+	FT_TOWN_DATA, ///< town data file
 
 	FT_INVALID = 7, ///< Invalid or unknown file type.
 	FT_NUMBITS = 3, ///< Number of bits required for storing a #AbstractFileType value.
@@ -25,7 +26,7 @@ enum AbstractFileType {
 };
 
 /** Kinds of files in each #AbstractFileType. */
-enum DetailedFileType {
+enum DetailedFileType : uint8_t {
 	/* Save game and scenario files. */
 	DFT_OLD_GAME_FILE, ///< Old save game or scenario file.
 	DFT_GAME_FILE,     ///< Save game or scenario file.
@@ -34,17 +35,22 @@ enum DetailedFileType {
 	DFT_HEIGHTMAP_BMP, ///< BMP file.
 	DFT_HEIGHTMAP_PNG, ///< PNG file.
 
+	/* Town data files. */
+	DFT_TOWN_DATA_JSON,  ///< JSON file.
+
 	/* fios 'files' */
 	DFT_FIOS_DRIVE,  ///< A drive (letter) entry.
 	DFT_FIOS_PARENT, ///< A parent directory entry.
 	DFT_FIOS_DIR,    ///< A directory entry.
 	DFT_FIOS_DIRECT, ///< Direct filename.
 
+	DFT_END,         ///< End of this enum. Supports a compile time size check against _fios_colours in fios_gui.cpp
+
 	DFT_INVALID = 255, ///< Unknown or invalid file.
 };
 
 /** Operation performed on the file. */
-enum SaveLoadOperation {
+enum SaveLoadOperation : uint8_t {
 	SLO_CHECK,   ///< Load file for checking and/or preview.
 	SLO_LOAD,    ///< File is being loaded.
 	SLO_SAVE,    ///< File is being saved.
@@ -64,7 +70,7 @@ enum SaveLoadOperation {
  * Values are a combination of #AbstractFileType and #DetailedFileType.
  * @see GetAbstractFileType GetDetailedFileType
  */
-enum FiosType {
+enum FiosType : uint16_t {
 	FIOS_TYPE_DRIVE  = MAKE_FIOS_TYPE(FT_NONE, DFT_FIOS_DRIVE),
 	FIOS_TYPE_PARENT = MAKE_FIOS_TYPE(FT_NONE, DFT_FIOS_PARENT),
 	FIOS_TYPE_DIR    = MAKE_FIOS_TYPE(FT_NONE, DFT_FIOS_DIR),
@@ -76,6 +82,7 @@ enum FiosType {
 	FIOS_TYPE_OLD_SCENARIO = MAKE_FIOS_TYPE(FT_SCENARIO, DFT_OLD_GAME_FILE),
 	FIOS_TYPE_PNG          = MAKE_FIOS_TYPE(FT_HEIGHTMAP, DFT_HEIGHTMAP_PNG),
 	FIOS_TYPE_BMP          = MAKE_FIOS_TYPE(FT_HEIGHTMAP, DFT_HEIGHTMAP_BMP),
+	FIOS_TYPE_JSON         = MAKE_FIOS_TYPE(FT_TOWN_DATA, DFT_TOWN_DATA_JSON),
 
 	FIOS_TYPE_INVALID = MAKE_FIOS_TYPE(FT_INVALID, DFT_INVALID),
 };
@@ -105,7 +112,7 @@ inline DetailedFileType GetDetailedFileType(FiosType fios_type)
 /**
  * The different kinds of subdirectories OpenTTD uses
  */
-enum Subdirectory {
+enum Subdirectory : uint8_t {
 	BASE_DIR,      ///< Base directory for all subdirectories
 	SAVE_DIR,      ///< Base directory for all savegames
 	AUTOSAVE_DIR,  ///< Subdirectory of save for autosaves
@@ -122,6 +129,7 @@ enum Subdirectory {
 	GAME_LIBRARY_DIR, ///< Subdirectory for all GS libraries
 	SCREENSHOT_DIR,   ///< Subdirectory for all screenshots
 	SOCIAL_INTEGRATION_DIR, ///< Subdirectory for all social integration plugins
+	DOCS_DIR,      ///< Subdirectory for documentation
 	NUM_SUBDIRS,   ///< Number of subdirectories
 	NO_DIRECTORY,  ///< A path without any base directory
 };
@@ -129,7 +137,7 @@ enum Subdirectory {
 /**
  * Types of searchpaths OpenTTD might use
  */
-enum Searchpath : unsigned {
+enum Searchpath : uint8_t {
 	SP_FIRST_DIR,
 	SP_WORKING_DIR = SP_FIRST_DIR, ///< Search in the working directory
 #ifdef USE_XDG
@@ -146,6 +154,35 @@ enum Searchpath : unsigned {
 	NUM_SEARCHPATHS
 };
 
-DECLARE_POSTFIX_INCREMENT(Searchpath)
+DECLARE_INCREMENT_DECREMENT_OPERATORS(Searchpath)
+
+class FileHandle {
+public:
+	static std::optional<FileHandle> Open(const std::string &filename, const std::string &mode);
+
+	inline void Close() { this->f.reset(); }
+
+	inline operator FILE *()
+	{
+		assert(this->f != nullptr);
+		return this->f.get();
+	}
+
+private:
+	/** Helper to close a FILE * with a \c std::unique_ptr. */
+	struct FileDeleter {
+		void operator ()(FILE *f)
+		{
+			if (f != nullptr) fclose(f);
+		}
+	};
+
+	std::unique_ptr<FILE, FileDeleter> f;
+
+	FileHandle(FILE *f) : f(f) { assert(this->f != nullptr); }
+};
+
+/* Ensure has_value() is used consistently. */
+template <> constexpr std::optional<FileHandle>::operator bool() const noexcept = delete;
 
 #endif /* FILEIO_TYPE_H */

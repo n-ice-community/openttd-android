@@ -11,7 +11,7 @@
 #include "sprite_file_type.hpp"
 
 /** Signature of a container version 2 GRF. */
-extern const uint8_t _grf_cont_v2_sig[8] = {'G', 'R', 'F', 0x82, 0x0D, 0x0A, 0x1A, 0x0A};
+extern const std::array<uint8_t, 8> _grf_cont_v2_sig = {'G', 'R', 'F', 0x82, 0x0D, 0x0A, 0x1A, 0x0A};
 
 /**
  * Get the container version of the currently opened GRF file.
@@ -24,8 +24,8 @@ static uint8_t GetGRFContainerVersion(SpriteFile &file)
 	if (file.ReadWord() == 0) {
 		/* Check for GRF container version 2, which is identified by the bytes
 		 * '47 52 46 82 0D 0A 1A 0A' at the start of the file. */
-		for (uint i = 0; i < lengthof(_grf_cont_v2_sig); i++) {
-			if (file.ReadByte() != _grf_cont_v2_sig[i]) return 0; // Invalid format
+		for (const auto &expected_sig_byte : _grf_cont_v2_sig) {
+			if (file.ReadByte() != expected_sig_byte) return 0; // Invalid format
 		}
 
 		return 2;

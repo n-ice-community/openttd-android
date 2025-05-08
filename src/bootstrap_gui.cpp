@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "base_media_base.h"
+#include "base_media_graphics.h"
 #include "blitter/factory.hpp"
 #include "error_func.h"
 
@@ -43,17 +44,17 @@ static constexpr NWidgetPart _background_widgets[] = {
 static WindowDesc _background_desc(
 	WDP_MANUAL, nullptr, 0, 0,
 	WC_BOOTSTRAP, WC_NONE,
-	WDF_NO_CLOSE,
-	std::begin(_background_widgets), std::end(_background_widgets)
+	WindowDefaultFlag::NoClose,
+	_background_widgets
 );
 
 /** The background for the game. */
 class BootstrapBackground : public Window {
 public:
-	BootstrapBackground() : Window(&_background_desc)
+	BootstrapBackground() : Window(_background_desc)
 	{
 		this->InitNested(0);
-		CLRBITS(this->flags, WF_WHITE_BORDER);
+		this->flags.Reset(WindowFlag::WhiteBorder);
 		ResizeWindow(this, _screen.width, _screen.height);
 	}
 
@@ -67,11 +68,11 @@ public:
 /** Nested widgets for the error window. */
 static constexpr NWidgetPart _nested_bootstrap_errmsg_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_CAPTION, COLOUR_GREY, WID_BEM_CAPTION), SetDataTip(STR_MISSING_GRAPHICS_ERROR_TITLE, STR_NULL),
+		NWidget(WWT_CAPTION, COLOUR_GREY, WID_BEM_CAPTION), SetStringTip(STR_MISSING_GRAPHICS_ERROR_TITLE),
 	EndContainer(),
 	NWidget(WWT_PANEL, COLOUR_GREY, WID_BEM_MESSAGE), EndContainer(),
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BEM_QUIT), SetDataTip(STR_MISSING_GRAPHICS_ERROR_QUIT, STR_NULL), SetFill(1, 0),
+		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BEM_QUIT), SetStringTip(STR_MISSING_GRAPHICS_ERROR_QUIT), SetFill(1, 0),
 	EndContainer(),
 };
 
@@ -79,14 +80,14 @@ static constexpr NWidgetPart _nested_bootstrap_errmsg_widgets[] = {
 static WindowDesc _bootstrap_errmsg_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_BOOTSTRAP, WC_NONE,
-	WDF_MODAL | WDF_NO_CLOSE,
-	std::begin(_nested_bootstrap_errmsg_widgets), std::end(_nested_bootstrap_errmsg_widgets)
+	{WindowDefaultFlag::Modal, WindowDefaultFlag::NoClose},
+	_nested_bootstrap_errmsg_widgets
 );
 
 /** The window for a failed bootstrap. */
 class BootstrapErrorWindow : public Window {
 public:
-	BootstrapErrorWindow() : Window(&_bootstrap_errmsg_desc)
+	BootstrapErrorWindow() : Window(_bootstrap_errmsg_desc)
 	{
 		this->InitNested(1);
 	}
@@ -97,12 +98,12 @@ public:
 		this->Window::Close();
 	}
 
-	void UpdateWidgetSize(WidgetID widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize) override
+	void UpdateWidgetSize(WidgetID widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize) override
 	{
 		if (widget == WID_BEM_MESSAGE) {
-			*size = GetStringBoundingBox(STR_MISSING_GRAPHICS_ERROR);
-			size->width += WidgetDimensions::scaled.frametext.Horizontal();
-			size->height += WidgetDimensions::scaled.frametext.Vertical();
+			size = GetStringBoundingBox(STR_MISSING_GRAPHICS_ERROR);
+			size.width += WidgetDimensions::scaled.frametext.Horizontal();
+			size.height += WidgetDimensions::scaled.frametext.Vertical();
 		}
 	}
 
@@ -123,7 +124,7 @@ public:
 
 /** Nested widgets for the download window. */
 static constexpr NWidgetPart _nested_bootstrap_download_status_window_widgets[] = {
-	NWidget(WWT_CAPTION, COLOUR_GREY), SetDataTip(STR_CONTENT_DOWNLOAD_TITLE, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+	NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_CONTENT_DOWNLOAD_TITLE, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 	NWidget(WWT_PANEL, COLOUR_GREY),
 		NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0), SetPadding(WidgetDimensions::unscaled.modalpopup),
 			NWidget(WWT_EMPTY, INVALID_COLOUR, WID_NCDS_PROGRESS_BAR), SetFill(1, 0),
@@ -136,8 +137,8 @@ static constexpr NWidgetPart _nested_bootstrap_download_status_window_widgets[] 
 static WindowDesc _bootstrap_download_status_window_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_NETWORK_STATUS_WINDOW, WC_NONE,
-	WDF_MODAL | WDF_NO_CLOSE,
-	std::begin(_nested_bootstrap_download_status_window_widgets), std::end(_nested_bootstrap_download_status_window_widgets)
+	{WindowDefaultFlag::Modal, WindowDefaultFlag::NoClose},
+	_nested_bootstrap_download_status_window_widgets
 );
 
 
@@ -145,7 +146,7 @@ static WindowDesc _bootstrap_download_status_window_desc(
 struct BootstrapContentDownloadStatusWindow : public BaseNetworkContentDownloadStatusWindow {
 public:
 	/** Simple call the constructor of the superclass. */
-	BootstrapContentDownloadStatusWindow() : BaseNetworkContentDownloadStatusWindow(&_bootstrap_download_status_window_desc)
+	BootstrapContentDownloadStatusWindow() : BaseNetworkContentDownloadStatusWindow(_bootstrap_download_status_window_desc)
 	{
 	}
 
@@ -175,12 +176,12 @@ public:
 /** The widgets for the query. It has no close box as that sprite does not exist yet. */
 static constexpr NWidgetPart _bootstrap_query_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_CAPTION, COLOUR_GREY), SetDataTip(STR_MISSING_GRAPHICS_SET_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+		NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_MISSING_GRAPHICS_SET_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 	EndContainer(),
 	NWidget(WWT_PANEL, COLOUR_GREY, WID_BAFD_QUESTION), EndContainer(),
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BAFD_YES), SetDataTip(STR_MISSING_GRAPHICS_YES_DOWNLOAD, STR_NULL),
-		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BAFD_NO), SetDataTip(STR_MISSING_GRAPHICS_NO_QUIT, STR_NULL),
+		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BAFD_YES), SetStringTip(STR_MISSING_GRAPHICS_YES_DOWNLOAD),
+		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BAFD_NO), SetStringTip(STR_MISSING_GRAPHICS_NO_QUIT),
 	EndContainer(),
 };
 
@@ -188,17 +189,17 @@ static constexpr NWidgetPart _bootstrap_query_widgets[] = {
 static WindowDesc _bootstrap_query_desc(
 	WDP_CENTER, nullptr, 0, 0,
 	WC_CONFIRM_POPUP_QUERY, WC_NONE,
-	WDF_NO_CLOSE,
-	std::begin(_bootstrap_query_widgets), std::end(_bootstrap_query_widgets)
+	WindowDefaultFlag::NoClose,
+	_bootstrap_query_widgets
 );
 
 /** The window for the query. It can't use the generic query window as that uses sprites that don't exist yet. */
 class BootstrapAskForDownloadWindow : public Window, ContentCallback {
-	Dimension button_size; ///< The dimension of the button
+	Dimension button_size{}; ///< The dimension of the button
 
 public:
 	/** Start listening to the content client events. */
-	BootstrapAskForDownloadWindow() : Window(&_bootstrap_query_desc)
+	BootstrapAskForDownloadWindow() : Window(_bootstrap_query_desc)
 	{
 		this->InitNested(WN_CONFIRM_POPUP_QUERY_BOOTSTRAP);
 		_network_content_client.AddCallback(this);
@@ -211,7 +212,7 @@ public:
 		this->Window::Close();
 	}
 
-	void UpdateWidgetSize(WidgetID widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize) override
+	void UpdateWidgetSize(WidgetID widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize) override
 	{
 		/* We cache the button size. This is safe as no reinit can happen here. */
 		if (this->button_size.width == 0) {
@@ -223,13 +224,13 @@ public:
 		switch (widget) {
 			case WID_BAFD_QUESTION:
 				/* The question is twice as wide as the buttons, and determine the height based on the width. */
-				size->width = this->button_size.width * 2;
-				size->height = GetStringHeight(STR_MISSING_GRAPHICS_SET_MESSAGE, size->width - WidgetDimensions::scaled.frametext.Horizontal()) + WidgetDimensions::scaled.frametext.Vertical();
+				size.width = this->button_size.width * 2;
+				size.height = GetStringHeight(STR_MISSING_GRAPHICS_SET_MESSAGE, size.width - WidgetDimensions::scaled.frametext.Horizontal()) + WidgetDimensions::scaled.frametext.Vertical();
 				break;
 
 			case WID_BAFD_YES:
 			case WID_BAFD_NO:
-				*size = this->button_size;
+				size = this->button_size;
 				break;
 		}
 	}
@@ -272,10 +273,10 @@ public:
 		_network_content_client.RequestContentList(CONTENT_TYPE_BASE_GRAPHICS);
 	}
 
-	void OnReceiveContentInfo(const ContentInfo *ci) override
+	void OnReceiveContentInfo(const ContentInfo &ci) override
 	{
 		/* And once the meta data is received, start downloading it. */
-		_network_content_client.Select(ci->id);
+		_network_content_client.Select(ci.id);
 		new BootstrapContentDownloadStatusWindow();
 		this->Close();
 	}
@@ -291,10 +292,10 @@ public:
 #	include "video/video_driver.hpp"
 
 class BootstrapEmscripten : public ContentCallback {
-	bool downloading{false};
-	uint total_files{0};
-	uint total_bytes{0};
-	uint downloaded_bytes{0};
+	bool downloading = false;
+	uint total_files = 0;
+	uint total_bytes = 0;
+	uint downloaded_bytes = 0;
 
 public:
 	BootstrapEmscripten()
@@ -319,19 +320,19 @@ public:
 		_network_content_client.RequestContentList(CONTENT_TYPE_BASE_GRAPHICS);
 	}
 
-	void OnReceiveContentInfo(const ContentInfo *ci) override
+	void OnReceiveContentInfo(const ContentInfo &ci) override
 	{
 		if (this->downloading) return;
 
 		/* And once the metadata is received, start downloading it. */
-		_network_content_client.Select(ci->id);
+		_network_content_client.Select(ci.id);
 		_network_content_client.DownloadSelectedContent(this->total_files, this->total_bytes);
 		this->downloading = true;
 
 		EM_ASM({ if (window["openttd_bootstrap"]) openttd_bootstrap($0, $1); }, this->downloaded_bytes, this->total_bytes);
 	}
 
-	void OnDownloadProgress(const ContentInfo *, int bytes) override
+	void OnDownloadProgress(const ContentInfo &, int bytes) override
 	{
 		/* A negative value means we are resetting; for example, when retrying or using a fallback. */
 		if (bytes < 0) {
@@ -406,7 +407,7 @@ bool HandleBootstrap()
 	if (_exit_game) return false;
 
 	/* Try to probe the graphics. Should work this time. */
-	if (!BaseGraphics::SetSet({})) goto failure;
+	if (!BaseGraphics::SetSet(nullptr)) goto failure;
 
 	/* Finally we can continue heading for the menu. */
 	_game_mode = GM_MENU;

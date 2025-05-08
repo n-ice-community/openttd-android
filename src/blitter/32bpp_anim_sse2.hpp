@@ -31,14 +31,14 @@
 class Blitter_32bppSSE2_Anim : public Blitter_32bppAnim {
 public:
 	void PaletteAnimate(const Palette &palette) override;
-	const char *GetName() override { return "32bpp-sse2-anim"; }
+	std::string_view GetName() override { return "32bpp-sse2-anim"; }
 };
 
 /** Factory for the partially 32bpp blitter with animation. */
 class FBlitter_32bppSSE2_Anim : public BlitterFactory {
 public:
 	FBlitter_32bppSSE2_Anim() : BlitterFactory("32bpp-sse2-anim", "32bpp partially SSE2 Animation Blitter (palette animation)", HasCPUIDFlag(1, 3, 26)) {}
-	Blitter *CreateInstance() override { return new Blitter_32bppSSE2_Anim(); }
+	std::unique_ptr<Blitter> CreateInstance() override { return std::make_unique<Blitter_32bppSSE2_Anim>(); }
 };
 
 #endif /* WITH_SSE */

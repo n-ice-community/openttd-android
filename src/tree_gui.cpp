@@ -52,8 +52,8 @@ const PalSpriteID tree_sprites[] = {
  */
 static Dimension GetMaxTreeSpriteSize()
 {
-	const uint16_t base = _tree_base_by_landscape[_settings_game.game_creation.landscape];
-	const uint16_t count = _tree_count_by_landscape[_settings_game.game_creation.landscape];
+	const uint16_t base = _tree_base_by_landscape[to_underlying(_settings_game.game_creation.landscape)];
+	const uint16_t count = _tree_count_by_landscape[to_underlying(_settings_game.game_creation.landscape)];
 
 	Dimension size, this_size;
 	Point offset;
@@ -82,14 +82,14 @@ class BuildTreesWindow : public Window
 	/** Visual Y offset of tree root from the bottom of the tree type buttons */
 	static const int BUTTON_BOTTOM_OFFSET = 7;
 
-	enum PlantingMode {
+	enum PlantingMode : uint8_t {
 		PM_NORMAL,
 		PM_FOREST_SM,
 		PM_FOREST_LG,
 	};
 
-	int tree_to_plant;  ///< Tree number to plant, \c TREE_INVALID for a random tree.
-	PlantingMode mode;  ///< Current mode for planting
+	int tree_to_plant = -1; ///< Tree number to plant, \c TREE_INVALID for a random tree.
+	PlantingMode mode = PM_NORMAL; ///< Current mode for planting
 
 	~BuildTreesWindow()
 	{
@@ -135,7 +135,7 @@ class BuildTreesWindow : public Window
 	{
 		TreeType treetype = (TreeType)this->tree_to_plant;
 		if (this->tree_to_plant == TREE_INVALID) {
-			treetype = (TreeType)(InteractiveRandomRange(_tree_count_by_landscape[_settings_game.game_creation.landscape]) + _tree_base_by_landscape[_settings_game.game_creation.landscape]);
+			treetype = (TreeType)(InteractiveRandomRange(_tree_count_by_landscape[to_underlying(_settings_game.game_creation.landscape)]) + _tree_base_by_landscape[to_underlying(_settings_game.game_creation.landscape)]);
 		}
 		const uint radius = this->mode == PM_FOREST_LG ? 12 : 5;
 		const uint count = this->mode == PM_FOREST_LG ? 12 : 5;
@@ -144,7 +144,7 @@ class BuildTreesWindow : public Window
 	}
 
 public:
-	BuildTreesWindow(WindowDesc *desc, WindowNumber window_number) : Window(desc), tree_to_plant(-1), mode(PM_NORMAL)
+	BuildTreesWindow(WindowDesc &desc, WindowNumber window_number) : Window(desc)
 	{
 		this->CreateNestedTree();
 		ResetObjectToPlace();
@@ -157,13 +157,13 @@ public:
 		this->FinishInitNested(window_number);
 	}
 
-	void UpdateWidgetSize(WidgetID widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize) override
+	void UpdateWidgetSize(WidgetID widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize) override
 	{
 		if (widget >= WID_BT_TYPE_BUTTON_FIRST) {
 			/* Ensure tree type buttons are sized after the largest tree type */
 			Dimension d = GetMaxTreeSpriteSize();
-			size->width = d.width + padding.width;
-			size->height = d.height + padding.height + ScaleGUITrad(BUTTON_BOTTOM_OFFSET); // we need some more space
+			size.width = d.width + padding.width;
+			size.height = d.height + padding.height + ScaleGUITrad(BUTTON_BOTTOM_OFFSET); // we need some more space
 		}
 	}
 
@@ -267,24 +267,24 @@ public:
  */
 static std::unique_ptr<NWidgetBase> MakeTreeTypeButtons()
 {
-	const uint8_t type_base = _tree_base_by_landscape[_settings_game.game_creation.landscape];
-	const uint8_t type_count = _tree_count_by_landscape[_settings_game.game_creation.landscape];
+	const uint8_t type_base = _tree_base_by_landscape[to_underlying(_settings_game.game_creation.landscape)];
+	const uint8_t type_count = _tree_count_by_landscape[to_underlying(_settings_game.game_creation.landscape)];
 
 	/* Toyland has 9 tree types, which look better in 3x3 than 4x3 */
 	const int num_columns = type_count == 9 ? 3 : 4;
 	const int num_rows = CeilDiv(type_count, num_columns);
 	uint8_t cur_type = type_base;
 
-	auto vstack = std::make_unique<NWidgetVertical>(NC_EQUALSIZE);
+	auto vstack = std::make_unique<NWidgetVertical>(NWidContainerFlag::EqualSize);
 	vstack->SetPIP(0, 1, 0);
 
 	for (int row = 0; row < num_rows; row++) {
-		auto hstack = std::make_unique<NWidgetHorizontal>(NC_EQUALSIZE);
+		auto hstack = std::make_unique<NWidgetHorizontal>(NWidContainerFlag::EqualSize);
 		hstack->SetPIP(0, 1, 0);
 		for (int col = 0; col < num_columns; col++) {
 			if (cur_type > type_base + type_count) break;
 			auto button = std::make_unique<NWidgetBackground>(WWT_PANEL, COLOUR_GREY, WID_BT_TYPE_BUTTON_FIRST + cur_type);
-			button->SetDataTip(0x0, STR_PLANT_TREE_TOOLTIP);
+			button->SetToolTip(STR_PLANT_TREE_TOOLTIP);
 			hstack->Add(std::move(button));
 			cur_type++;
 		}
@@ -297,25 +297,22 @@ static std::unique_ptr<NWidgetBase> MakeTreeTypeButtons()
 static constexpr NWidgetPart _nested_build_trees_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
-		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetDataTip(STR_PLANT_TREE_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_PLANT_TREE_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 		NWidget(WWT_SHADEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_STICKYBOX, COLOUR_DARK_GREEN),
 	EndContainer(),
 	NWidget(WWT_PANEL, COLOUR_DARK_GREEN),
-		NWidget(NWID_VERTICAL), SetPadding(2),
+		NWidget(NWID_VERTICAL), SetPIP(0, 1, 0), SetPadding(2),
 			NWidgetFunction(MakeTreeTypeButtons),
-			NWidget(NWID_SPACER), SetMinimalSize(0, 1),
-			NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_TYPE_RANDOM), SetDataTip(STR_TREES_RANDOM_TYPE, STR_TREES_RANDOM_TYPE_TOOLTIP),
+			NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_TYPE_RANDOM), SetStringTip(STR_TREES_RANDOM_TYPE, STR_TREES_RANDOM_TYPE_TOOLTIP),
 			NWidget(NWID_SELECTION, INVALID_COLOUR, WID_BT_SE_PANE),
-				NWidget(NWID_VERTICAL),
-					NWidget(NWID_SPACER), SetMinimalSize(0, 1),
-					NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
-						NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_MODE_NORMAL), SetFill(1, 0), SetDataTip(STR_TREES_MODE_NORMAL_BUTTON, STR_TREES_MODE_NORMAL_TOOLTIP),
-						NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_MODE_FOREST_SM), SetFill(1, 0), SetDataTip(STR_TREES_MODE_FOREST_SM_BUTTON, STR_TREES_MODE_FOREST_SM_TOOLTIP),
-						NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_MODE_FOREST_LG), SetFill(1, 0), SetDataTip(STR_TREES_MODE_FOREST_LG_BUTTON, STR_TREES_MODE_FOREST_LG_TOOLTIP),
+				NWidget(NWID_VERTICAL), SetPIP(0, 1, 0),
+					NWidget(NWID_HORIZONTAL, NWidContainerFlag::EqualSize),
+						NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_MODE_NORMAL), SetFill(1, 0), SetStringTip(STR_TREES_MODE_NORMAL_BUTTON, STR_TREES_MODE_NORMAL_TOOLTIP),
+						NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_MODE_FOREST_SM), SetFill(1, 0), SetStringTip(STR_TREES_MODE_FOREST_SM_BUTTON, STR_TREES_MODE_FOREST_SM_TOOLTIP),
+						NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BT_MODE_FOREST_LG), SetFill(1, 0), SetStringTip(STR_TREES_MODE_FOREST_LG_BUTTON, STR_TREES_MODE_FOREST_LG_TOOLTIP),
 					EndContainer(),
-					NWidget(NWID_SPACER), SetMinimalSize(0, 1),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BT_MANY_RANDOM), SetDataTip(STR_TREES_RANDOM_TREES_BUTTON, STR_TREES_RANDOM_TREES_TOOLTIP),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BT_MANY_RANDOM), SetStringTip(STR_TREES_RANDOM_TREES_BUTTON, STR_TREES_RANDOM_TREES_TOOLTIP),
 				EndContainer(),
 			EndContainer(),
 		EndContainer(),
@@ -325,12 +322,12 @@ static constexpr NWidgetPart _nested_build_trees_widgets[] = {
 static WindowDesc _build_trees_desc(
 	WDP_AUTO, "build_tree", 0, 0,
 	WC_BUILD_TREES, WC_NONE,
-	WDF_CONSTRUCTION,
-	std::begin(_nested_build_trees_widgets), std::end(_nested_build_trees_widgets)
+	WindowDefaultFlag::Construction,
+	_nested_build_trees_widgets
 );
 
 void ShowBuildTreesToolbar()
 {
 	if (_game_mode != GM_EDITOR && !Company::IsValidID(_local_company)) return;
-	AllocateWindowDescFront<BuildTreesWindow>(&_build_trees_desc, 0);
+	AllocateWindowDescFront<BuildTreesWindow>(_build_trees_desc, 0);
 }

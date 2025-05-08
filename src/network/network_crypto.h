@@ -40,7 +40,7 @@
  */
 class NetworkEncryptionHandler {
 public:
-	virtual ~NetworkEncryptionHandler() {}
+	virtual ~NetworkEncryptionHandler() = default;
 
 	/**
 	 * Get the size of the MAC (Message Authentication Code) used by the underlying encryption protocol.
@@ -70,7 +70,7 @@ public:
  */
 class NetworkAuthenticationPasswordRequest {
 public:
-	virtual ~NetworkAuthenticationPasswordRequest() {}
+	virtual ~NetworkAuthenticationPasswordRequest() = default;
 
 	/**
 	 * Reply to the request with the given password.
@@ -108,7 +108,7 @@ public:
  */
 class NetworkAuthenticationPasswordProvider {
 public:
-	virtual ~NetworkAuthenticationPasswordProvider() {}
+	virtual ~NetworkAuthenticationPasswordProvider() = default;
 
 	/**
 	 * Callback to return the password where to validate against.
@@ -139,7 +139,7 @@ public:
  */
 class NetworkAuthenticationAuthorizedKeyHandler {
 public:
-	virtual ~NetworkAuthenticationAuthorizedKeyHandler() {}
+	virtual ~NetworkAuthenticationAuthorizedKeyHandler() = default;
 
 	/**
 	 * Check whether the key handler can be used, i.e. whether there are authorized keys to check against.
@@ -174,22 +174,22 @@ public:
 
 
 /** The authentication method that can be used. */
-enum NetworkAuthenticationMethod : uint8_t {
-	NETWORK_AUTH_METHOD_X25519_KEY_EXCHANGE_ONLY, ///< No actual authentication is taking place, just perform a x25519 key exchange.
-	NETWORK_AUTH_METHOD_X25519_PAKE, ///< Authentication using x25519 password-authenticated key agreement.
-	NETWORK_AUTH_METHOD_X25519_AUTHORIZED_KEY, ///< Authentication using x22519 key exchange and authorized keys.
-	NETWORK_AUTH_METHOD_END, ///< Must ALWAYS be on the end of this list!! (period)
+enum class NetworkAuthenticationMethod : uint8_t {
+	X25519_KeyExchangeOnly, ///< No actual authentication is taking place, just perform a x25519 key exchange. This method is not supported for the admin connection.
+	X25519_PAKE, ///< Authentication using x25519 password-authenticated key agreement.
+	X25519_AuthorizedKey, ///< Authentication using x22519 key exchange and authorized keys.
+	End, ///< Must ALWAYS be on the end of this list!! (period)
 };
 
 /** The mask of authentication methods that can be used. */
-using NetworkAuthenticationMethodMask = uint16_t;
+using NetworkAuthenticationMethodMask = EnumBitSet<NetworkAuthenticationMethod, uint16_t>;
 
 /**
  * Base class for cryptographic authentication handlers.
  */
 class NetworkAuthenticationHandler {
 public:
-	virtual ~NetworkAuthenticationHandler() {}
+	virtual ~NetworkAuthenticationHandler() = default;
 
 	/**
 	 * Get the name of the handler for debug messages.
@@ -222,10 +222,10 @@ public:
 class NetworkAuthenticationClientHandler : public NetworkAuthenticationHandler {
 public:
 	/** The processing result of receiving a request. */
-	enum RequestResult {
-		AWAIT_USER_INPUT, ///< We have requested some user input, but must wait on that.
-		READY_FOR_RESPONSE, ///< We do not have to wait for user input, and can immediately respond to the server.
-		INVALID, ///< We have received an invalid request.
+	enum class RequestResult : uint8_t {
+		AwaitUserInput, ///< We have requested some user input, but must wait on that.
+		ReadyForResponse, ///< We do not have to wait for user input, and can immediately respond to the server.
+		Invalid, ///< We have received an invalid request.
 	};
 
 	/**
@@ -248,6 +248,7 @@ public:
 	 */
 	virtual bool ReceiveEnableEncryption(struct Packet &p) = 0;
 
+	static void EnsureValidSecretKeyAndUpdatePublicKey(std::string &secret_key, std::string &public_key);
 	static std::unique_ptr<NetworkAuthenticationClientHandler> Create(std::shared_ptr<NetworkAuthenticationPasswordRequestHandler> password_handler, std::string &secret_key, std::string &public_key);
 };
 
@@ -257,10 +258,10 @@ public:
 class NetworkAuthenticationServerHandler : public NetworkAuthenticationHandler {
 public:
 	/** The processing result of receiving a response. */
-	enum ResponseResult {
-		AUTHENTICATED, ///< The client was authenticated successfully.
-		NOT_AUTHENTICATED, ///< All authentications for this handler have been exhausted.
-		RETRY_NEXT_METHOD, ///< The client failed to authenticate, but there is another method to try.
+	enum class ResponseResult : uint8_t {
+		Authenticated, ///< The client was authenticated successfully.
+		NotAuthenticated, ///< All authentications for this handler have been exhausted.
+		RetryNextMethod, ///< The client failed to authenticate, but there is another method to try.
 	};
 
 	/**
@@ -295,7 +296,7 @@ public:
 	 */
 	virtual std::string GetPeerPublicKey() const = 0;
 
-	static std::unique_ptr<NetworkAuthenticationServerHandler> Create(const NetworkAuthenticationPasswordProvider *password_provider, const NetworkAuthenticationAuthorizedKeyHandler *authorized_key_handler, NetworkAuthenticationMethodMask client_supported_method_mask = ~static_cast<NetworkAuthenticationMethodMask>(0));
+	static std::unique_ptr<NetworkAuthenticationServerHandler> Create(const NetworkAuthenticationPasswordProvider *password_provider, const NetworkAuthenticationAuthorizedKeyHandler *authorized_key_handler, NetworkAuthenticationMethodMask client_supported_method_mask = {NetworkAuthenticationMethod::X25519_KeyExchangeOnly, NetworkAuthenticationMethod::X25519_PAKE, NetworkAuthenticationMethod::X25519_AuthorizedKey});
 };
 
 #endif /* NETWORK_CRYPTO_H */

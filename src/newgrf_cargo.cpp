@@ -9,6 +9,7 @@
 
 #include "stdafx.h"
 #include "debug.h"
+#include "newgrf_cargo.h"
 #include "newgrf_spritegroup.h"
 
 #include "safeguards.h"
@@ -68,31 +69,27 @@ uint16_t GetCargoCallback(CallbackID callback, uint32_t param1, uint32_t param2,
 }
 
 /**
- * Translate a GRF-local cargo slot/bitnum into a CargoID.
+ * Translate a GRF-local cargo slot/bitnum into a CargoType.
  * @param cargo   GRF-local cargo slot/bitnum.
  * @param grffile Originating GRF file.
  * @param usebit  Defines the meaning of \a cargo for GRF version < 7.
  *                If true, then \a cargo is a bitnum. If false, then \a cargo is a cargoslot.
  *                For GRF version >= 7 \a cargo is always a translated cargo bit.
- * @return CargoID or INVALID_CARGO if the cargo is not available.
+ * @return CargoType or INVALID_CARGO if the cargo is not available.
  */
-CargoID GetCargoTranslation(uint8_t cargo, const GRFFile *grffile, bool usebit)
+CargoType GetCargoTranslation(uint8_t cargo, const GRFFile *grffile, bool usebit)
 {
-	/* Pre-version 7 uses the 'climate dependent' ID in callbacks and properties, i.e. cargo is the cargo ID */
+	/* We can't use GetCargoTranslationTable here as the usebit flag changes behaviour. */
+	/* Pre-version 7 uses the bitnum lookup from (standard in v8) instead of climate dependent in some places.. */
+	std::span<const CargoLabel> cargo_list;
 	if (grffile->grf_version < 7 && !usebit) {
-		if (cargo >= CargoSpec::GetArraySize() || !CargoSpec::Get(cargo)->IsValid()) return INVALID_CARGO;
-		return cargo;
-	}
-
-	/* Other cases use (possibly translated) cargobits */
-
-	if (!grffile->cargo_list.empty()) {
-		/* ...and the cargo is in bounds, then get the cargo ID for
-		 * the label */
-		if (cargo < grffile->cargo_list.size()) return GetCargoIDByLabel(grffile->cargo_list[cargo]);
+		cargo_list = GetClimateDependentCargoTranslationTable();
+	} else if (!grffile->cargo_list.empty()) {
+		cargo_list = grffile->cargo_list;
 	} else {
-		/* Else the cargo value is a 'climate independent' 'bitnum' */
-		return GetCargoIDByBitnum(cargo);
+		cargo_list = GetClimateIndependentCargoTranslationTable();
 	}
+
+	if (cargo < cargo_list.size()) return GetCargoTypeByLabel(cargo_list[cargo]);
 	return INVALID_CARGO;
 }

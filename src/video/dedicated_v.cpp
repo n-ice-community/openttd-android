@@ -93,7 +93,7 @@ static void CloseWindowsConsoleThread()
 #include "../safeguards.h"
 
 
-static void *_dedicated_video_mem;
+static std::unique_ptr<uint8_t[]> _dedicated_video_mem;
 
 /* Whether a fork has been done. */
 bool _dedicated_forks;
@@ -103,16 +103,16 @@ extern bool SafeLoad(const std::string &filename, SaveLoadOperation fop, Detaile
 static FVideoDriver_Dedicated iFVideoDriver_Dedicated;
 
 
-const char *VideoDriver_Dedicated::Start(const StringList &)
+std::optional<std::string_view> VideoDriver_Dedicated::Start(const StringList &)
 {
 	this->UpdateAutoResolution();
 
 	int bpp = BlitterFactory::GetCurrentBlitter()->GetScreenDepth();
-	_dedicated_video_mem = (bpp == 0) ? nullptr : MallocT<uint8_t>(static_cast<size_t>(_cur_resolution.width) * _cur_resolution.height * (bpp / 8));
+	if (bpp != 0) _dedicated_video_mem = std::make_unique<uint8_t[]>(static_cast<size_t>(_cur_resolution.width) * _cur_resolution.height * (bpp / 8));
 
 	_screen.width  = _screen.pitch = _cur_resolution.width;
 	_screen.height = _cur_resolution.height;
-	_screen.dst_ptr = _dedicated_video_mem;
+	_screen.dst_ptr = _dedicated_video_mem.get();
 	ScreenSizeChanged();
 	BlitterFactory::GetCurrentBlitter()->PostResize();
 
@@ -131,7 +131,7 @@ const char *VideoDriver_Dedicated::Start(const StringList &)
 #endif
 
 	Debug(driver, 1, "Loading dedicated server");
-	return nullptr;
+	return std::nullopt;
 }
 
 void VideoDriver_Dedicated::Stop()
@@ -139,7 +139,7 @@ void VideoDriver_Dedicated::Stop()
 #ifdef _WIN32
 	CloseWindowsConsoleThread();
 #endif
-	free(_dedicated_video_mem);
+	_dedicated_video_mem = nullptr;
 }
 
 void VideoDriver_Dedicated::MakeDirty(int, int, int, int) {}
@@ -219,7 +219,6 @@ void VideoDriver_Dedicated::MainLoop()
 		if (!_dedicated_forks) DedicatedHandleKeyInput();
 		this->DrainCommandQueue();
 
-		ChangeGameSpeed(_ddc_fastforward);
 		this->Tick();
 		this->SleepTillNextTick();
 	}

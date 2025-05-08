@@ -22,22 +22,22 @@ public:
 	};
 
 	void Draw(Blitter::BlitterParams *bp, BlitterMode mode, ZoomLevel zoom) override;
-	Sprite *Encode(const SpriteLoader::SpriteCollection &sprite, AllocatorProc *allocator) override;
+	Sprite *Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override;
 
-	const char *GetName() override { return "32bpp-optimized"; }
+	std::string_view GetName() override { return "32bpp-optimized"; }
 
 	template <BlitterMode mode, bool Tpal_to_rgb = false> void Draw(const Blitter::BlitterParams *bp, ZoomLevel zoom);
 
 protected:
 	template <bool Tpal_to_rgb> void Draw(Blitter::BlitterParams *bp, BlitterMode mode, ZoomLevel zoom);
-	template <bool Tpal_to_rgb> Sprite *EncodeInternal(const SpriteLoader::SpriteCollection &sprite, AllocatorProc *allocator);
+	template <bool Tpal_to_rgb> Sprite *EncodeInternal(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator);
 };
 
 /** Factory for the optimised 32 bpp blitter (without palette animation). */
 class FBlitter_32bppOptimized : public BlitterFactory {
 public:
 	FBlitter_32bppOptimized() : BlitterFactory("32bpp-optimized", "32bpp Optimized Blitter (no palette animation)") {}
-	Blitter *CreateInstance() override { return new Blitter_32bppOptimized(); }
+	std::unique_ptr<Blitter> CreateInstance() override { return std::make_unique<Blitter_32bppOptimized>(); }
 };
 
 #endif /* BLITTER_32BPP_OPTIMIZED_HPP */

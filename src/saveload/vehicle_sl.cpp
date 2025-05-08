@@ -12,6 +12,7 @@
 #include "saveload.h"
 #include "compat/vehicle_sl_compat.h"
 
+#include "../debug.h"
 #include "../vehicle_func.h"
 #include "../train.h"
 #include "../roadveh.h"
@@ -165,7 +166,7 @@ void UpdateOldAircraft()
 {
 	/* set airport_flags to 0 for all airports just to be sure */
 	for (Station *st : Station::Iterate()) {
-		st->airport.flags = 0; // reset airport
+		st->airport.blocks = {}; // reset airport
 	}
 
 	for (Aircraft *a : Aircraft::Iterate()) {
@@ -173,13 +174,13 @@ void UpdateOldAircraft()
 		 * skip those */
 		if (a->IsNormalAircraft()) {
 			/* airplane in terminal stopped doesn't hurt anyone, so goto next */
-			if ((a->vehstatus & VS_STOPPED) && a->state == 0) {
+			if (a->vehstatus.Test(VehState::Stopped) && a->state == 0) {
 				a->state = HANGAR;
 				continue;
 			}
 
 			AircraftLeaveHangar(a, a->direction); // make airplane visible if it was in a depot for example
-			a->vehstatus &= ~VS_STOPPED; // make airplane moving
+			a->vehstatus.Reset(VehState::Stopped); // make airplane moving
 			UpdateAircraftCache(a);
 			a->cur_speed = a->vcache.cached_max_speed; // so aircraft don't have zero speed while in air
 			if (!a->current_order.IsType(OT_GOTO_STATION) && !a->current_order.IsType(OT_GOTO_DEPOT)) {
@@ -189,7 +190,7 @@ void UpdateOldAircraft()
 			a->state = FLYING;
 			AircraftNextAirportPos_and_Order(a); // move it to the entry point of the airport
 			GetNewVehiclePosResult gp = GetNewVehiclePos(a);
-			a->tile = 0; // aircraft in air is tile=0
+			a->tile = TileIndex{}; // aircraft in air is tile=0
 
 			/* correct speed of helicopter-rotors */
 			if (a->subtype == AIR_HELICOPTER) a->Next()->Next()->cur_speed = 32;
@@ -224,7 +225,7 @@ void UpdateOldAircraft()
 static void CheckValidVehicles()
 {
 	size_t total_engines = Engine::GetPoolSize();
-	EngineID first_engine[4] = { INVALID_ENGINE, INVALID_ENGINE, INVALID_ENGINE, INVALID_ENGINE };
+	EngineID first_engine[4] = { EngineID::Invalid(), EngineID::Invalid(), EngineID::Invalid(), EngineID::Invalid() };
 
 	for (const Engine *e : Engine::IterateType(VEH_TRAIN)) { first_engine[VEH_TRAIN] = e->index; break; }
 	for (const Engine *e : Engine::IterateType(VEH_ROAD)) { first_engine[VEH_ROAD] = e->index; break; }
@@ -251,8 +252,8 @@ static void CheckValidVehicles()
 
 extern uint8_t _age_cargo_skip_counter; // From misc_sl.cpp
 
-/** Called after load to update coordinates */
-void AfterLoadVehicles(bool part_of_load)
+/** Called after load for phase 1 of vehicle initialisation */
+void AfterLoadVehiclesPhase1(bool part_of_load)
 {
 	for (Vehicle *v : Vehicle::Iterate()) {
 		/* Reinstate the previous pointer */
@@ -261,7 +262,7 @@ void AfterLoadVehicles(bool part_of_load)
 
 		if (part_of_load) v->fill_percent_te_id = INVALID_TE_ID;
 		v->first = nullptr;
-		if (v->IsGroundVehicle()) v->GetGroundVehicleCache()->first_engine = INVALID_ENGINE;
+		if (v->IsGroundVehicle()) v->GetGroundVehicleCache()->first_engine = EngineID::Invalid();
 	}
 
 	/* AfterLoadVehicles may also be called in case of NewGRF reload, in this
@@ -395,22 +396,26 @@ void AfterLoadVehicles(bool part_of_load)
 				/* If the start date is 0, the vehicle is not waiting to start and can be ignored. */
 				if (v->timetable_start == 0) continue;
 
-				v->timetable_start = GetStartTickFromDate(v->timetable_start);
+				v->timetable_start = GetStartTickFromDate(TimerGameEconomy::Date(v->timetable_start));
 			}
 		}
 
 		if (IsSavegameVersionBefore(SLV_VEHICLE_ECONOMY_AGE)) {
 			/* Set vehicle economy age based on calendar age. */
 			for (Vehicle *v : Vehicle::Iterate()) {
-				v->economy_age = v->age.base();
+				v->economy_age = TimerGameEconomy::Date{v->age.base()};
 			}
 		}
 	}
 
 	CheckValidVehicles();
+}
 
+/** Called after load for phase 2 of vehicle initialisation */
+void AfterLoadVehiclesPhase2(bool part_of_load)
+{
 	for (Vehicle *v : Vehicle::Iterate()) {
-		assert(v->first != nullptr);
+		assert(v->First() != nullptr);
 
 		v->trip_occupancy = CalcPercentVehicleFilled(v, nullptr);
 
@@ -460,7 +465,7 @@ void AfterLoadVehicles(bool part_of_load)
 			if (v->type == VEH_TRAIN) {
 				Train *t = Train::From(v);
 				if (!t->IsFrontEngine()) {
-					if (t->IsEngine()) t->vehstatus |= VS_STOPPED;
+					if (t->IsEngine()) t->vehstatus.Set(VehState::Stopped);
 					/* cur_speed is now relevant for non-front parts - nonzero breaks
 					 * moving-wagons-inside-depot- and autoreplace- code */
 					t->cur_speed = 0;
@@ -468,7 +473,7 @@ void AfterLoadVehicles(bool part_of_load)
 			}
 			/* trains weren't stopping gradually in old OTTD versions (and TTO/TTD)
 			 * other vehicle types didn't have zero speed while stopped (even in 'recent' OTTD versions) */
-			if ((v->vehstatus & VS_STOPPED) && (v->type != VEH_TRAIN || IsSavegameVersionBefore(SLV_2, 1))) {
+			if (v->vehstatus.Test(VehState::Stopped) && (v->type != VEH_TRAIN || IsSavegameVersionBefore(SLV_2, 1))) {
 				v->cur_speed = 0;
 			}
 		}
@@ -510,7 +515,7 @@ void AfterLoadVehicles(bool part_of_load)
 					RoadVehicle *u = RoadVehicle::GetIfValid(v->dest_tile.base());
 					if (u != nullptr && u->IsFrontEngine()) {
 						/* Delete UFO targetting a vehicle which is already a target. */
-						if (u->disaster_vehicle != INVALID_VEHICLE && u->disaster_vehicle != dv->index) {
+						if (u->disaster_vehicle != VehicleID::Invalid() && u->disaster_vehicle != dv->index) {
 							delete v;
 							continue;
 						} else {
@@ -551,7 +556,7 @@ void FixupTrainLengths()
 			 * so we need to move all vehicles forward to cover the difference to the
 			 * old center, otherwise wagon spacing in trains would be broken upon load. */
 			for (Train *u = Train::From(v); u != nullptr; u = u->Next()) {
-				if (u->track == TRACK_BIT_DEPOT || (u->vehstatus & VS_CRASHED)) continue;
+				if (u->track == TRACK_BIT_DEPOT || u->vehstatus.Test(VehState::Crashed)) continue;
 
 				Train *next = u->Next();
 
@@ -612,7 +617,7 @@ void FixupTrainLengths()
 					int d = TicksToLeaveDepot(u);
 					if (d <= 0) {
 						/* Next vehicle should have left the depot already, show it and pull forward. */
-						next->vehstatus &= ~VS_HIDDEN;
+						next->vehstatus.Reset(VehState::Hidden);
 						next->track = TrackToTrackBits(GetRailDepotTrack(next->tile));
 						for (int i = 0; i >= d; i--) TrainController(next, nullptr);
 					}
@@ -626,8 +631,8 @@ void FixupTrainLengths()
 }
 
 static uint8_t  _cargo_periods;
-static uint16_t _cargo_source;
-static uint32_t _cargo_source_xy;
+static StationID _cargo_source;
+static TileIndex _cargo_source_xy;
 static uint16_t _cargo_count;
 static uint16_t _cargo_paid_for;
 static Money  _cargo_feeder_share;
@@ -817,8 +822,23 @@ public:
 	}
 };
 
+class SlVehicleRoadVehPath : public VectorSaveLoadHandler<SlVehicleRoadVehPath, RoadVehicle, RoadVehPathElement> {
+public:
+	inline static const SaveLoad description[] = {
+		SLE_VAR(RoadVehPathElement, trackdir, SLE_UINT8),
+		SLE_VAR(RoadVehPathElement, tile, SLE_UINT32),
+	};
+	inline const static SaveLoadCompatTable compat_description = {};
+
+	std::vector<RoadVehPathElement> &GetVector(RoadVehicle *rv) const override { return rv->path; }
+};
+
 class SlVehicleRoadVeh : public DefaultSaveLoadHandler<SlVehicleRoadVeh, Vehicle> {
 public:
+	/* RoadVehicle path is stored in std::pair which cannot be directly saved. */
+	static inline std::vector<Trackdir> rv_path_td;
+	static inline std::vector<TileIndex> rv_path_tile;
+
 	inline static const SaveLoad description[] = {
 		  SLEG_STRUCT("common", SlVehicleCommon),
 		      SLE_VAR(RoadVehicle, state,                SLE_UINT8),
@@ -828,11 +848,31 @@ public:
 		      SLE_VAR(RoadVehicle, overtaking_ctr,       SLE_UINT8),
 		      SLE_VAR(RoadVehicle, crashed_ctr,          SLE_UINT16),
 		      SLE_VAR(RoadVehicle, reverse_ctr,          SLE_UINT8),
-		SLE_CONDDEQUE(RoadVehicle, path.td,              SLE_UINT8,                  SLV_ROADVEH_PATH_CACHE, SL_MAX_VERSION),
-		SLE_CONDDEQUE(RoadVehicle, path.tile,            SLE_UINT32,                 SLV_ROADVEH_PATH_CACHE, SL_MAX_VERSION),
+		SLEG_CONDVECTOR("path.td",   rv_path_td,         SLE_UINT8,                  SLV_ROADVEH_PATH_CACHE, SLV_PATH_CACHE_FORMAT),
+		SLEG_CONDVECTOR("path.tile", rv_path_tile,       SLE_UINT32,                 SLV_ROADVEH_PATH_CACHE, SLV_PATH_CACHE_FORMAT),
+		SLEG_CONDSTRUCTLIST("path", SlVehicleRoadVehPath, SLV_PATH_CACHE_FORMAT, SL_MAX_VERSION),
 		  SLE_CONDVAR(RoadVehicle, gv_flags,             SLE_UINT16,                 SLV_139, SL_MAX_VERSION),
 	};
 	inline const static SaveLoadCompatTable compat_description = _vehicle_roadveh_sl_compat;
+
+	static void ConvertPathCache(RoadVehicle &rv)
+	{
+		/* The two vectors should be the same size, but if not we can just ignore the cache and not cause more issues. */
+		if (rv_path_td.size() != rv_path_tile.size()) {
+			Debug(sl, 1, "Found RoadVehicle {} with invalid path cache, ignoring.", rv.index);
+			return;
+		}
+		size_t n = std::min(rv_path_td.size(), rv_path_tile.size());
+		if (n == 0) return;
+
+		rv.path.reserve(n);
+		for (size_t c = 0; c < n; ++c) {
+			rv.path.emplace_back(rv_path_td[c], rv_path_tile[c]);
+		}
+
+		/* Path cache is now taken from back instead of front, so needs reversing. */
+		std::reverse(std::begin(rv.path), std::end(rv.path));
+	}
 
 	void Save(Vehicle *v) const override
 	{
@@ -844,6 +884,9 @@ public:
 	{
 		if (v->type != VEH_ROAD) return;
 		SlObject(v, this->GetLoadDescription());
+		if (!IsSavegameVersionBefore(SLV_ROADVEH_PATH_CACHE) && IsSavegameVersionBefore(SLV_PATH_CACHE_FORMAT)) {
+			ConvertPathCache(*static_cast<RoadVehicle *>(v));
+		}
 	}
 
 	void FixPointers(Vehicle *v) const override
@@ -853,12 +896,25 @@ public:
 	}
 };
 
+class SlVehicleShipPath : public VectorSaveLoadHandler<SlVehicleShipPath, Ship, ShipPathElement> {
+public:
+	inline static const SaveLoad description[] = {
+		SLE_VAR(ShipPathElement, trackdir, SLE_UINT8),
+	};
+	inline const static SaveLoadCompatTable compat_description = {};
+
+	std::vector<ShipPathElement> &GetVector(Ship *s) const override { return s->path; }
+};
+
 class SlVehicleShip : public DefaultSaveLoadHandler<SlVehicleShip, Vehicle> {
 public:
+	static inline std::vector<Trackdir> ship_path_td;
+
 	inline static const SaveLoad description[] = {
 		  SLEG_STRUCT("common", SlVehicleCommon),
 		      SLE_VAR(Ship, state,                     SLE_UINT8),
-		SLE_CONDDEQUE(Ship, path,                      SLE_UINT8,                  SLV_SHIP_PATH_CACHE, SL_MAX_VERSION),
+		SLEG_CONDVECTOR("path", ship_path_td, SLE_UINT8, SLV_SHIP_PATH_CACHE, SLV_PATH_CACHE_FORMAT),
+		SLEG_CONDSTRUCTLIST("path", SlVehicleShipPath, SLV_PATH_CACHE_FORMAT, SL_MAX_VERSION),
 		  SLE_CONDVAR(Ship, rotation,                  SLE_UINT8,                  SLV_SHIP_ROTATION, SL_MAX_VERSION),
 	};
 	inline const static SaveLoadCompatTable compat_description = _vehicle_ship_sl_compat;
@@ -873,6 +929,12 @@ public:
 	{
 		if (v->type != VEH_SHIP) return;
 		SlObject(v, this->GetLoadDescription());
+
+		if (IsSavegameVersionBefore(SLV_PATH_CACHE_FORMAT)) {
+			/* Path cache is now taken from back instead of front, so needs reversing. */
+			Ship *s = static_cast<Ship *>(v);
+			std::transform(std::rbegin(ship_path_td), std::rend(ship_path_td), std::back_inserter(s->path), [](Trackdir trackdir) { return trackdir; });
+		}
 	}
 
 	void FixPointers(Vehicle *v) const override
@@ -1062,12 +1124,12 @@ struct VEHSChunkHandler : ChunkHandler {
 			VehicleType vtype = (VehicleType)SlReadByte();
 
 			switch (vtype) {
-				case VEH_TRAIN:    v = new (index) Train();           break;
-				case VEH_ROAD:     v = new (index) RoadVehicle();     break;
-				case VEH_SHIP:     v = new (index) Ship();            break;
-				case VEH_AIRCRAFT: v = new (index) Aircraft();        break;
-				case VEH_EFFECT:   v = new (index) EffectVehicle();   break;
-				case VEH_DISASTER: v = new (index) DisasterVehicle(); break;
+				case VEH_TRAIN:    v = new (VehicleID(index)) Train();           break;
+				case VEH_ROAD:     v = new (VehicleID(index)) RoadVehicle();     break;
+				case VEH_SHIP:     v = new (VehicleID(index)) Ship();            break;
+				case VEH_AIRCRAFT: v = new (VehicleID(index)) Aircraft();        break;
+				case VEH_EFFECT:   v = new (VehicleID(index)) EffectVehicle();   break;
+				case VEH_DISASTER: v = new (VehicleID(index)) DisasterVehicle(); break;
 				case VEH_INVALID: // Savegame shouldn't contain invalid vehicles
 				default: SlErrorCorrupt("Invalid vehicle type");
 			}
@@ -1082,10 +1144,10 @@ struct VEHSChunkHandler : ChunkHandler {
 
 			/* Old savegames used 'last_station_visited = 0xFF' */
 			if (IsSavegameVersionBefore(SLV_5) && v->last_station_visited == 0xFF) {
-				v->last_station_visited = INVALID_STATION;
+				v->last_station_visited = StationID::Invalid();
 			}
 
-			if (IsSavegameVersionBefore(SLV_182)) v->last_loading_station = INVALID_STATION;
+			if (IsSavegameVersionBefore(SLV_182)) v->last_loading_station = StationID::Invalid();
 
 			if (IsSavegameVersionBefore(SLV_5)) {
 				/* Convert the current_order.type (which is a mix of type and flags, because

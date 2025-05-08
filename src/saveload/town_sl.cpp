@@ -18,11 +18,8 @@
 #include "../landscape.h"
 #include "../subsidy_func.h"
 #include "../strings_func.h"
-#include "../tilematrix_type.hpp"
 
 #include "../safeguards.h"
-
-typedef TileMatrix<CargoTypes, 4> AcceptanceMatrix;
 
 /**
  * Rebuild all the cached variables of towns.
@@ -38,7 +35,7 @@ void RebuildTownCaches()
 		town->cache.num_houses = 0;
 	}
 
-	for (TileIndex t = 0; t < Map::Size(); t++) {
+	for (const auto t : Map::Iterate()) {
 		if (!IsTileType(t, MP_HOUSE)) continue;
 
 		HouseID house_id = GetHouseType(t);
@@ -47,7 +44,7 @@ void RebuildTownCaches()
 		if (IsHouseCompleted(t)) town->cache.population += HouseSpec::Get(house_id)->population;
 
 		/* Increase the number of houses for every house, but only once. */
-		if (GetHouseNorthPart(house_id) == 0) town->cache.num_houses++;
+		if (GetHouseNorthPart(house_id) == TileDiffXY(0, 0)) town->cache.num_houses++;
 	}
 
 	/* Update the population and num_house dependent values */
@@ -66,7 +63,7 @@ void RebuildTownCaches()
  */
 void UpdateHousesAndTowns()
 {
-	for (TileIndex t = 0; t < Map::Size(); t++) {
+	for (const auto t : Map::Iterate()) {
 		if (!IsTileType(t, MP_HOUSE)) continue;
 
 		HouseID house_id = GetCleanHouseType(t);
@@ -79,7 +76,7 @@ void UpdateHousesAndTowns()
 	}
 
 	/* Check for cases when a NewGRF has set a wrong house substitute type. */
-	for (TileIndex t = 0; t < Map::Size(); t++) {
+	for (const TileIndex &t : Map::Iterate()) {
 		if (!IsTileType(t, MP_HOUSE)) continue;
 
 		HouseID house_type = GetCleanHouseType(t);
@@ -87,13 +84,13 @@ void UpdateHousesAndTowns()
 		if (t == north_tile) {
 			const HouseSpec *hs = HouseSpec::Get(house_type);
 			bool valid_house = true;
-			if (hs->building_flags & TILE_SIZE_2x1) {
+			if (hs->building_flags.Test(BuildingFlag::Size2x1)) {
 				TileIndex tile = t + TileDiffXY(1, 0);
 				if (!IsTileType(tile, MP_HOUSE) || GetCleanHouseType(tile) != house_type + 1) valid_house = false;
-			} else if (hs->building_flags & TILE_SIZE_1x2) {
+			} else if (hs->building_flags.Test(BuildingFlag::Size1x2)) {
 				TileIndex tile = t + TileDiffXY(0, 1);
 				if (!IsTileType(tile, MP_HOUSE) || GetCleanHouseType(tile) != house_type + 1) valid_house = false;
-			} else if (hs->building_flags & TILE_SIZE_2x2) {
+			} else if (hs->building_flags.Test(BuildingFlag::Size2x2)) {
 				TileIndex tile = t + TileDiffXY(0, 1);
 				if (!IsTileType(tile, MP_HOUSE) || GetCleanHouseType(tile) != house_type + 1) valid_house = false;
 				tile = t + TileDiffXY(1, 0);
@@ -174,7 +171,7 @@ public:
 
 	void Load(Town *t) const override
 	{
-		size_t length = IsSavegameVersionBefore(SLV_SAVELOAD_LIST_LENGTH) ? (size_t)TAE_END : SlGetStructListLength(TAE_END);
+		size_t length = IsSavegameVersionBefore(SLV_SAVELOAD_LIST_LENGTH) ? static_cast<size_t>(TAE_END) : SlGetStructListLength(TAE_END);
 		for (size_t i = 0; i < length; i++) {
 			SlObject(&t->received[i], this->GetLoadDescription());
 		}
@@ -182,6 +179,12 @@ public:
 };
 
 class SlTownAcceptanceMatrix : public DefaultSaveLoadHandler<SlTownAcceptanceMatrix, Town> {
+private:
+	/** Compatibility struct with just enough of TileMatrix to facilitate loading. */
+	struct AcceptanceMatrix {
+		TileArea area;
+		static const uint GRID = 4;
+	};
 public:
 	inline static const SaveLoad description[] = {
 		SLE_VAR(AcceptanceMatrix, area.tile, SLE_UINT32),
@@ -266,7 +269,7 @@ static const SaveLoad _town_desc[] = {
 	SLE_CONDVAR(Town, larger_town,           SLE_BOOL,                  SLV_56, SL_MAX_VERSION),
 	SLE_CONDVAR(Town, layout,                SLE_UINT8,                SLV_113, SL_MAX_VERSION),
 
-	SLE_CONDREFLIST(Town, psa_list,          REF_STORAGE,              SLV_161, SL_MAX_VERSION),
+	SLE_CONDREFVECTOR(Town, psa_list,        REF_STORAGE,              SLV_161, SL_MAX_VERSION),
 
 	SLEG_CONDSTRUCTLIST("supplied", SlTownSupplied,                    SLV_165, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("received", SlTownReceived,                    SLV_165, SL_MAX_VERSION),
@@ -297,10 +300,10 @@ struct CITYChunkHandler : ChunkHandler {
 		int index;
 
 		while ((index = SlIterateArray()) != -1) {
-			Town *t = new (index) Town();
+			Town *t = new (TownID(index)) Town();
 			SlObject(t, slt);
 
-			if (t->townnamegrfid == 0 && !IsInsideMM(t->townnametype, SPECSTR_TOWNNAME_START, SPECSTR_TOWNNAME_LAST + 1) && GetStringTab(t->townnametype) != TEXT_TAB_OLD_CUSTOM) {
+			if (t->townnamegrfid == 0 && !IsInsideMM(t->townnametype, SPECSTR_TOWNNAME_START, SPECSTR_TOWNNAME_END) && GetStringTab(t->townnametype) != TEXT_TAB_OLD_CUSTOM) {
 				SlErrorCorrupt("Invalid town name generator");
 			}
 		}

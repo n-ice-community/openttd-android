@@ -13,7 +13,6 @@
 #include "timetable.h"
 #include "news_func.h"
 #include "company_func.h"
-#include "pathfinder/npf/npf_func.h"
 #include "depot_base.h"
 #include "station_base.h"
 #include "newgrf_engine.h"
@@ -168,8 +167,8 @@ static const Depot *FindClosestShipDepot(const Vehicle *v, uint max_distance)
 		const WaterRegionPatchDesc current_node = patches_to_search.front();
 		patches_to_search.pop_front();
 
-		/* Add neighbors of the current patch to the search queue. */
-		TVisitWaterRegionPatchCallBack visitFunc = [&](const WaterRegionPatchDesc &water_region_patch) {
+		/* Add neighbours of the current patch to the search queue. */
+		TVisitWaterRegionPatchCallBack visit_func = [&](const WaterRegionPatchDesc &water_region_patch) {
 			/* Note that we check the max distance per axis, not the total distance. */
 			if (std::abs(water_region_patch.x - start_patch.x) > max_region_distance ||
 					std::abs(water_region_patch.y - start_patch.y) > max_region_distance) return;
@@ -181,7 +180,7 @@ static const Depot *FindClosestShipDepot(const Vehicle *v, uint max_distance)
 			}
 		};
 
-		VisitWaterRegionPatchNeighbors(current_node, visitFunc);
+		VisitWaterRegionPatchNeighbours(current_node, visit_func);
 	}
 
 	/* Step 2: Find the closest depot within the reachable Water Region Patches. */
@@ -210,12 +209,7 @@ static void CheckIfShipNeedsService(Vehicle *v)
 		return;
 	}
 
-	uint max_distance;
-	switch (_settings_game.pf.pathfinder_for_ships) {
-		case VPF_NPF:  max_distance = _settings_game.pf.npf.maximum_go_to_depot_penalty  / NPF_TILE_LENGTH;  break;
-		case VPF_YAPF: max_distance = _settings_game.pf.yapf.maximum_go_to_depot_penalty / YAPF_TILE_LENGTH; break;
-		default: NOT_REACHED();
-	}
+	uint max_distance = _settings_game.pf.yapf.maximum_go_to_depot_penalty / YAPF_TILE_LENGTH;
 
 	const Depot *depot = FindClosestShipDepot(v, max_distance);
 
@@ -293,7 +287,7 @@ void Ship::OnNewEconomyDay()
 
 Trackdir Ship::GetVehicleTrackdir() const
 {
-	if (this->vehstatus & VS_CRASHED) return INVALID_TRACKDIR;
+	if (this->vehstatus.Test(VehState::Crashed)) return INVALID_TRACKDIR;
 
 	if (this->IsInDepot()) {
 		/* We'll assume the ship is facing outwards */
@@ -323,14 +317,14 @@ void Ship::PlayLeaveStationSound(bool force) const
 
 TileIndex Ship::GetOrderStationLocation(StationID station)
 {
-	if (station == this->last_station_visited) this->last_station_visited = INVALID_STATION;
+	if (station == this->last_station_visited) this->last_station_visited = StationID::Invalid();
 
 	const Station *st = Station::Get(station);
 	if (CanVehicleUseStation(this, st)) {
 		return st->xy;
 	} else {
 		this->IncrementRealOrderIndex();
-		return 0;
+		return TileIndex{};
 	}
 }
 
@@ -376,13 +370,7 @@ static Vehicle *EnsureNoMovingShipProc(Vehicle *v, void *)
 static bool CheckReverseShip(const Ship *v, Trackdir *trackdir = nullptr)
 {
 	/* Ask pathfinder for best direction */
-	bool reverse = false;
-	switch (_settings_game.pf.pathfinder_for_ships) {
-		case VPF_NPF: reverse = NPFShipCheckReverse(v, trackdir); break;
-		case VPF_YAPF: reverse = YapfShipCheckReverse(v, trackdir); break;
-		default: NOT_REACHED();
-	}
-	return reverse;
+	return YapfShipCheckReverse(v, trackdir);
 }
 
 static bool CheckShipLeaveDepot(Ship *v)
@@ -432,7 +420,7 @@ static bool CheckShipLeaveDepot(Ship *v)
 	}
 
 	v->state = AxisToTrackBits(axis);
-	v->vehstatus &= ~VS_HIDDEN;
+	v->vehstatus.Reset(VehState::Hidden);
 
 	v->cur_speed = 0;
 	v->UpdateViewport(true, true);
@@ -483,10 +471,9 @@ static void ShipArrivesAt(const Vehicle *v, Station *st)
 	if (!(st->had_vehicle_of_type & HVOT_SHIP)) {
 		st->had_vehicle_of_type |= HVOT_SHIP;
 
-		SetDParam(0, st->index);
 		AddVehicleNewsItem(
-			STR_NEWS_FIRST_SHIP_ARRIVAL,
-			(v->owner == _local_company) ? NT_ARRIVAL_COMPANY : NT_ARRIVAL_OTHER,
+			GetEncodedString(STR_NEWS_FIRST_SHIP_ARRIVAL, st->index),
+			(v->owner == _local_company) ? NewsType::ArrivalCompany : NewsType::ArrivalOther,
 			v->index,
 			st->index
 		);
@@ -518,10 +505,10 @@ static Track ChooseShipTrack(Ship *v, TileIndex tile, TrackBits tracks)
 	} else {
 		/* Attempt to follow cached path. */
 		if (!v->path.empty()) {
-			track = TrackdirToTrack(v->path.front());
+			track = TrackdirToTrack(v->path.back().trackdir);
 
 			if (HasBit(tracks, track)) {
-				v->path.pop_front();
+				v->path.pop_back();
 				/* HandlePathfindResult() is not called here because this is not a new pathfinder result. */
 				return track;
 			}
@@ -530,11 +517,7 @@ static Track ChooseShipTrack(Ship *v, TileIndex tile, TrackBits tracks)
 			v->path.clear();
 		}
 
-		switch (_settings_game.pf.pathfinder_for_ships) {
-			case VPF_NPF: track = NPFShipChooseTrack(v, path_found); break;
-			case VPF_YAPF: track = YapfShipChooseTrack(v, tile, path_found, v->path); break;
-			default: NOT_REACHED();
-		}
+		track = YapfShipChooseTrack(v, tile, path_found, v->path);
 	}
 
 	v->HandlePathfindingResult(path_found);
@@ -719,7 +702,7 @@ static void ShipController(Ship *v)
 
 	if (v->HandleBreakdown()) return;
 
-	if (v->vehstatus & VS_STOPPED) return;
+	if (v->vehstatus.Test(VehState::Stopped)) return;
 
 	if (ProcessOrders(v) && CheckReverseShip(v)) return ReverseShip(v);
 
@@ -789,10 +772,10 @@ static void ShipController(Ship *v)
 							}
 						} else if (v->current_order.IsType(OT_GOTO_STATION) && IsDockingTile(gp.new_tile)) {
 							/* Process station in the orderlist. */
-							Station *st = Station::Get(v->current_order.GetDestination());
+							Station *st = Station::Get(v->current_order.GetDestination().ToStationID());
 							if (st->docking_station.Contains(gp.new_tile) && IsShipDestinationTile(gp.new_tile, st->index)) {
 								v->last_station_visited = st->index;
-								if (st->facilities & FACIL_DOCK) { // ugly, ugly workaround for problem with ships able to drop off cargo at wrong stations
+								if (st->facilities.Test(StationFacility::Dock)) { // ugly, ugly workaround for problem with ships able to drop off cargo at wrong stations
 									ShipArrivesAt(v, st);
 									v->BeginLoading();
 								} else { // leave stations without docks right away
@@ -864,13 +847,13 @@ static void ShipController(Ship *v)
 				v->x_pos = gp.x;
 				v->y_pos = gp.y;
 				v->UpdatePosition();
-				if ((v->vehstatus & VS_HIDDEN) == 0) v->Vehicle::UpdateViewport(true);
-				return;
+				if (!v->vehstatus.Test(VehState::Hidden)) v->Vehicle::UpdateViewport(true);
+				continue;
 			}
 
 			/* Ship is back on the bridge head, we need to consume its path
 			 * cache entry here as we didn't have to choose a ship track. */
-			if (!v->path.empty()) v->path.pop_front();
+			if (!v->path.empty()) v->path.pop_back();
 		}
 
 		/* update image of ship, as well as delta XY */
@@ -886,7 +869,7 @@ bool Ship::Tick()
 {
 	PerformanceAccumulator framerate(PFE_GL_SHIPS);
 
-	if (!(this->vehstatus & VS_STOPPED)) this->running_ticks++;
+	if (!this->vehstatus.Test(VehState::Stopped)) this->running_ticks++;
 
 	ShipController(this);
 
@@ -908,10 +891,10 @@ void Ship::SetDestTile(TileIndex tile)
  * @param[out] ret the vehicle that has been built.
  * @return the cost of this operation or an error.
  */
-CommandCost CmdBuildShip(DoCommandFlag flags, TileIndex tile, const Engine *e, Vehicle **ret)
+CommandCost CmdBuildShip(DoCommandFlags flags, TileIndex tile, const Engine *e, Vehicle **ret)
 {
 	tile = GetShipDepotNorthTile(tile);
-	if (flags & DC_EXEC) {
+	if (flags.Test(DoCommandFlag::Execute)) {
 		int x;
 		int y;
 
@@ -928,17 +911,22 @@ CommandCost CmdBuildShip(DoCommandFlag flags, TileIndex tile, const Engine *e, V
 		v->y_pos = y;
 		v->z_pos = GetSlopePixelZ(x, y);
 
+		v->direction = DiagDirToDir(GetShipDepotDirection(tile));
+
+		/* UpdateDeltaXY() requires rotation to be initialised as well. */
+		v->rotation = v->direction;
 		v->UpdateDeltaXY();
-		v->vehstatus = VS_HIDDEN | VS_STOPPED | VS_DEFPAL;
+
+		v->vehstatus = {VehState::Hidden, VehState::Stopped, VehState::DefaultPalette};
 
 		v->spritenum = svi->image_index;
 		v->cargo_type = e->GetDefaultCargoType();
-		assert(IsValidCargoID(v->cargo_type));
+		assert(IsValidCargoType(v->cargo_type));
 		v->cargo_cap = svi->capacity;
 		v->refit_cap = 0;
 
-		v->last_station_visited = INVALID_STATION;
-		v->last_loading_station = INVALID_STATION;
+		v->last_station_visited = StationID::Invalid();
+		v->last_loading_station = StationID::Invalid();
 		v->engine_type = e->index;
 
 		v->reliability = e->reliability;
@@ -957,7 +945,7 @@ CommandCost CmdBuildShip(DoCommandFlag flags, TileIndex tile, const Engine *e, V
 		v->acceleration = svi->acceleration;
 		v->UpdateCache();
 
-		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
+		if (e->flags.Test(EngineFlag::ExclusivePreview)) v->vehicle_flags.Set(VehicleFlag::BuiltAsPrototype);
 		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->InvalidateNewGRFCacheOfChain();

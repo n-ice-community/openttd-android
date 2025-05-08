@@ -202,13 +202,13 @@ static const SpriteID SPR_TRACKS_FOR_SLOPES_MAGLEV_BASE = SPR_TRACKS_FOR_SLOPES_
 static const uint16_t TRACKS_FOR_SLOPES_SPRITE_COUNT = 12;
 
 static const SpriteID SPR_SLOPES_BASE              = SPR_TRACKS_FOR_SLOPES_BASE + TRACKS_FOR_SLOPES_SPRITE_COUNT;
-static const SpriteID SPR_SLOPES_INCLINED_OFFSET   = 15;
-static const SpriteID SPR_SLOPES_VIRTUAL_BASE      = SPR_SLOPES_BASE - SPR_SLOPES_INCLINED_OFFSET; // The original foundations (see SPR_FOUNDATION_BASE below) are mapped before the additional foundations.
-static const SpriteID SPR_TRKFOUND_BLOCK_SIZE      = 22; // The normal track foundation sprites are organized in blocks of 22.
+static const uint16_t SLOPES_INCLINED_OFFSET = 15;
+static const SpriteID SPR_SLOPES_VIRTUAL_BASE      = SPR_SLOPES_BASE - SLOPES_INCLINED_OFFSET; // The original foundations (see SPR_FOUNDATION_BASE below) are mapped before the additional foundations.
+static const uint16_t TRKFOUND_BLOCK_SIZE = 22; // The normal track foundation sprites are organized in blocks of 22.
 static const uint16_t NORMAL_FOUNDATION_SPRITE_COUNT = 74;
 /** Halftile foundations */
 static const SpriteID SPR_HALFTILE_FOUNDATION_BASE = SPR_SLOPES_BASE + NORMAL_FOUNDATION_SPRITE_COUNT;
-static const SpriteID SPR_HALFTILE_BLOCK_SIZE      = 4;  // The half tile foundation sprites are organized in blocks of 4.
+static const uint16_t HALFTILE_BLOCK_SIZE = 4; // The half tile foundation sprites are organized in blocks of 4.
 static const uint16_t NORMAL_AND_HALFTILE_FOUNDATION_SPRITE_COUNT = 90;
 
 static const SpriteID SPR_AUTORAIL_BASE = SPR_HALFTILE_FOUNDATION_BASE + NORMAL_AND_HALFTILE_FOUNDATION_SPRITE_COUNT;
@@ -222,11 +222,11 @@ static const uint16_t TWOCCMAP_SPRITE_COUNT = 256;
 
 /** shore tiles - action 05-0D */
 static const SpriteID SPR_SHORE_BASE                  = SPR_2CCMAP_BASE + TWOCCMAP_SPRITE_COUNT;
-static const SpriteID SPR_SHORE_SPRITE_COUNT          = 18;
+static const uint16_t SHORE_SPRITE_COUNT = 18;
 static const SpriteID SPR_ORIGINALSHORE_START         = 4062;
 static const SpriteID SPR_ORIGINALSHORE_END           = 4069;
 
-static const SpriteID SPR_AIRPORTX_BASE     = SPR_SHORE_BASE + SPR_SHORE_SPRITE_COUNT; // The sprites used for other airport angles
+static const SpriteID SPR_AIRPORTX_BASE     = SPR_SHORE_BASE + SHORE_SPRITE_COUNT; // The sprites used for other airport angles
 static const SpriteID SPR_NEWAIRPORT_TARMAC = SPR_AIRPORTX_BASE;
 static const SpriteID SPR_NSRUNWAY1         = SPR_AIRPORTX_BASE + 1;
 static const SpriteID SPR_NSRUNWAY2         = SPR_AIRPORTX_BASE + 2;
@@ -255,9 +255,9 @@ static const SpriteID SPR_AIRPORT_PREVIEW_COMMUTER         = SPR_AIRPORT_PREVIEW
 static const SpriteID SPR_AIRPORT_PREVIEW_HELIDEPOT        = SPR_AIRPORT_PREVIEW_BASE + 6;
 static const SpriteID SPR_AIRPORT_PREVIEW_INTERCONTINENTAL = SPR_AIRPORT_PREVIEW_BASE + 7;
 static const SpriteID SPR_AIRPORT_PREVIEW_HELISTATION      = SPR_AIRPORT_PREVIEW_BASE + 8;
-static const SpriteID SPR_AIRPORT_PREVIEW_COUNT            = 9;
+static const uint16_t AIRPORT_PREVIEW_SPRITE_COUNT = 9;
 
-static const SpriteID SPR_ROADSTOP_BASE     = SPR_AIRPORT_PREVIEW_BASE + SPR_AIRPORT_PREVIEW_COUNT; // The sprites used for drive-through road stops
+static const SpriteID SPR_ROADSTOP_BASE     = SPR_AIRPORT_PREVIEW_BASE + AIRPORT_PREVIEW_SPRITE_COUNT; // The sprites used for drive-through road stops
 static const SpriteID SPR_BUS_STOP_DT_Y_W   = SPR_ROADSTOP_BASE;
 static const SpriteID SPR_BUS_STOP_DT_Y_E   = SPR_ROADSTOP_BASE + 1;
 static const SpriteID SPR_BUS_STOP_DT_X_W   = SPR_ROADSTOP_BASE + 2;
@@ -272,7 +272,7 @@ static const uint16_t ROADSTOP_SPRITE_COUNT = 8;
 static const SpriteID SPR_TRAMWAY_BASE                 = SPR_ROADSTOP_BASE + ROADSTOP_SPRITE_COUNT;
 static const SpriteID SPR_TRAMWAY_OVERLAY              = SPR_TRAMWAY_BASE + 4;
 static const SpriteID SPR_TRAMWAY_TRAM                 = SPR_TRAMWAY_BASE + 27;
-static const SpriteID SPR_TRAMWAY_SLOPED_OFFSET        = 11;
+static const uint16_t TRAMWAY_SLOPED_OFFSET = 11;
 static const SpriteID SPR_TRAMWAY_BUS_STOP_DT_Y_W      = SPR_TRAMWAY_BASE + 25;
 static const SpriteID SPR_TRAMWAY_BUS_STOP_DT_Y_E      = SPR_TRAMWAY_BASE + 23;
 static const SpriteID SPR_TRAMWAY_BUS_STOP_DT_X_W      = SPR_TRAMWAY_BASE + 24;
@@ -291,8 +291,8 @@ static const uint16_t TRAMWAY_SPRITE_COUNT = 119;
 
 /** One way road sprites */
 static const SpriteID SPR_ONEWAY_BASE           = SPR_TRAMWAY_BASE + TRAMWAY_SPRITE_COUNT;
-static const SpriteID SPR_ONEWAY_SLOPE_N_OFFSET = 6;
-static const SpriteID SPR_ONEWAY_SLOPE_S_OFFSET = 12;
+static const uint16_t ONEWAY_SLOPE_N_OFFSET = 6;
+static const uint16_t ONEWAY_SLOPE_S_OFFSET = 12;
 static const uint16_t ONEWAY_SPRITE_COUNT = 18;
 
 /** Tunnel sprites with grass only for custom railtype tunnel. */
@@ -307,8 +307,20 @@ static const uint16_t EMPTY_BOUNDING_BOX_SPRITE_COUNT = 1;
 static const SpriteID SPR_PALETTE_BASE = SPR_EMPTY_BOUNDING_BOX + EMPTY_BOUNDING_BOX_SPRITE_COUNT;
 static const uint16_t PALETTE_SPRITE_COUNT = 1;
 
+/** Road waypoint sprites. */
+static const SpriteID SPR_ROAD_WAYPOINTS_BASE = SPR_PALETTE_BASE + PALETTE_SPRITE_COUNT;
+static const SpriteID SPR_ROAD_WAYPOINT_Y_W   = SPR_ROAD_WAYPOINTS_BASE;
+static const SpriteID SPR_ROAD_WAYPOINT_Y_E   = SPR_ROAD_WAYPOINTS_BASE + 1;
+static const SpriteID SPR_ROAD_WAYPOINT_X_W   = SPR_ROAD_WAYPOINTS_BASE + 2;
+static const SpriteID SPR_ROAD_WAYPOINT_X_E   = SPR_ROAD_WAYPOINTS_BASE + 3;
+static const uint16_t ROAD_WAYPOINTS_SPRITE_COUNT = 4;
+
+/** Overlay rocks sprites. */
+static constexpr SpriteID SPR_OVERLAY_ROCKS_BASE = SPR_ROAD_WAYPOINTS_BASE + ROAD_WAYPOINTS_SPRITE_COUNT;
+static constexpr uint16_t OVERLAY_ROCKS_SPRITE_COUNT = 19 * 5; /* Rock overlays: plain, snow 1, snow 2, snow 3 and full snow. */
+
 /* From where can we start putting NewGRFs? */
-static const SpriteID SPR_NEWGRFS_BASE = SPR_PALETTE_BASE + PALETTE_SPRITE_COUNT;
+static const SpriteID SPR_NEWGRFS_BASE = SPR_OVERLAY_ROCKS_BASE + OVERLAY_ROCKS_SPRITE_COUNT;
 
 /* Manager face sprites */
 static const SpriteID SPR_GRADIENT = 874; // background gradient behind manager face
@@ -359,9 +371,9 @@ static const SpriteID SPR_STATUE_COMPANY          = 2632;
 static const SpriteID SPR_BOUGHT_LAND             = 4790;
 
 /* sprites for rail and rail stations*/
-static const SpriteID SPR_RAIL_SNOW_OFFSET        = 26;
-static const SpriteID SPR_MONO_SNOW_OFFSET        = 26;
-static const SpriteID SPR_MGLV_SNOW_OFFSET        = 26;
+static const uint16_t SPR_RAIL_SNOW_OFFSET        = 26;
+static const uint16_t SPR_MONO_SNOW_OFFSET        = 26;
+static const uint16_t SPR_MGLV_SNOW_OFFSET        = 26;
 
 static const SpriteID SPR_ORIGINAL_SIGNALS_BASE   = 1275;
 
@@ -1513,19 +1525,18 @@ static const CursorID ANIMCURSOR_BUILDSIGNALS = ANIMCURSOR_FLAG | 4; ///< 1292 -
  * <li> PALETTE_SPRITE_WIDTH and PALETTE_SPRITE_START determine the position and number of
  * bits used for the recolouring process. For transparency, it must be 0x322.</li></ul>
  */
-enum SpriteSetup {
-	/* These bits are applied to sprite ID */
-	TRANSPARENT_BIT = 31,       ///< toggles transparency in the sprite
-	RECOLOUR_BIT = 30,          ///< toggles recolouring in the sprite
-	CUSTOM_BIT = 29,
-	OPAQUE_BIT = 28,
 
-	/* This bit is applied to palette ID */
-	PALETTE_TEXT_RECOLOUR = 31, ///< Set if palette is actually a magic text recolour
+/* These bits are applied to sprite ID */
+static constexpr uint8_t TRANSPARENT_BIT = 31; ///< toggles transparency in the sprite
+static constexpr uint8_t RECOLOUR_BIT = 30; ///< toggles recolouring in the sprite
+static constexpr uint8_t CUSTOM_BIT = 29;
+static constexpr uint8_t OPAQUE_BIT = 28;
 
-	PALETTE_WIDTH = 24,         ///< number of bits of the sprite containing the recolour palette
-	SPRITE_WIDTH = 24,          ///< number of bits for the sprite number
-};
+/* This bit is applied to palette ID */
+static constexpr uint8_t PALETTE_TEXT_RECOLOUR = 31; ///< Set if palette is actually a magic text recolour
+
+static constexpr uint8_t PALETTE_WIDTH = 24; ///< number of bits of the sprite containing the recolour palette
+static constexpr uint8_t SPRITE_WIDTH = 24; ///< number of bits for the sprite number
 
 /**
  * these masks change the colours of the palette for a sprite.
@@ -1535,25 +1546,21 @@ enum SpriteSetup {
  * @note Do not modify this enum. Alter SpriteSetup instead
  * @see SpriteSetup
  */
-enum Modifiers {
-	SPRITE_MODIFIER_CUSTOM_SPRITE = CUSTOM_BIT,      ///< Set when a sprite originates from an Action 1
-	SPRITE_MODIFIER_OPAQUE        = OPAQUE_BIT,      ///< Set when a sprite must not ever be displayed transparently
-	PALETTE_MODIFIER_TRANSPARENT  = TRANSPARENT_BIT, ///< when a sprite is to be displayed transparently, this bit needs to be set.
-	PALETTE_MODIFIER_COLOUR       = RECOLOUR_BIT,    ///< this bit is set when a recolouring process is in action
-};
+static constexpr uint8_t SPRITE_MODIFIER_CUSTOM_SPRITE = CUSTOM_BIT;      ///< Set when a sprite originates from an Action 1
+static constexpr uint8_t SPRITE_MODIFIER_OPAQUE        = OPAQUE_BIT;      ///< Set when a sprite must not ever be displayed transparently
+static constexpr uint8_t PALETTE_MODIFIER_TRANSPARENT  = TRANSPARENT_BIT; ///< when a sprite is to be displayed transparently, this bit needs to be set.
+static constexpr uint8_t PALETTE_MODIFIER_COLOUR       = RECOLOUR_BIT;    ///< this bit is set when a recolouring process is in action
 
 /**
  * Masks needed for sprite operations.
  * @note Do not modify this enum. Alter SpriteSetup instead
  * @see SpriteSetup
  */
-enum SpriteMasks {
-	MAX_SPRITES = 1U << SPRITE_WIDTH,      ///< Maximum number of sprites that can be loaded at a given time
-	SPRITE_MASK = MAX_SPRITES - 1,         ///< The mask to for the main sprite
+static constexpr uint32_t MAX_SPRITES = 1U << SPRITE_WIDTH; ///< Maximum number of sprites that can be loaded at a given time
+static constexpr uint32_t SPRITE_MASK = MAX_SPRITES - 1; ///< The mask to for the main sprite
 
-	MAX_PALETTES = 1U << PALETTE_WIDTH,
-	PALETTE_MASK = MAX_PALETTES - 1,       ///< The mask for the auxiliary sprite (the one that takes care of recolouring)
-};
+static constexpr uint32_t MAX_PALETTES = 1U << PALETTE_WIDTH;
+static constexpr uint32_t PALETTE_MASK = MAX_PALETTES - 1; ///< The mask for the auxiliary sprite (the one that takes care of recolouring)
 
 static_assert( (1U << TRANSPARENT_BIT & SPRITE_MASK) == 0 );
 static_assert( (1U << RECOLOUR_BIT & SPRITE_MASK) == 0 );

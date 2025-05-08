@@ -84,8 +84,8 @@ void Blitter_8bppOptimized::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Z
 			width -= pixels;
 
 			switch (mode) {
-				case BM_COLOUR_REMAP:
-				case BM_CRASH_REMAP: {
+				case BlitterMode::ColourRemap:
+				case BlitterMode::CrashRemap: {
 					const uint8_t *remap = bp->remap;
 					do {
 						uint m = remap[*src];
@@ -95,13 +95,13 @@ void Blitter_8bppOptimized::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Z
 					break;
 				}
 
-				case BM_BLACK_REMAP:
+				case BlitterMode::BlackRemap:
 					MemSetT(dst, 0, pixels);
 					dst += pixels;
 					break;
 
-				case BM_TRANSPARENT:
-				case BM_TRANSPARENT_REMAP: {
+				case BlitterMode::Transparent:
+				case BlitterMode::TransparentRemap: {
 					const uint8_t *remap = bp->remap;
 					src += pixels;
 					do {
@@ -120,7 +120,7 @@ void Blitter_8bppOptimized::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Z
 	}
 }
 
-Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &sprite, AllocatorProc *allocator)
+Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
 {
 	/* Make memory for all zoom-levels */
 	uint memory = sizeof(SpriteData);
@@ -128,9 +128,9 @@ Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &spri
 	ZoomLevel zoom_min;
 	ZoomLevel zoom_max;
 
-	if (sprite[ZOOM_LVL_NORMAL].type == SpriteType::Font) {
-		zoom_min = ZOOM_LVL_NORMAL;
-		zoom_max = ZOOM_LVL_NORMAL;
+	if (sprite[ZOOM_LVL_MIN].type == SpriteType::Font) {
+		zoom_min = ZOOM_LVL_MIN;
+		zoom_max = ZOOM_LVL_MIN;
 	} else {
 		zoom_min = _settings_client.gui.zoom_min;
 		zoom_max = _settings_client.gui.zoom_max;
@@ -148,8 +148,7 @@ Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &spri
 	 * memory around as this function is called quite often
 	 * and the memory usage is quite low. */
 	static ReusableBuffer<uint8_t> temp_buffer;
-	SpriteData *temp_dst = (SpriteData *)temp_buffer.Allocate(memory);
-	memset(temp_dst, 0, sizeof(*temp_dst));
+	SpriteData *temp_dst = reinterpret_cast<SpriteData *>(temp_buffer.ZeroAllocate(memory));
 	uint8_t *dst = temp_dst->data;
 
 	/* Make the sprites per zoom-level */
@@ -219,12 +218,12 @@ Sprite *Blitter_8bppOptimized::Encode(const SpriteLoader::SpriteCollection &spri
 	assert(size < memory);
 
 	/* Allocate the exact amount of memory we need */
-	Sprite *dest_sprite = (Sprite *)allocator(sizeof(*dest_sprite) + size);
+	Sprite *dest_sprite = allocator.Allocate<Sprite>(sizeof(*dest_sprite) + size);
 
-	dest_sprite->height = sprite[ZOOM_LVL_NORMAL].height;
-	dest_sprite->width  = sprite[ZOOM_LVL_NORMAL].width;
-	dest_sprite->x_offs = sprite[ZOOM_LVL_NORMAL].x_offs;
-	dest_sprite->y_offs = sprite[ZOOM_LVL_NORMAL].y_offs;
+	dest_sprite->height = sprite[ZOOM_LVL_MIN].height;
+	dest_sprite->width  = sprite[ZOOM_LVL_MIN].width;
+	dest_sprite->x_offs = sprite[ZOOM_LVL_MIN].x_offs;
+	dest_sprite->y_offs = sprite[ZOOM_LVL_MIN].y_offs;
 	memcpy(dest_sprite->data, temp_dst, size);
 
 	return dest_sprite;

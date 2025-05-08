@@ -21,17 +21,17 @@
  * Only the cargo type of the most saturated linkgraph is taken into account.
  */
 struct LinkProperties {
-	LinkProperties() : cargo(INVALID_CARGO), capacity(0), usage(0), planned(0), shared(false) {}
+	LinkProperties() {}
 
 	/** Return the usage of the link to display. */
 	uint Usage() const { return std::max(this->usage, this->planned); }
 
-	CargoID cargo; ///< Cargo type of the link.
-	uint capacity; ///< Capacity of the link.
-	uint usage;    ///< Actual usage of the link.
-	uint planned;  ///< Planned usage of the link.
-	uint32_t time;   ///< Travel time of the link.
-	bool shared;   ///< If this is a shared link to be drawn dashed.
+	CargoType cargo = INVALID_CARGO; ///< Cargo type of the link.
+	uint capacity = 0; ///< Capacity of the link.
+	uint usage = 0; ///< Actual usage of the link.
+	uint planned = 0; ///< Planned usage of the link.
+	uint32_t time = 0; ///< Travel time of the link.
+	bool shared = false; ///< If this is a shared link to be drawn dashed.
 };
 
 /**
@@ -55,7 +55,7 @@ public:
 	 * @param scale Desired thickness of lines and size of station dots.
 	 */
 	LinkGraphOverlay(Window *w, WidgetID wid, CargoTypes cargo_mask, CompanyMask company_mask, uint scale) :
-			window(w), widget_id(wid), cargo_mask(cargo_mask), company_mask(company_mask), scale(scale)
+			window(w), widget_id(wid), cargo_mask(cargo_mask), company_mask(company_mask), scale(scale), dirty(true)
 	{}
 
 	void Draw(const DrawPixelInfo *dpi);
@@ -94,7 +94,7 @@ protected:
 	void GetWidgetDpi(DrawPixelInfo *dpi) const;
 	void RebuildCache();
 
-	static void AddStats(CargoID new_cargo, uint new_cap, uint new_usg, uint new_flow, uint32_t time, bool new_shared, LinkProperties &cargo);
+	static void AddStats(CargoType new_cargo, uint new_cap, uint new_usg, uint new_flow, uint32_t time, bool new_shared, LinkProperties &cargo);
 	static void DrawVertex(int x, int y, int size, int colour, int border_colour);
 };
 
@@ -105,18 +105,18 @@ void ShowLinkGraphLegend();
  */
 struct LinkGraphLegendWindow : Window {
 public:
-	LinkGraphLegendWindow(WindowDesc *desc, int window_number);
+	LinkGraphLegendWindow(WindowDesc &desc, int window_number);
 	void SetOverlay(std::shared_ptr<LinkGraphOverlay> overlay);
 
-	void UpdateWidgetSize(WidgetID widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize) override;
+	void UpdateWidgetSize(WidgetID widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize) override;
 	void DrawWidget(const Rect &r, WidgetID widget) const override;
 	bool OnTooltip([[maybe_unused]] Point pt, WidgetID widget, TooltipCloseCondition close_cond) override;
 	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override;
 	void OnInvalidateData(int data = 0, bool gui_scope = true) override;
 
 private:
-	std::shared_ptr<LinkGraphOverlay> overlay;
-	size_t num_cargo;
+	std::shared_ptr<LinkGraphOverlay> overlay{};
+	size_t num_cargo = 0;
 
 	void UpdateOverlayCompanies();
 	void UpdateOverlayCargoes();

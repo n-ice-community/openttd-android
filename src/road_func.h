@@ -135,7 +135,7 @@ inline Money RoadMaintenanceCost(RoadType roadtype, uint32_t num, uint32_t total
 inline bool HasRoadCatenary(RoadType roadtype)
 {
 	assert(roadtype < ROADTYPE_END);
-	return HasBit(GetRoadTypeInfo(roadtype)->flags, ROTF_CATENARY);
+	return GetRoadTypeInfo(roadtype)->flags.Test(RoadTypeFlag::Catenary);
 }
 
 /**
@@ -159,6 +159,8 @@ void UpdateAdjacentLevelCrossingTilesOnLevelCrossingRemoval(TileIndex tile, Axis
 void UpdateCompanyRoadInfrastructure(RoadType rt, Owner o, int count);
 
 struct TileInfo;
+enum Roadside : uint8_t;
 void DrawRoadOverlays(const TileInfo *ti, PaletteID pal, const RoadTypeInfo *road_rti, const RoadTypeInfo *tram_rit, uint road_offset, uint tram_offset, bool draw_underlay = true);
+void DrawRoadGroundSprites(const TileInfo *ti, RoadBits road, RoadBits tram, const RoadTypeInfo *road_rti, const RoadTypeInfo *tram_rti, Roadside roadside, bool snow_or_desert);
 
 #endif /* ROAD_FUNC_H */

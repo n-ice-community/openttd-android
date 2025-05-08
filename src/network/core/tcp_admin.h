@@ -22,7 +22,7 @@
  * This protocol may only be extended to ensure stability.
  */
 enum PacketAdminType : uint8_t {
-	ADMIN_PACKET_ADMIN_JOIN,             ///< The admin announces and authenticates itself to the server.
+	ADMIN_PACKET_ADMIN_JOIN,             ///< The admin announces and authenticates itself to the server using an unsecured passwords.
 	ADMIN_PACKET_ADMIN_QUIT,             ///< The admin tells the server that it is quitting.
 	ADMIN_PACKET_ADMIN_UPDATE_FREQUENCY, ///< The admin tells the server the update frequency of a particular piece of information.
 	ADMIN_PACKET_ADMIN_POLL,             ///< The admin explicitly polls for a piece of information.
@@ -31,6 +31,8 @@ enum PacketAdminType : uint8_t {
 	ADMIN_PACKET_ADMIN_GAMESCRIPT,       ///< The admin sends a JSON string for the GameScript.
 	ADMIN_PACKET_ADMIN_PING,             ///< The admin sends a ping to the server, expecting a ping-reply (PONG) packet.
 	ADMIN_PACKET_ADMIN_EXTERNAL_CHAT,    ///< The admin sends a chat message from external source.
+	ADMIN_PACKET_ADMIN_JOIN_SECURE,      ///< The admin announces and starts a secure authentication handshake.
+	ADMIN_PACKET_ADMIN_AUTH_RESPONSE,    ///< The admin responds to the authentication request.
 
 	ADMIN_PACKET_SERVER_FULL = 100,      ///< The server tells the admin it cannot accept the admin.
 	ADMIN_PACKET_SERVER_BANNED,          ///< The server tells the admin it is banned.
@@ -61,19 +63,22 @@ enum PacketAdminType : uint8_t {
 	ADMIN_PACKET_SERVER_RCON_END,        ///< The server indicates that the remote console command has completed.
 	ADMIN_PACKET_SERVER_PONG,            ///< The server replies to a ping request from the admin.
 	ADMIN_PACKET_SERVER_CMD_LOGGING,     ///< The server gives the admin copies of incoming command packets.
+	ADMIN_PACKET_SERVER_AUTH_REQUEST,    ///< The server gives the admin the used authentication method and required parameters.
+	ADMIN_PACKET_SERVER_ENABLE_ENCRYPTION, ///< The server tells that authentication has completed and requests to enable encryption with the keys of the last \c ADMIN_PACKET_ADMIN_AUTH_RESPONSE.
 
 	INVALID_ADMIN_PACKET = 0xFF,         ///< An invalid marker for admin packets.
 };
 
 /** Status of an admin. */
-enum AdminStatus {
+enum AdminStatus : uint8_t {
 	ADMIN_STATUS_INACTIVE,      ///< The admin is not connected nor active.
+	ADMIN_STATUS_AUTHENTICATE,  ///< The admin is connected and working on authentication.
 	ADMIN_STATUS_ACTIVE,        ///< The admin is active.
 	ADMIN_STATUS_END,           ///< Must ALWAYS be on the end of this list!! (period)
 };
 
 /** Update types an admin can register a frequency for */
-enum AdminUpdateType {
+enum AdminUpdateType : uint8_t {
 	ADMIN_UPDATE_DATE,            ///< Updates about the date of the game.
 	ADMIN_UPDATE_CLIENT_INFO,     ///< Updates about the information of clients.
 	ADMIN_UPDATE_COMPANY_INFO,    ///< Updates about the generic information of companies.
@@ -88,19 +93,19 @@ enum AdminUpdateType {
 };
 
 /** Update frequencies an admin can register. */
-enum AdminUpdateFrequency {
-	ADMIN_FREQUENCY_POLL      = 0x01, ///< The admin can poll this.
-	ADMIN_FREQUENCY_DAILY     = 0x02, ///< The admin gets information about this on a daily basis.
-	ADMIN_FREQUENCY_WEEKLY    = 0x04, ///< The admin gets information about this on a weekly basis.
-	ADMIN_FREQUENCY_MONTHLY   = 0x08, ///< The admin gets information about this on a monthly basis.
-	ADMIN_FREQUENCY_QUARTERLY = 0x10, ///< The admin gets information about this on a quarterly basis.
-	ADMIN_FREQUENCY_ANUALLY   = 0x20, ///< The admin gets information about this on a yearly basis.
-	ADMIN_FREQUENCY_AUTOMATIC = 0x40, ///< The admin gets information about this when it changes.
+enum class AdminUpdateFrequency : uint8_t {
+	Poll, ///< The admin can poll this.
+	Daily, ///< The admin gets information about this on a daily basis.
+	Weekly, ///< The admin gets information about this on a weekly basis.
+	Monthly, ///< The admin gets information about this on a monthly basis.
+	Quarterly, ///< The admin gets information about this on a quarterly basis.
+	Annually, ///< The admin gets information about this on a yearly basis.
+	Automatic, ///< The admin gets information about this when it changes.
 };
-DECLARE_ENUM_AS_BIT_SET(AdminUpdateFrequency)
+using AdminUpdateFrequencies = EnumBitSet<AdminUpdateFrequency, uint8_t>;
 
 /** Reasons for removing a company - communicated to admins. */
-enum AdminCompanyRemoveReason {
+enum AdminCompanyRemoveReason : uint8_t {
 	ADMIN_CRR_MANUAL,    ///< The company is manually removed.
 	ADMIN_CRR_AUTOCLEAN, ///< The company is removed due to autoclean.
 	ADMIN_CRR_BANKRUPT,  ///< The company went belly-up.
@@ -111,15 +116,15 @@ enum AdminCompanyRemoveReason {
 /** Main socket handler for admin related connections. */
 class NetworkAdminSocketHandler : public NetworkTCPSocketHandler {
 protected:
-	std::string admin_name;    ///< Name of the admin.
-	std::string admin_version; ///< Version string of the admin.
-	AdminStatus status;        ///< Status of this admin.
+	std::string admin_name{}; ///< Name of the admin.
+	std::string admin_version{}; ///< Version string of the admin.
+	AdminStatus status = ADMIN_STATUS_INACTIVE; ///< Status of this admin.
 
 	NetworkRecvStatus ReceiveInvalidPacket(PacketAdminType type);
 
 	/**
-	 * Join the admin network:
-	 * string  Password the server is expecting for this network.
+	 * Join the admin network using an unsecured password exchange:
+	 * string  Unsecured password the server is expecting for this network.
 	 * string  Name of the application being used to connect.
 	 * string  Version string of the application being used to connect.
 	 * @param p The packet that was just received.
@@ -137,7 +142,7 @@ protected:
 	/**
 	 * Register updates to be sent at certain frequencies (as announced in the PROTOCOL packet):
 	 * uint16_t  Update type (see #AdminUpdateType). Note integer type - see "Certain Packet Information" in docs/admin_network.md.
-	 * uint16_t  Update frequency (see #AdminUpdateFrequency), setting #ADMIN_FREQUENCY_POLL is always ignored.
+	 * uint16_t  Update frequency (see #AdminUpdateFrequency), setting #AdminUpdateFrequency::Poll is always ignored.
 	 * @param p The packet that was just received.
 	 * @return The state the network should have.
 	 */
@@ -145,7 +150,7 @@ protected:
 
 	/**
 	 * Poll the server for certain updates, an invalid poll (e.g. not existent id) gets silently dropped:
-	 * uint8_t   #AdminUpdateType the server should answer for, only if #AdminUpdateFrequency #ADMIN_FREQUENCY_POLL is advertised in the PROTOCOL packet. Note integer type - see "Certain Packet Information" in docs/admin_network.md.
+	 * uint8_t   #AdminUpdateType the server should answer for, only if #AdminUpdateFrequency::Poll is advertised in the PROTOCOL packet. Note integer type - see "Certain Packet Information" in docs/admin_network.md.
 	 * uint32_t  ID relevant to the packet type, e.g.
 	 *          - the client ID for #ADMIN_UPDATE_CLIENT_INFO. Use UINT32_MAX to show all clients.
 	 *          - the company ID for #ADMIN_UPDATE_COMPANY_INFO. Use UINT32_MAX to show all companies.
@@ -169,7 +174,7 @@ protected:
 	 * Send chat from the external source:
 	 * string  Name of the source this message came from.
 	 * uint16_t  TextColour to use for the message.
-	 * string  Name of the user who sent the messsage.
+	 * string  Name of the user who sent the message.
 	 * string  Message.
 	 * @param p The packet that was just received.
 	 * @return The state the network should have.
@@ -199,6 +204,32 @@ protected:
 	 * @return The state the network should have.
 	 */
 	virtual NetworkRecvStatus Receive_ADMIN_PING(Packet &p);
+
+	/**
+	 * Join the admin network using a secure authentication method:
+	 * string Name of the application being used to connect.
+	 * string Version string of the application being used to connect.
+	 * uint16_t Bitmask of supported authentication methods. See \c NetworkAuthenticationMethod for the supported methods.
+	 *
+	 * The server will determine which of the authentication methods supplied by the client will be used.
+	 * When there is no supported authentication method, an \c ADMIN_PACKET_SERVER_ERROR packet will be
+	 * sent with \c NETWORK_ERROR_NO_AUTHENTICATION_METHOD_AVAILABLE as error.
+	 * @param p The packet that was just received.
+	 * @return The state the network should have.
+	 */
+	virtual NetworkRecvStatus Receive_ADMIN_JOIN_SECURE(Packet &p);
+
+	/**
+	 * Admin responds to \c ADMIN_PACKET_SERVER_AUTH_REQUEST with the appropriate
+	 * data given the agreed upon \c NetworkAuthenticationMethod.
+	 * With \c NETWORK_AUTH_METHOD_X25519_PAKE and \c NETWORK_AUTH_METHOD_X25519_AUTHORIZED_KEY:
+	 *   32 * uint8_t Public key of the client.
+	 *   16 * uint8_t Message authentication code (mac).
+	 *    8 * uint8_t Encrypted message of the authentication (just random bytes).
+	 * @param p The packet that was just received.
+	 * @return The state the network should have.
+	 */
+	virtual NetworkRecvStatus Receive_ADMIN_AUTH_RESPONSE(Packet &p);
 
 	/**
 	 * The server is full (connection gets closed).
@@ -333,7 +364,7 @@ protected:
 	 * string  Name of the company.
 	 * string  Name of the companies manager.
 	 * uint8_t   Main company colour.
-	 * bool    Company is password protected.
+	 * bool    Company is protected.
 	 * uint32_t  Year the company was inaugurated.
 	 * bool    Company is an AI.
 	 * @param p The packet that was just received.
@@ -347,7 +378,7 @@ protected:
 	 * string  Name of the company.
 	 * string  Name of the companies manager.
 	 * uint8_t   Main company colour.
-	 * bool    Company is password protected.
+	 * bool    Company is protected.
 	 * uint8_t   Quarters of bankruptcy.
 	 * uint8_t   Owner of share 1.
 	 * uint8_t   Owner of share 2.
@@ -473,6 +504,25 @@ protected:
 	virtual NetworkRecvStatus Receive_SERVER_CMD_LOGGING(Packet &p);
 
 	/**
+	 * Server requests authentication challenge from the admin.
+	 * uint8_t The chosen authentication method from \c NetworkAuthenticationMethod.
+	 * With \c NETWORK_AUTH_METHOD_X25519_PAKE and \c NETWORK_AUTH_METHOD_X25519_AUTHORIZED_KEY:
+	 *   32 * uint8_t Public key of the server.
+	 *   24 * uint8_t Nonce to use for the encryption.
+	 * @param p The packet that was just received.
+	 * @return The state the network should have.
+	 */
+	virtual NetworkRecvStatus Receive_SERVER_AUTH_REQUEST(Packet &p);
+
+	/**
+	 * Indication to the client that authentication is complete and encryption has to be used from here on forward.
+	 * The encryption uses the shared keys generated by the last AUTH_REQUEST key exchange.
+	 * 24 * uint8_t Nonce for encrypted connection.
+	 * @param p The packet that was just received.
+	 */
+	virtual NetworkRecvStatus Receive_SERVER_ENABLE_ENCRYPTION(Packet &p);
+
+	/**
 	 * Send a ping-reply (pong) to the admin that sent us the ping packet.
 	 * uint32_t  Integer identifier - should be the same as read from the admins ping packet.
 	 * @param p The packet that was just received.
@@ -492,7 +542,11 @@ protected:
 public:
 	NetworkRecvStatus CloseConnection(bool error = true) override;
 
-	NetworkAdminSocketHandler(SOCKET s);
+	/**
+	 * Create the admin handler for the given socket.
+	 * @param s The socket to communicate over.
+	 */
+	NetworkAdminSocketHandler(SOCKET s) : NetworkTCPSocketHandler(s) {}
 
 	NetworkRecvStatus ReceivePackets();
 

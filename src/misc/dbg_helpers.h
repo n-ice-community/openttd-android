@@ -34,7 +34,7 @@ template <typename T, size_t N> struct ArrayT<T[N]> {
 template <typename E, typename T>
 inline typename ArrayT<T>::Item ItemAtT(E idx, const T &t, typename ArrayT<T>::Item t_unk)
 {
-	if ((size_t)idx >= ArrayT<T>::length) {
+	if (static_cast<size_t>(idx) >= ArrayT<T>::length) {
 		return t_unk;
 	}
 	return t[idx];
@@ -48,7 +48,7 @@ inline typename ArrayT<T>::Item ItemAtT(E idx, const T &t, typename ArrayT<T>::I
 template <typename E, typename T>
 inline typename ArrayT<T>::Item ItemAtT(E idx, const T &t, typename ArrayT<T>::Item t_unk, E idx_inv, typename ArrayT<T>::Item t_inv)
 {
-	if ((size_t)idx < ArrayT<T>::length) {
+	if (static_cast<size_t>(idx) < ArrayT<T>::length) {
 		return t[idx];
 	}
 	if (idx == idx_inv) {
@@ -81,6 +81,32 @@ inline std::string ComposeNameT(E value, T &t, const char *t_unk, E val_inv, con
 		if (value != 0) {
 			out += (!out.empty() ? "+" : "");
 			out += t_unk;
+		}
+	}
+	return out;
+}
+
+/**
+ * Helper template function that returns compound bitfield name that is
+ * concatenation of names of each set bit in the given value
+ * or unknown_name when index is out of bounds.
+ */
+template <typename E>
+inline std::string ComposeNameT(E value, std::span<const std::string_view> names, std::string_view unknown_name)
+{
+	std::string out;
+	if (value.base() == 0) {
+		out = "<none>";
+	} else {
+		for (size_t i = 0; i < std::size(names); ++i) {
+			if (!value.Test(static_cast<E::EnumType>(i))) continue;
+			out += (!out.empty() ? "+" : "");
+			out += names[i];
+			value.Reset(static_cast<E::EnumType>(i));
+		}
+		if (value.base() != 0) {
+			out += (!out.empty() ? "+" : "");
+			out += unknown_name;
 		}
 	}
 	return out;
@@ -156,12 +182,40 @@ struct DumpTarget {
 		std::string known_as;
 		if (FindKnownName(type_id, s, known_as)) {
 			/* We already know this one, no need to dump it. */
-			std::string known_as_str = std::string("known_as.") + name;
+			std::string known_as_str = std::string("known_as.") + known_as;
 			WriteValue(name, known_as_str);
 		} else {
 			/* Still unknown, dump it */
 			BeginStruct(type_id, name, s);
 			s->Dump(*this);
+			EndStruct();
+		}
+	}
+
+	/** Dump nested object (or only its name if this instance is already known). */
+	template <typename S> void WriteStructT(const std::string &name, const std::deque<S> *s)
+	{
+		static size_t type_id = ++LastTypeId();
+
+		if (s == nullptr) {
+			/* No need to dump nullptr struct. */
+			WriteValue(name, "<null>");
+			return;
+		}
+		std::string known_as;
+		if (FindKnownName(type_id, s, known_as)) {
+			/* We already know this one, no need to dump it. */
+			std::string known_as_str = std::string("known_as.") + known_as;
+			WriteValue(name, known_as_str);
+		} else {
+			/* Still unknown, dump it */
+			BeginStruct(type_id, name, s);
+			size_t num_items = s->size();
+			this->WriteValue("num_items", std::to_string(num_items));
+			for (size_t i = 0; i < num_items; i++) {
+				const auto &item = (*s)[i];
+				this->WriteStructT(fmt::format("item[{}]", i), &item);
+			}
 			EndStruct();
 		}
 	}

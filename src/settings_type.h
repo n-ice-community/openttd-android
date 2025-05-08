@@ -35,7 +35,7 @@ const size_t MAX_SLE_INT32 = INT32_MAX;
 const size_t MAX_SLE_INT = INT_MAX;
 
 /** Settings profiles and highscore tables. */
-enum SettingsProfile {
+enum SettingsProfile : uint8_t {
 	SP_BEGIN = 0,
 	SP_EASY = SP_BEGIN,                       ///< Easy difficulty.
 	SP_MEDIUM,                                ///< Medium difficulty.
@@ -51,7 +51,7 @@ enum SettingsProfile {
 };
 
 /** Available industry map generation densities. */
-enum IndustryDensity {
+enum IndustryDensity : uint8_t {
 	ID_FUND_ONLY, ///< The game does not build industries.
 	ID_MINIMAL,   ///< Start with just the industries that must be present.
 	ID_VERY_LOW,  ///< Very few industries at game start.
@@ -91,6 +91,13 @@ enum RightClickClose : uint8_t {
 	RCC_YES_EXCEPT_STICKY,
 };
 
+/** Possible values for "place_houses" setting. */
+enum PlaceHouses : uint8_t {
+	PH_FORBIDDEN = 0,
+	PH_ALLOWED,
+	PH_ALLOWED_CONSTRUCTED,
+};
+
 /** Settings related to the difficulty of the game */
 struct DifficultySettings {
 	uint8_t competitor_start_time;            ///< Unused value, used to load old savegames.
@@ -118,12 +125,19 @@ struct DifficultySettings {
 };
 
 /** Settings relating to viewport/smallmap scrolling. */
-enum ViewportScrollMode {
+enum ViewportScrollMode : uint8_t {
 	VSM_VIEWPORT_RMB_FIXED, ///< Viewport moves with mouse movement on holding right mouse button, cursor position is fixed.
 	VSM_MAP_RMB_FIXED,      ///< Map moves with mouse movement on holding right mouse button, cursor position is fixed.
 	VSM_MAP_RMB,            ///< Map moves with mouse movement on holding right mouse button, cursor moves.
 	VSM_MAP_LMB,            ///< Map moves with mouse movement on holding left mouse button, cursor moves.
 	VSM_END,                ///< Number of scroll mode settings.
+};
+
+/** Settings related to scroll wheel behavior. */
+enum ScrollWheelScrollingSetting : uint8_t {
+	SWS_ZOOM_MAP = 0,       ///< Scroll wheel zooms the map.
+	SWS_SCROLL_MAP = 1,     ///< Scroll wheel scrolls the map.
+	SWS_OFF = 2             ///< Scroll wheel has no effect.
 };
 
 /** Settings related to the GUI and other stuff that is not saved in the savegame. */
@@ -132,6 +146,7 @@ struct GUISettings {
 	bool   lost_vehicle_warn;                ///< if a vehicle can't find its destination, show a warning
 	uint8_t  order_review_system;              ///< perform order reviews on vehicles
 	bool   vehicle_income_warn;              ///< if a vehicle isn't generating income, show a warning
+	bool   old_vehicle_warn;                 ///< if a vehicle is getting old, show a warning
 	bool   vertical_toolbar;                 ///< main toolbar is split into two vertical toolbars
 	bool   compact_vertical_toolbar;         ///< compact mode for vertical toolbars, with more sub-menus
 	bool   build_confirmation;               ///< show confirmation dialog when building roads and stations
@@ -324,16 +339,15 @@ struct NetworkSettings {
 	NetworkAuthorizedKeys server_authorized_keys; ///< Public keys of clients that are authorized to connect to the game.
 	std::string rcon_password;                            ///< password for rconsole (server side)
 	NetworkAuthorizedKeys rcon_authorized_keys; ///< Public keys of clients that are authorized to use the rconsole (server side).
+	bool allow_insecure_admin_login; ///< Whether to allow logging in as admin using the insecure old JOIN packet.
 	std::string admin_password;                           ///< password for the admin network
+	NetworkAuthorizedKeys admin_authorized_keys; ///< Public keys of clients that are authorized to use the admin network.
 	std::string client_name;                              ///< name of the player (as client)
 	std::string client_secret_key; ///< The secret key of the client for authorized key logins.
 	std::string client_public_key; ///< The public key of the client for authorized key logins.
-	std::string default_company_pass;                     ///< default password for new companies in encrypted form
 	std::string connect_to_ip;                            ///< default for the "Add server" query
-	std::string network_id;                               ///< network ID for servers
 	bool        autoclean_companies;                      ///< automatically remove companies that are not in use
-	uint8_t       autoclean_unprotected;                    ///< remove passwordless companies after this many months
-	uint8_t       autoclean_protected;                      ///< remove the password from passworded companies after this many months
+	uint8_t       autoclean_protected; ///< Remove companies after this many months.
 	uint8_t       autoclean_novehicles;                     ///< remove companies with no vehicles after this many months
 	uint8_t       max_companies;                            ///< maximum amount of companies
 	uint8_t       max_clients;                              ///< maximum amount of clients
@@ -344,6 +358,8 @@ struct NetworkSettings {
 	std::string last_joined;                              ///< Last joined server
 	UseRelayService use_relay_service;                    ///< Use relay service?
 	ParticipateSurvey participate_survey;                 ///< Participate in the automated survey
+
+	bool AdminAuthenticationConfigured() const { return !this->admin_password.empty() || !this->admin_authorized_keys.empty(); }
 };
 
 /** Settings related to the creation of games. */
@@ -364,8 +380,8 @@ struct GameCreationSettings {
 	uint8_t heightmap_rotation;               ///< rotation director for the heightmap
 	uint8_t se_flat_world_height;             ///< land height a flat world gets in SE
 	uint8_t town_name;                        ///< the town name generator used for town names
-	uint8_t landscape;                        ///< the landscape we're currently in
-	uint8_t water_borders;                    ///< bitset of the borders that are water
+	LandscapeType landscape;                        ///< the landscape we're currently in
+	BorderFlags water_borders;                    ///< bitset of the borders that are water
 	uint16_t custom_town_number;               ///< manually entered number of towns
 	uint16_t custom_industry_number;           ///< manually entered number of industries
 	uint8_t variety;                          ///< variety level applied to TGP
@@ -420,42 +436,11 @@ struct ScriptSettings {
 	uint32_t script_max_memory_megabytes;      ///< limit on memory a single script instance may have allocated
 };
 
-/** Settings related to the new pathfinder. */
-struct NPFSettings {
-	/**
-	 * The maximum amount of search nodes a single NPF run should take. This
-	 * limit should make sure performance stays at acceptable levels at the cost
-	 * of not being perfect anymore.
-	 */
-	uint32_t npf_max_search_nodes;
-	uint32_t maximum_go_to_depot_penalty;      ///< What is the maximum penalty that may be endured for going to a depot
-
-	uint32_t npf_rail_firstred_penalty;        ///< the penalty for when the first signal is red (and it is not an exit or combo signal)
-	uint32_t npf_rail_firstred_exit_penalty;   ///< the penalty for when the first signal is red (and it is an exit or combo signal)
-	uint32_t npf_rail_lastred_penalty;         ///< the penalty for when the last signal is red
-	uint32_t npf_rail_station_penalty;         ///< the penalty for station tiles
-	uint32_t npf_rail_slope_penalty;           ///< the penalty for sloping upwards
-	uint32_t npf_rail_curve_penalty;           ///< the penalty for curves
-	uint32_t npf_rail_depot_reverse_penalty;   ///< the penalty for reversing in depots
-	uint32_t npf_rail_pbs_cross_penalty;       ///< the penalty for crossing a reserved rail track
-	uint32_t npf_rail_pbs_signal_back_penalty; ///< the penalty for passing a pbs signal from the backside
-	uint32_t npf_buoy_penalty;                 ///< the penalty for going over (through) a buoy
-	uint32_t npf_water_curve_penalty;          ///< the penalty for curves
-	uint32_t npf_road_curve_penalty;           ///< the penalty for curves
-	uint32_t npf_crossing_penalty;             ///< the penalty for level crossings
-	uint32_t npf_road_drive_through_penalty;   ///< the penalty for going through a drive-through road stop
-	uint32_t npf_road_dt_occupied_penalty;     ///< the penalty multiplied by the fill percentage of a drive-through road stop
-	uint32_t npf_road_bay_occupied_penalty;    ///< the penalty multiplied by the fill percentage of a road bay
-};
-
 /** Settings related to the yet another pathfinder. */
 struct YAPFSettings {
 	bool   disable_node_optimization;        ///< whether to use exit-dir instead of trackdir in node key
 	uint32_t max_search_nodes;                 ///< stop path-finding when this number of nodes visited
 	uint32_t maximum_go_to_depot_penalty;      ///< What is the maximum penalty that may be endured for going to a depot
-	bool   ship_use_yapf;                    ///< use YAPF for ships
-	bool   road_use_yapf;                    ///< use YAPF for road
-	bool   rail_use_yapf;                    ///< use YAPF for rail
 	uint32_t road_slope_penalty;               ///< penalty for up-hill slope
 	uint32_t road_curve_penalty;               ///< penalty for curves
 	uint32_t road_crossing_penalty;            ///< penalty for level crossing
@@ -492,11 +477,6 @@ struct YAPFSettings {
 
 /** Settings related to all pathfinders. */
 struct PathfinderSettings {
-	uint8_t  pathfinder_for_trains;            ///< the pathfinder to use for trains
-	uint8_t  pathfinder_for_roadvehs;          ///< the pathfinder to use for roadvehicles
-	uint8_t  pathfinder_for_ships;             ///< the pathfinder to use for ships
-	bool   new_pathfinding_all;              ///< use the newest pathfinding algorithm for all
-
 	bool   roadveh_queue;                    ///< buggy road vehicle queueing
 	bool   forbid_90_deg;                    ///< forbid trains to make 90 deg turns
 
@@ -508,7 +488,6 @@ struct PathfinderSettings {
 	uint8_t wait_for_pbs_path;                ///< how long to wait for a path reservation.
 	uint8_t path_backoff_interval;            ///< ticks between checks for a free path.
 
-	NPFSettings  npf;                        ///< pathfinder settings for the new pathfinder
 	YAPFSettings yapf;                       ///< pathfinder settings for the yet another pathfinder
 };
 
@@ -565,6 +544,7 @@ struct EconomySettings {
 	TownCargoGenMode town_cargogen_mode;     ///< algorithm for generating cargo from houses, @see TownCargoGenMode
 	bool   allow_town_roads;                 ///< towns are allowed to build roads (always allowed when generating world / in SE)
 	TownFounding found_town;                 ///< town founding.
+	PlaceHouses place_houses;                ///< players are allowed to place town houses.
 	bool   station_noise_level;              ///< build new airports when the town noise level is still within accepted limits
 	uint16_t town_noise_population[4];         ///< population to base decision on noise evaluation (@see town_council_tolerance)
 	bool   allow_town_level_crossings;       ///< towns are allowed to build level crossings
@@ -587,11 +567,11 @@ struct LinkGraphSettings {
 	uint8_t demand_distance;                  ///< influence of distance between stations on the demand function
 	uint8_t short_path_saturation;            ///< percentage up to which short paths are saturated before saturating most capacious paths
 
-	inline DistributionType GetDistributionType(CargoID cargo) const
+	inline DistributionType GetDistributionType(CargoType cargo) const
 	{
-		if (IsCargoInClass(cargo, CC_PASSENGERS)) return this->distribution_pax;
-		if (IsCargoInClass(cargo, CC_MAIL)) return this->distribution_mail;
-		if (IsCargoInClass(cargo, CC_ARMOURED)) return this->distribution_armoured;
+		if (IsCargoInClass(cargo, CargoClass::Passengers)) return this->distribution_pax;
+		if (IsCargoInClass(cargo, CargoClass::Mail)) return this->distribution_mail;
+		if (IsCargoInClass(cargo, CargoClass::Armoured)) return this->distribution_armoured;
 		return this->distribution_default;
 	}
 };
@@ -600,7 +580,6 @@ struct LinkGraphSettings {
 struct StationSettings {
 	bool   modified_catchment;               ///< different-size catchment areas
 	bool   serve_neutral_industries;         ///< company stations can serve industries with attached neutral stations
-	bool   adjacent_stations;                ///< allow stations to be built directly adjacent to other stations
 	bool   distant_join_stations;            ///< allow to join non-adjacent stations
 	bool   never_expire_airports;            ///< never expire airports
 	uint8_t station_spread;                  ///< amount a station may spread
@@ -608,20 +587,33 @@ struct StationSettings {
 
 /** Default settings for vehicles. */
 struct VehicleDefaultSettings {
-	bool   servint_ispercent;                ///< service intervals are in percents
-	uint16_t servint_trains;                   ///< service interval for trains
-	uint16_t servint_roadveh;                  ///< service interval for road vehicles
-	uint16_t servint_aircraft;                 ///< service interval for aircraft
-	uint16_t servint_ships;                    ///< service interval for ships
+	bool   servint_ispercent = false; ///< service intervals are in percents
+	uint16_t servint_trains = 0; ///< service interval for trains
+	uint16_t servint_roadveh = 0; ///< service interval for road vehicles
+	uint16_t servint_aircraft = 0; ///< service interval for aircraft
+	uint16_t servint_ships = 0; ///< service interval for ships
 };
 
 /** Settings that can be set per company. */
 struct CompanySettings {
-	bool engine_renew;                       ///< is autorenew enabled
-	int16_t engine_renew_months;               ///< months before/after the maximum vehicle age a vehicle should be renewed
-	uint32_t engine_renew_money;               ///< minimum amount of money before autorenew is used
-	bool renew_keep_length;                  ///< sell some wagons if after autoreplace the train is longer than before
-	VehicleDefaultSettings vehicle;          ///< default settings for vehicles
+	bool engine_renew = false; ///< is autorenew enabled
+	int16_t engine_renew_months = 0; ///< months before/after the maximum vehicle age a vehicle should be renewed
+	uint32_t engine_renew_money = 0; ///< minimum amount of money before autorenew is used
+	bool renew_keep_length = false; ///< sell some wagons if after autoreplace the train is longer than before
+	VehicleDefaultSettings vehicle{}; ///< default settings for vehicles
+};
+
+/** Container for AI and Game script configuration. */
+struct ScriptConfigSettings
+{
+	ReferenceThroughBaseContainer<std::array<std::unique_ptr<class AIConfig>, MAX_COMPANIES>> ai; ///< settings per company
+	std::unique_ptr<class GameConfig> game; ///< settings for gamescript
+
+	ScriptConfigSettings();
+	~ScriptConfigSettings();
+
+	ScriptConfigSettings(const ScriptConfigSettings &other);
+	ScriptConfigSettings &operator=(const ScriptConfigSettings &other);
 };
 
 /** All settings together for the game. */
@@ -631,8 +623,7 @@ struct GameSettings {
 	ConstructionSettings construction;       ///< construction of things in-game
 	AISettings           ai;                 ///< what may the AI do?
 	ScriptSettings       script;             ///< settings for scripts
-	class AIConfig      *ai_config[MAX_COMPANIES]; ///< settings per company
-	class GameConfig    *game_config;        ///< settings for gamescript
+	ScriptConfigSettings script_config;      ///< AI and Gamescript configuration.
 	PathfinderSettings   pf;                 ///< settings for all pathfinders
 	OrderSettings        order;              ///< settings related to orders
 	VehicleSettings      vehicle;            ///< options for vehicles

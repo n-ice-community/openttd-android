@@ -11,6 +11,7 @@
 #define MUSIC_MIDIFILE_HPP
 
 #include "../stdafx.h"
+#include "../fileio_type.h"
 #include "midi.h"
 
 struct MusicSongInfo;
@@ -28,9 +29,9 @@ struct MidiFile {
 		TempoChange(uint32_t _ticktime, uint32_t _tempo) : ticktime(_ticktime), tempo(_tempo) { }
 	};
 
-	std::vector<DataBlock> blocks;   ///< sequential time-annotated data of file, merged to a single track
-	std::vector<TempoChange> tempos; ///< list of tempo changes in file
-	uint16_t tickdiv;                  ///< ticks per quarter note
+	std::vector<DataBlock> blocks{}; ///< sequential time-annotated data of file, merged to a single track
+	std::vector<TempoChange> tempos{}; ///< list of tempo changes in file
+	uint16_t tickdiv = 0; ///< ticks per quarter note
 
 	MidiFile();
 	~MidiFile();
@@ -44,7 +45,7 @@ struct MidiFile {
 
 	static std::string GetSMFFile(const MusicSongInfo &song);
 	static bool ReadSMFHeader(const std::string &filename, SMFHeader &header);
-	static bool ReadSMFHeader(FILE *file, SMFHeader &header);
+	static bool ReadSMFHeader(FileHandle &file, SMFHeader &header);
 };
 
 #endif /* MUSIC_MIDIFILE_HPP */

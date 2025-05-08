@@ -18,8 +18,10 @@ if(GRFCODEC_FOUND)
                          ${CMAKE_CURRENT_SOURCE_DIR}/oneway.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/openttd.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/openttdgui.nfo
+                         ${CMAKE_CURRENT_SOURCE_DIR}/overlay_rocks.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/palette.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/roadstops.nfo
+                         ${CMAKE_CURRENT_SOURCE_DIR}/road_waypoints.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/signals.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/sloped_tracks.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/tramtracks.nfo
@@ -41,7 +43,13 @@ if(GRFCODEC_FOUND)
                          ${CMAKE_CURRENT_SOURCE_DIR}/openttdgui_convert_road.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/openttdgui_convert_tram.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/openttdgui_group_livery.png
+                         ${CMAKE_CURRENT_SOURCE_DIR}/overlay_rocks.png
+                         ${CMAKE_CURRENT_SOURCE_DIR}/overlay_snowy_rocks_1.png
+                         ${CMAKE_CURRENT_SOURCE_DIR}/overlay_snowy_rocks_2.png
+                         ${CMAKE_CURRENT_SOURCE_DIR}/overlay_snowy_rocks_3.png
+                         ${CMAKE_CURRENT_SOURCE_DIR}/overlay_snowy_rocks_4.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/roadstops.png
+                         ${CMAKE_CURRENT_SOURCE_DIR}/road_waypoints.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/signals.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/sloped_tracks.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/tramtracks.png

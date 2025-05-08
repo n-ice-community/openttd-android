@@ -86,9 +86,9 @@ void LinkGraphSchedule::JoinNext()
  */
 /* static */ void LinkGraphSchedule::Run(LinkGraphJob *job)
 {
-	for (uint i = 0; i < lengthof(instance.handlers); ++i) {
+	for (const auto &handler : instance.handlers) {
 		if (job->IsJobAborted()) return;
-		instance.handlers[i]->Run(*job);
+		handler->Run(*job);
 	}
 
 	/*
@@ -143,12 +143,12 @@ void LinkGraphSchedule::ShiftDates(TimerGameEconomy::Date interval)
  */
 LinkGraphSchedule::LinkGraphSchedule()
 {
-	this->handlers[0] = new InitHandler;
-	this->handlers[1] = new DemandHandler;
-	this->handlers[2] = new MCFHandler<MCF1stPass>;
-	this->handlers[3] = new FlowMapper(false);
-	this->handlers[4] = new MCFHandler<MCF2ndPass>;
-	this->handlers[5] = new FlowMapper(true);
+	this->handlers[0] = std::make_unique<InitHandler>();
+	this->handlers[1] = std::make_unique<DemandHandler>();
+	this->handlers[2] = std::make_unique<MCFHandler<MCF1stPass>>();
+	this->handlers[3] = std::make_unique<FlowMapper>(false);
+	this->handlers[4] = std::make_unique<MCFHandler<MCF2ndPass>>();
+	this->handlers[5] = std::make_unique<FlowMapper>(true);
 }
 
 /**
@@ -157,9 +157,6 @@ LinkGraphSchedule::LinkGraphSchedule()
 LinkGraphSchedule::~LinkGraphSchedule()
 {
 	this->Clear();
-	for (uint i = 0; i < lengthof(this->handlers); ++i) {
-		delete this->handlers[i];
-	}
 }
 
 /**
@@ -171,18 +168,18 @@ LinkGraphSchedule::~LinkGraphSchedule()
  */
 void StateGameLoop_LinkGraphPauseControl()
 {
-	if (_pause_mode & PM_PAUSED_LINK_GRAPH) {
+	if (_pause_mode.Test(PauseMode::LinkGraph)) {
 		/* We are paused waiting on a job, check the job every tick. */
 		if (!LinkGraphSchedule::instance.IsJoinWithUnfinishedJobDue()) {
-			Command<CMD_PAUSE>::Post(PM_PAUSED_LINK_GRAPH, false);
+			Command<CMD_PAUSE>::Post(PauseMode::LinkGraph, false);
 		}
-	} else if (_pause_mode == PM_UNPAUSED &&
+	} else if (_pause_mode.None() &&
 			TimerGameEconomy::date_fract == LinkGraphSchedule::SPAWN_JOIN_TICK - 2 &&
 			TimerGameEconomy::date.base() % (_settings_game.linkgraph.recalc_interval / EconomyTime::SECONDS_PER_DAY) == (_settings_game.linkgraph.recalc_interval / EconomyTime::SECONDS_PER_DAY) / 2 &&
 			LinkGraphSchedule::instance.IsJoinWithUnfinishedJobDue()) {
 		/* Perform check two TimerGameEconomy::date_fract ticks before we would join, to make
 		 * sure it also works in multiplayer. */
-		Command<CMD_PAUSE>::Post(PM_PAUSED_LINK_GRAPH, true);
+		Command<CMD_PAUSE>::Post(PauseMode::LinkGraph, true);
 	}
 }
 
@@ -194,7 +191,7 @@ void StateGameLoop_LinkGraphPauseControl()
 void AfterLoad_LinkGraphPauseControl()
 {
 	if (LinkGraphSchedule::instance.IsJoinWithUnfinishedJobDue()) {
-		_pause_mode |= PM_PAUSED_LINK_GRAPH;
+		_pause_mode.Set(PauseMode::LinkGraph);
 	}
 }
 
@@ -205,7 +202,7 @@ void AfterLoad_LinkGraphPauseControl()
 void OnTick_LinkGraph()
 {
 	if (TimerGameEconomy::date_fract != LinkGraphSchedule::SPAWN_JOIN_TICK) return;
-	TimerGameEconomy::Date offset = TimerGameEconomy::date.base() % (_settings_game.linkgraph.recalc_interval / EconomyTime::SECONDS_PER_DAY);
+	TimerGameEconomy::Date offset{TimerGameEconomy::date.base() % (_settings_game.linkgraph.recalc_interval / EconomyTime::SECONDS_PER_DAY)};
 	if (offset == 0) {
 		LinkGraphSchedule::instance.SpawnNext();
 	} else if (offset == (_settings_game.linkgraph.recalc_interval / EconomyTime::SECONDS_PER_DAY) / 2) {

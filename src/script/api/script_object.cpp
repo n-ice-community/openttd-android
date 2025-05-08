@@ -25,6 +25,21 @@
 
 #include "../../safeguards.h"
 
+void SimpleCountedObject::Release()
+{
+	int32_t res = --this->ref_count;
+	assert(res >= 0);
+	if (res == 0) {
+		try {
+			this->FinalRelease(); // may throw, for example ScriptTest/ExecMode
+		} catch (...) {
+			delete this;
+			throw;
+		}
+		delete this;
+	}
+}
+
 /**
  * Get the storage associated with the current ScriptInstance.
  * @return The storage.
@@ -200,7 +215,7 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 	return GetStorage()->allow_do_command;
 }
 
-/* static */ void ScriptObject::SetCompany(CompanyID company)
+/* static */ void ScriptObject::SetCompany(::CompanyID company)
 {
 	if (GetStorage()->root_company == INVALID_OWNER) GetStorage()->root_company = company;
 	GetStorage()->company = company;
@@ -208,12 +223,12 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 	_current_company = company;
 }
 
-/* static */ CompanyID ScriptObject::GetCompany()
+/* static */ ::CompanyID ScriptObject::GetCompany()
 {
 	return GetStorage()->company;
 }
 
-/* static */ CompanyID ScriptObject::GetRootCompany()
+/* static */ ::CompanyID ScriptObject::GetRootCompany()
 {
 	return GetStorage()->root_company;
 }
@@ -234,14 +249,9 @@ ScriptObject::ActiveInstance::~ActiveInstance()
 	return GetStorage()->log_data;
 }
 
-/* static */ std::string ScriptObject::GetString(StringID string)
-{
-	return ::StrMakeValid(::GetString(string));
-}
-
 /* static */ void ScriptObject::SetCallbackVariable(int index, int value)
 {
-	if ((size_t)index >= GetStorage()->callback_value.size()) GetStorage()->callback_value.resize(index + 1);
+	if (static_cast<size_t>(index) >= GetStorage()->callback_value.size()) GetStorage()->callback_value.resize(index + 1);
 	GetStorage()->callback_value[index] = value;
 }
 
@@ -332,7 +342,7 @@ bool ScriptObject::DoCommandProcessResult(const CommandCost &res, Script_Suspend
 }
 
 
-/* static */ Randomizer ScriptObject::random_states[OWNER_END];
+/* static */ ScriptObject::RandomizerArray ScriptObject::random_states;
 
 Randomizer &ScriptObject::GetRandomizer(Owner owner)
 {
@@ -342,7 +352,7 @@ Randomizer &ScriptObject::GetRandomizer(Owner owner)
 void ScriptObject::InitializeRandomizers()
 {
 	Randomizer random = _random;
-	for (Owner owner = OWNER_BEGIN; owner < OWNER_END; owner++) {
+	for (Owner owner = OWNER_BEGIN; owner < OWNER_END; ++owner) {
 		ScriptObject::GetRandomizer(owner).SetSeed(random.Next());
 	}
 }

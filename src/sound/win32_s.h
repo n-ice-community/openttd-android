@@ -15,17 +15,17 @@
 /** Implementation of the sound driver for Windows. */
 class SoundDriver_Win32 : public SoundDriver {
 public:
-	const char *Start(const StringList &param) override;
+	std::optional<std::string_view> Start(const StringList &param) override;
 
 	void Stop() override;
-	const char *GetName() const override { return "win32"; }
+	std::string_view GetName() const override { return "win32"; }
 };
 
 /** Factory for the sound driver for Windows. */
 class FSoundDriver_Win32 : public DriverFactoryBase {
 public:
-	FSoundDriver_Win32() : DriverFactoryBase(Driver::DT_SOUND, 9, "win32", "Win32 WaveOut Sound Driver (param bufsize,hz)") {}
-	Driver *CreateInstance() const override { return new SoundDriver_Win32(); }
+	FSoundDriver_Win32() : DriverFactoryBase(Driver::DT_SOUND, 9, "win32", "Win32 WaveOut Sound Driver (param hz,samples)") {}
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<SoundDriver_Win32>(); }
 };
 
 #endif /* SOUND_WIN32_H */

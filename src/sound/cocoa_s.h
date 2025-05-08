@@ -14,16 +14,16 @@
 
 class SoundDriver_Cocoa : public SoundDriver {
 public:
-	const char *Start(const StringList &param) override;
+	std::optional<std::string_view> Start(const StringList &param) override;
 
 	void Stop() override;
-	const char *GetName() const override { return "cocoa"; }
+	std::string_view GetName() const override { return "cocoa"; }
 };
 
 class FSoundDriver_Cocoa : public DriverFactoryBase {
 public:
 	FSoundDriver_Cocoa() : DriverFactoryBase(Driver::DT_SOUND, 10, "cocoa", "Cocoa Sound Driver (param hz)") {}
-	Driver *CreateInstance() const override { return new SoundDriver_Cocoa(); }
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<SoundDriver_Cocoa>(); }
 };
 
 #endif /* SOUND_COCOA_H */

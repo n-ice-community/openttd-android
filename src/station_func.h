@@ -33,6 +33,7 @@ void UpdateStationAcceptance(Station *st, bool show_msg);
 CargoTypes GetAcceptanceMask(const Station *st);
 CargoTypes GetEmptyMask(const Station *st);
 
+void SetRailStationTileFlags(TileIndex tile, const StationSpec *statspec);
 const DrawTileSprites *GetStationTileLayout(StationType st, uint8_t gfx);
 void StationPickerDrawSprite(int x, int y, StationType st, RailType railtype, RoadType roadtype, int image);
 
@@ -48,8 +49,8 @@ void UpdateAirportsNoise();
 bool SplitGroundSpriteForOverlay(const TileInfo *ti, SpriteID *ground, RailTrackOffset *overlay_offset);
 
 void IncreaseStats(Station *st, const Vehicle *v, StationID next_station_id, uint32_t time);
-void IncreaseStats(Station *st, CargoID cargo, StationID next_station_id, uint capacity, uint usage, uint32_t time, EdgeUpdateMode mode);
-void RerouteCargo(Station *st, CargoID c, StationID avoid, StationID avoid2);
+void IncreaseStats(Station *st, CargoType cargo, StationID next_station_id, uint capacity, uint usage, uint32_t time, EdgeUpdateModes modes);
+void RerouteCargo(Station *st, CargoType cargo, StationID avoid, StationID avoid2);
 
 /**
  * Calculates the maintenance cost of a number of station tiles.

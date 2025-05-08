@@ -24,44 +24,20 @@ struct ViewportSignKdtreeItem {
 		VKI_SIGN,
 	};
 	ItemType type;
-	union {
-		StationID station;
-		TownID town;
-		SignID sign;
-	} id;
+	std::variant<StationID, TownID, SignID> id;
 	int32_t center;
 	int32_t top;
 
 	bool operator== (const ViewportSignKdtreeItem &other) const
 	{
 		if (this->type != other.type) return false;
-		switch (this->type) {
-			case VKI_STATION:
-			case VKI_WAYPOINT:
-				return this->id.station == other.id.station;
-			case VKI_TOWN:
-				return this->id.town == other.id.town;
-			case VKI_SIGN:
-				return this->id.sign == other.id.sign;
-			default:
-				NOT_REACHED();
-		}
+		return this->id == other.id;
 	}
 
 	bool operator< (const ViewportSignKdtreeItem &other) const
 	{
 		if (this->type != other.type) return this->type < other.type;
-		switch (this->type) {
-			case VKI_STATION:
-			case VKI_WAYPOINT:
-				return this->id.station < other.id.station;
-			case VKI_TOWN:
-				return this->id.town < other.id.town;
-			case VKI_SIGN:
-				return this->id.sign < other.id.sign;
-			default:
-				NOT_REACHED();
-		}
+		return this->id < other.id;
 	}
 
 	static ViewportSignKdtreeItem MakeStation(StationID id);
@@ -70,12 +46,14 @@ struct ViewportSignKdtreeItem {
 	static ViewportSignKdtreeItem MakeSign(SignID id);
 };
 
-inline int32_t Kdtree_ViewportSignXYFunc(const ViewportSignKdtreeItem &item, int dim)
-{
-	return (dim == 0) ? item.center : item.top;
-}
+struct Kdtree_ViewportSignXYFunc {
+	inline int32_t operator()(const ViewportSignKdtreeItem &item, int dim)
+	{
+		return (dim == 0) ? item.center : item.top;
+	}
+};
 
-typedef Kdtree<ViewportSignKdtreeItem, decltype(&Kdtree_ViewportSignXYFunc), int32_t, int32_t> ViewportSignKdtree;
+using ViewportSignKdtree = Kdtree<ViewportSignKdtreeItem, Kdtree_ViewportSignXYFunc, int32_t, int32_t>;
 extern ViewportSignKdtree _viewport_sign_kdtree;
 
 void RebuildViewportKdtree();

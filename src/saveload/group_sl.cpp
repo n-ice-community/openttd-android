@@ -26,6 +26,7 @@ static const SaveLoad _group_desc[] = {
 	 SLE_CONDVAR(Group, livery.colour1,     SLE_UINT8,                     SLV_GROUP_LIVERIES, SL_MAX_VERSION),
 	 SLE_CONDVAR(Group, livery.colour2,     SLE_UINT8,                     SLV_GROUP_LIVERIES, SL_MAX_VERSION),
 	 SLE_CONDVAR(Group, parent,             SLE_UINT16,                    SLV_189, SL_MAX_VERSION),
+	 SLE_CONDVAR(Group, number, SLE_UINT16, SLV_GROUP_NUMBERS, SL_MAX_VERSION),
 };
 
 struct GRPSChunkHandler : ChunkHandler {
@@ -49,16 +50,10 @@ struct GRPSChunkHandler : ChunkHandler {
 		int index;
 
 		while ((index = SlIterateArray()) != -1) {
-			Group *g = new (index) Group();
+			Group *g = new (GroupID(index)) Group();
 			SlObject(g, slt);
 
-			if (IsSavegameVersionBefore(SLV_189)) g->parent = INVALID_GROUP;
-
-			if (IsSavegameVersionBefore(SLV_GROUP_LIVERIES)) {
-				const Company *c = Company::Get(g->owner);
-				g->livery.colour1 = c->livery[LS_DEFAULT].colour1;
-				g->livery.colour2 = c->livery[LS_DEFAULT].colour2;
-			}
+			if (IsSavegameVersionBefore(SLV_189)) g->parent = GroupID::Invalid();
 		}
 	}
 };

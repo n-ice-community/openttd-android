@@ -36,7 +36,7 @@ TemporaryStorageArray<int32_t, 0x110> _temp_store;
 	if (group == nullptr) return nullptr;
 
 	const GRFFile *grf = object.grffile;
-	auto profiler = std::find_if(_newgrf_profilers.begin(), _newgrf_profilers.end(), [&](const NewGRFProfiler &pr) { return pr.grffile == grf; });
+	auto profiler = std::ranges::find(_newgrf_profilers, grf, &NewGRFProfiler::grffile);
 
 	if (profiler == _newgrf_profilers.end() || !profiler->active) {
 		if (top_level) _temp_store.ClearChanges();
@@ -53,7 +53,7 @@ TemporaryStorageArray<int32_t, 0x110> _temp_store;
 	}
 }
 
-static inline uint32_t GetVariable(const ResolverObject &object, ScopeResolver *scope, uint8_t variable, uint32_t parameter, bool *available)
+static inline uint32_t GetVariable(const ResolverObject &object, ScopeResolver *scope, uint8_t variable, uint32_t parameter, bool &available)
 {
 	uint32_t value;
 	switch (variable) {
@@ -103,10 +103,10 @@ static inline uint32_t GetVariable(const ResolverObject &object, ScopeResolver *
  * @param[out] available Set to false, in case the variable does not exist.
  * @return Value
  */
-/* virtual */ uint32_t ScopeResolver::GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const
+/* virtual */ uint32_t ScopeResolver::GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const
 {
 	Debug(grf, 1, "Unhandled scope variable 0x{:X}", variable);
-	*available = false;
+	available = false;
 	return UINT_MAX;
 }
 
@@ -205,9 +205,9 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 
 			/* Note: 'last_value' and 'reseed' are shared between the main chain and the procedure */
 		} else if (adjust.variable == 0x7B) {
-			value = GetVariable(object, scope, adjust.parameter, last_value, &available);
+			value = GetVariable(object, scope, adjust.parameter, last_value, available);
 		} else {
-			value = GetVariable(object, scope, adjust.variable, adjust.parameter, &available);
+			value = GetVariable(object, scope, adjust.variable, adjust.parameter, available);
 		}
 
 		if (!available) {
@@ -230,7 +230,7 @@ const SpriteGroup *DeterministicSpriteGroup::Resolve(ResolverObject &object) con
 	if (this->calculated_result) {
 		/* nvar == 0 is a special case -- we turn our value into a callback result */
 		if (value != CALLBACK_FAILED) value = GB(value, 0, 15);
-		static CallbackResultSpriteGroup nvarzero(0, true);
+		static CallbackResultSpriteGroup nvarzero(0);
 		nvarzero.result = value;
 		return &nvarzero;
 	}
@@ -293,7 +293,7 @@ const DrawTileSprites *TileLayoutSpriteGroup::ProcessRegisters(uint8_t *stage) c
 		return &this->dts;
 	}
 
-	static DrawTileSprites result;
+	static DrawTileSpriteSpan result;
 	uint8_t actual_stage = stage != nullptr ? *stage : 0;
 	this->dts.PrepareLayout(0, 0, 0, actual_stage, false);
 	this->dts.ProcessRegisters(0, 0, false);

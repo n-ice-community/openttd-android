@@ -10,7 +10,14 @@
 #ifndef SOUND_TYPE_H
 #define SOUND_TYPE_H
 
+enum class SoundSource : uint8_t {
+	BasesetOldFormat,
+	BasesetNewFormat,
+	NewGRF,
+};
+
 struct SoundEntry {
+	std::shared_ptr<std::vector<uint8_t>> data;
 	class RandomAccessFile *file;
 	size_t file_offset;
 	size_t file_size;
@@ -19,6 +26,7 @@ struct SoundEntry {
 	uint8_t channels;
 	uint8_t volume;
 	uint8_t priority;
+	SoundSource source;
 	uint8_t grf_container_ver; ///< NewGRF container version if the sound is from a NewGRF.
 };
 
@@ -34,7 +42,7 @@ struct SoundEntry {
  *  - The naming of the enum values includes the position in the baseset.
  * That is, for sound effects 0x02 to 0x28 the naming is off-by-two.
  */
-enum SoundFx {
+enum SoundFx : uint8_t {
 	SND_BEGIN = 0,
 	SND_02_CONSTRUCTION_WATER = 0,         ///<  0 == 0x00  Construction: water infrastructure
 	SND_03_FACTORY,                        ///<  1 == 0x01  Industry producing: factory: whistle

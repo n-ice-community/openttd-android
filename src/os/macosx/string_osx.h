@@ -27,7 +27,7 @@ class OSXStringIterator : public StringIterator {
 	size_t cur_pos; ///< Current iteration position.
 
 public:
-	void SetString(const char *s) override;
+	void SetString(std::string_view s) override;
 	size_t SetCurPosition(size_t pos) override;
 	size_t Next(IterType what) override;
 	size_t Prev(IterType what) override;
@@ -49,10 +49,10 @@ public:
 	 * Get the actual ParagraphLayout for the given buffer.
 	 * @param buff The begin of the buffer.
 	 * @param buff_end The location after the last element in the buffer.
-	 * @param fontMapping THe mapping of the fonts.
+	 * @param font_mapping The mapping of the fonts.
 	 * @return The ParagraphLayout instance.
 	 */
-	static ParagraphLayouter *GetParagraphLayout(CharType *buff, CharType *buff_end, FontMap &fontMapping);
+	static std::unique_ptr<ParagraphLayouter> GetParagraphLayout(CharType *buff, CharType *buff_end, FontMap &font_mapping);
 
 	/**
 	 * Append a wide character to the internal buffer.

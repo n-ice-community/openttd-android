@@ -18,7 +18,7 @@
 #include "safeguards.h"
 
 /** Table of canal 'feature' sprite groups */
-WaterFeature _water_feature[CF_END];
+std::array<WaterFeature, CF_END> _water_feature;
 
 /** Scope resolver of a canal tile. */
 struct CanalScopeResolver : public ScopeResolver {
@@ -30,7 +30,7 @@ struct CanalScopeResolver : public ScopeResolver {
 	}
 
 	uint32_t GetRandomBits() const override;
-	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const override;
+	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const override;
 };
 
 /** Resolver object for canals. */
@@ -59,7 +59,7 @@ struct CanalResolverObject : public ResolverObject {
 	return IsTileType(this->tile, MP_WATER) ? GetWaterTileRandomBits(this->tile) : 0;
 }
 
-/* virtual */ uint32_t CanalScopeResolver::GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const
+/* virtual */ uint32_t CanalScopeResolver::GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const
 {
 	switch (variable) {
 		/* Height of tile */
@@ -102,7 +102,7 @@ struct CanalResolverObject : public ResolverObject {
 
 	Debug(grf, 1, "Unhandled canal variable 0x{:02X}", variable);
 
-	*available = false;
+	available = false;
 	return UINT_MAX;
 }
 
@@ -170,7 +170,7 @@ static uint16_t GetCanalCallback(CallbackID callback, uint32_t param1, uint32_t 
  */
 uint GetCanalSpriteOffset(CanalFeature feature, TileIndex tile, uint cur_offset)
 {
-	if (HasBit(_water_feature[feature].callback_mask, CBM_CANAL_SPRITE_OFFSET)) {
+	if (_water_feature[feature].callback_mask.Test(CanalCallbackMask::SpriteOffset)) {
 		uint16_t cb = GetCanalCallback(CBID_CANALS_SPRITE_OFFSET, cur_offset, 0, feature, tile);
 		if (cb != CALLBACK_FAILED) return cur_offset + cb;
 	}

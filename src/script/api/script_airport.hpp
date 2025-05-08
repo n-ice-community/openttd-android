@@ -12,6 +12,7 @@
 
 #include "script_object.hpp"
 #include "../../airport.h"
+#include "../../station_type.h"
 
 /**
  * Class that handles all airport related functions.
@@ -204,7 +205,8 @@ public:
 	 * Get the monthly maintenance cost of an airport type.
 	 * @param type The airport type to get the monthly maintenance cost of.
 	 * @pre IsAirportInformationAvailable(type)
-	 * @return Monthly maintenance cost of the airport type.
+	 * @return Maintenance cost of the airport type per economy-month.
+	 * @see \ref ScriptEconomyTime
 	 */
 	static Money GetMonthlyMaintenanceCost(AirportType type);
 

@@ -32,14 +32,14 @@ public:
 	void Draw(Blitter::BlitterParams *bp, BlitterMode mode, ZoomLevel zoom) override;
 	template <BlitterMode mode, Blitter_32bppSSE_Base::ReadMode read_mode, Blitter_32bppSSE_Base::BlockType bt_last, bool translucent>
 	void Draw(const Blitter::BlitterParams *bp, ZoomLevel zoom);
-	const char *GetName() override { return "32bpp-sse4"; }
+	std::string_view GetName() override { return "32bpp-sse4"; }
 };
 
 /** Factory for the SSE4 32 bpp blitter (without palette animation). */
 class FBlitter_32bppSSE4: public BlitterFactory {
 public:
 	FBlitter_32bppSSE4() : BlitterFactory("32bpp-sse4", "32bpp SSE4 Blitter (no palette animation)", HasCPUIDFlag(1, 2, 19)) {}
-	Blitter *CreateInstance() override { return new Blitter_32bppSSE4(); }
+	std::unique_ptr<Blitter> CreateInstance() override { return std::make_unique<Blitter_32bppSSE4>(); }
 };
 
 #endif /* WITH_SSE */

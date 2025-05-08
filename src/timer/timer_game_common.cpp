@@ -35,20 +35,18 @@ static constexpr uint16_t _month_date_from_year_day[] = {
 };
 #undef M
 
-enum DaysTillMonth {
-	ACCUM_JAN = 0,
-	ACCUM_FEB = ACCUM_JAN + 31,
-	ACCUM_MAR = ACCUM_FEB + 29,
-	ACCUM_APR = ACCUM_MAR + 31,
-	ACCUM_MAY = ACCUM_APR + 30,
-	ACCUM_JUN = ACCUM_MAY + 31,
-	ACCUM_JUL = ACCUM_JUN + 30,
-	ACCUM_AUG = ACCUM_JUL + 31,
-	ACCUM_SEP = ACCUM_AUG + 31,
-	ACCUM_OCT = ACCUM_SEP + 30,
-	ACCUM_NOV = ACCUM_OCT + 31,
-	ACCUM_DEC = ACCUM_NOV + 30,
-};
+static constexpr uint16_t ACCUM_JAN = 0;
+static constexpr uint16_t ACCUM_FEB = ACCUM_JAN + 31;
+static constexpr uint16_t ACCUM_MAR = ACCUM_FEB + 29;
+static constexpr uint16_t ACCUM_APR = ACCUM_MAR + 31;
+static constexpr uint16_t ACCUM_MAY = ACCUM_APR + 30;
+static constexpr uint16_t ACCUM_JUN = ACCUM_MAY + 31;
+static constexpr uint16_t ACCUM_JUL = ACCUM_JUN + 30;
+static constexpr uint16_t ACCUM_AUG = ACCUM_JUL + 31;
+static constexpr uint16_t ACCUM_SEP = ACCUM_AUG + 31;
+static constexpr uint16_t ACCUM_OCT = ACCUM_SEP + 30;
+static constexpr uint16_t ACCUM_NOV = ACCUM_OCT + 31;
+static constexpr uint16_t ACCUM_DEC = ACCUM_NOV + 30;
 
 /** Number of days to pass from the first day in the year before reaching the first of a month. */
 static constexpr uint16_t _accum_days_for_month[] = {
@@ -70,28 +68,28 @@ template <class T>
 	 */
 
 	/* There are 97 leap years in 400 years */
-	Year yr = 400 * (date.base() / (TimerGameConst<T>::DAYS_IN_YEAR * 400 + 97));
+	Year yr{400 * (date.base() / (TimerGameConst<T>::DAYS_IN_YEAR * 400 + 97))};
 	int rem = date.base() % (TimerGameConst<T>::DAYS_IN_YEAR * 400 + 97);
 
 	if (rem >= TimerGameConst<T>::DAYS_IN_YEAR * 100 + 25) {
 		/* There are 25 leap years in the first 100 years after
 		 * every 400th year, as every 400th year is a leap year */
-		yr += 100;
+		yr += Year{100};
 		rem -= TimerGameConst<T>::DAYS_IN_YEAR * 100 + 25;
 
 		/* There are 24 leap years in the next couple of 100 years */
-		yr += 100 * (rem / (TimerGameConst<T>::DAYS_IN_YEAR * 100 + 24));
+		yr += Year{100 * (rem / (TimerGameConst<T>::DAYS_IN_YEAR * 100 + 24))};
 		rem = (rem % (TimerGameConst<T>::DAYS_IN_YEAR * 100 + 24));
 	}
 
 	if (!IsLeapYear(yr) && rem >= TimerGameConst<T>::DAYS_IN_YEAR * 4) {
 		/* The first 4 year of the century are not always a leap year */
-		yr += 4;
+		yr += Year{4};
 		rem -= TimerGameConst<T>::DAYS_IN_YEAR * 4;
 	}
 
 	/* There is 1 leap year every 4 years */
-	yr += 4 * (rem / (TimerGameConst<T>::DAYS_IN_YEAR * 4 + 1));
+	yr += Year{4 * (rem / (TimerGameConst<T>::DAYS_IN_YEAR * 4 + 1))};
 	rem = rem % (TimerGameConst<T>::DAYS_IN_YEAR * 4 + 1);
 
 	/* The last (max 3) years to account for; the first one

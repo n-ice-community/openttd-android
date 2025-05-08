@@ -17,64 +17,64 @@
 #include "timer/timer_game_calendar.h"
 #include "object_type.h"
 #include "newgrf_animation_type.h"
+#include "newgrf_badge_type.h"
 #include "newgrf_class.h"
 #include "newgrf_commons.h"
 
 /** Various object behaviours. */
-enum ObjectFlags : uint16_t {
-	OBJECT_FLAG_NONE               =       0, ///< Just nothing.
-	OBJECT_FLAG_ONLY_IN_SCENEDIT   = 1 <<  0, ///< Object can only be constructed in the scenario editor.
-	OBJECT_FLAG_CANNOT_REMOVE      = 1 <<  1, ///< Object can not be removed.
-	OBJECT_FLAG_AUTOREMOVE         = 1 <<  2, ///< Object get automatically removed (like "owned land").
-	OBJECT_FLAG_BUILT_ON_WATER     = 1 <<  3, ///< Object can be built on water (not required).
-	OBJECT_FLAG_CLEAR_INCOME       = 1 <<  4, ///< When object is cleared a positive income is generated instead of a cost.
-	OBJECT_FLAG_HAS_NO_FOUNDATION  = 1 <<  5, ///< Do not display foundations when on a slope.
-	OBJECT_FLAG_ANIMATION          = 1 <<  6, ///< Object has animated tiles.
-	OBJECT_FLAG_ONLY_IN_GAME       = 1 <<  7, ///< Object can only be built in game.
-	OBJECT_FLAG_2CC_COLOUR         = 1 <<  8, ///< Object wants 2CC colour mapping.
-	OBJECT_FLAG_NOT_ON_LAND        = 1 <<  9, ///< Object can not be on land, implicitly sets #OBJECT_FLAG_BUILT_ON_WATER.
-	OBJECT_FLAG_DRAW_WATER         = 1 << 10, ///< Object wants to be drawn on water.
-	OBJECT_FLAG_ALLOW_UNDER_BRIDGE = 1 << 11, ///< Object can built under a bridge.
-	OBJECT_FLAG_ANIM_RANDOM_BITS   = 1 << 12, ///< Object wants random bits in "next animation frame" callback.
-	OBJECT_FLAG_SCALE_BY_WATER     = 1 << 13, ///< Object count is roughly scaled by water amount at edges.
+enum class ObjectFlag : uint8_t {
+	OnlyInScenedit   =  0, ///< Object can only be constructed in the scenario editor.
+	CannotRemove     =  1, ///< Object can not be removed.
+	Autoremove       =  2, ///< Object get automatically removed (like "owned land").
+	BuiltOnWater     =  3, ///< Object can be built on water (not required).
+	ClearIncome      =  4, ///< When object is cleared a positive income is generated instead of a cost.
+	HasNoFoundation  =  5, ///< Do not display foundations when on a slope.
+	Animation        =  6, ///< Object has animated tiles.
+	OnlyInGame       =  7, ///< Object can only be built in game.
+	Uses2CC          =  8, ///< Object wants 2CC colour mapping.
+	NotOnLand        =  9, ///< Object can not be on land, implicitly sets #ObjectFlag::BuiltOnWater.
+	DrawWater        = 10, ///< Object wants to be drawn on water.
+	AllowUnderBridge = 11, ///< Object can built under a bridge.
+	AnimRandomBits   = 12, ///< Object wants random bits in "next animation frame" callback.
+	ScaleByWater     = 13, ///< Object count is roughly scaled by water amount at edges.
 };
-DECLARE_ENUM_AS_BIT_SET(ObjectFlags)
+using ObjectFlags = EnumBitSet<ObjectFlag, uint16_t>;
 
 static const uint8_t OBJECT_SIZE_1X1 = 0x11; ///< The value of a NewGRF's size property when the object is 1x1 tiles: low nibble for X, high nibble for Y.
 
 void ResetObjects();
 
 /** Class IDs for objects. */
-enum ObjectClassID : uint8_t {
-	OBJECT_CLASS_BEGIN   =    0, ///< The lowest valid value
-	OBJECT_CLASS_MAX     = 0xFF, ///< Maximum number of classes.
-	INVALID_OBJECT_CLASS = 0xFF, ///< Class for the less fortunate.
+enum ObjectClassID : uint16_t {
+	OBJECT_CLASS_BEGIN = 0, ///< The lowest valid value
+	OBJECT_CLASS_MAX = UINT16_MAX, ///< Maximum number of classes.
+	INVALID_OBJECT_CLASS = UINT16_MAX, ///< Class for the less fortunate.
 };
 /** Allow incrementing of ObjectClassID variables */
-DECLARE_POSTFIX_INCREMENT(ObjectClassID)
+DECLARE_INCREMENT_DECREMENT_OPERATORS(ObjectClassID)
 
 /** An object that isn't use for transport, industries or houses.
  * @note If you change this struct, adopt the initialization of
  * default objects in table/object_land.h
  */
-struct ObjectSpec {
+struct ObjectSpec : NewGRFSpecBase<ObjectClassID> {
 	/* 2 because of the "normal" and "buy" sprite stacks. */
-	GRFFilePropsBase<2> grf_prop; ///< Properties related the the grf file
+	FixedGRFFileProps<2> grf_prop; ///< Properties related the the grf file
 	AnimationInfo animation;      ///< Information about the animation.
-	ObjectClassID cls_id;         ///< The class to which this spec belongs.
 	StringID name;                ///< The name for this object.
 
-	uint8_t climate;                ///< In which climates is this object available?
+	LandscapeTypes climate; ///< In which climates is this object available?
 	uint8_t size;                   ///< The size of this objects; low nibble for X, high nibble for Y.
 	uint8_t build_cost_multiplier;  ///< Build cost multiplier per tile.
 	uint8_t clear_cost_multiplier;  ///< Clear cost multiplier per tile.
 	TimerGameCalendar::Date introduction_date; ///< From when can this object be built.
 	TimerGameCalendar::Date end_of_life_date;  ///< When can't this object be built anymore.
 	ObjectFlags flags;            ///< Flags/settings related to the object.
-	uint16_t callback_mask;         ///< Bitmask of requested/allowed callbacks.
+	ObjectCallbackMasks callback_mask;         ///< Bitmask of requested/allowed callbacks.
 	uint8_t height;                 ///< The height of this structure, in heightlevels; max MAX_TILE_HEIGHT.
 	uint8_t views;                  ///< The number of views.
 	uint8_t generate_amount;        ///< Number of objects which are attempted to be generated per 256^2 map during world generation.
+	std::vector<BadgeID> badges;
 
 	/**
 	 * Test if this object is enabled.
@@ -127,17 +127,16 @@ struct ObjectScopeResolver : public ScopeResolver {
 	}
 
 	uint32_t GetRandomBits() const override;
-	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const override;
+	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const override;
 };
 
 /** A resolver object to be used with feature 0F spritegroups. */
 struct ObjectResolverObject : public ResolverObject {
 	ObjectScopeResolver object_scope; ///< The object scope resolver.
-	TownScopeResolver *town_scope;    ///< The town scope resolver (created on the first call).
+	std::optional<TownScopeResolver> town_scope = std::nullopt; ///< The town scope resolver (created on the first call).
 
 	ObjectResolverObject(const ObjectSpec *spec, Object *o, TileIndex tile, uint8_t view = 0,
 			CallbackID callback = CBID_NO_CALLBACK, uint32_t param1 = 0, uint32_t param2 = 0);
-	~ObjectResolverObject();
 
 	ScopeResolver *GetScope(VarSpriteGroupScope scope = VSG_SCOPE_SELF, uint8_t relative = 0) override
 	{

@@ -47,8 +47,8 @@ bool ScriptInfo::CheckMethod(const char *name) const
 		"GetDate",
 		"CreateInstance",
 	};
-	for (size_t i = 0; i < lengthof(required_functions); i++) {
-		if (!info->CheckMethod(required_functions[i])) return SQ_ERROR;
+	for (const auto &required_function : required_functions) {
+		if (!info->CheckMethod(required_function)) return SQ_ERROR;
 	}
 
 	/* Get location information of the scanner */
@@ -177,7 +177,7 @@ SQInteger ScriptInfo::AddSetting(HSQUIRRELVM vm)
 	}
 
 	/* Make sure all properties are defined */
-	uint mask = (config.flags & SCRIPTCONFIG_BOOLEAN) ? 0x1F3 : 0x1FF;
+	uint mask = config.flags.Test(ScriptConfigFlag::Boolean) ? 0x1F3 : 0x1FF;
 	if (items != mask) {
 		this->engine->ThrowError("please define all properties of a setting (min/max not allowed for booleans)");
 		return SQ_ERROR;

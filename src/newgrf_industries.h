@@ -33,7 +33,7 @@ struct IndustriesScopeResolver : public ScopeResolver {
 	}
 
 	uint32_t GetRandomBits() const override;
-	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool *available) const override;
+	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const override;
 	uint32_t GetTriggers() const override;
 	void StorePSA(uint pos, int32_t value) override;
 };
@@ -41,11 +41,10 @@ struct IndustriesScopeResolver : public ScopeResolver {
 /** Resolver for industries. */
 struct IndustriesResolverObject : public ResolverObject {
 	IndustriesScopeResolver industries_scope; ///< Scope resolver for the industry.
-	TownScopeResolver *town_scope;            ///< Scope resolver for the associated town (if needed and available, else \c nullptr).
+	std::optional<TownScopeResolver> town_scope = std::nullopt; ///< Scope resolver for the associated town (if needed and available, else \c std::nullopt).
 
 	IndustriesResolverObject(TileIndex tile, Industry *indus, IndustryType type, uint32_t random_bits = 0,
 			CallbackID callback = CBID_NO_CALLBACK, uint32_t callback_param1 = 0, uint32_t callback_param2 = 0);
-	~IndustriesResolverObject();
 
 	TownScopeResolver *GetTown();
 
@@ -69,7 +68,7 @@ struct IndustriesResolverObject : public ResolverObject {
 };
 
 /** When should the industry(tile) be triggered for random bits? */
-enum IndustryTrigger {
+enum IndustryTrigger : uint8_t {
 	/** Triggered each tile loop */
 	INDUSTRY_TRIGGER_TILELOOP_PROCESS = 1,
 	/** Triggered (whole industry) each 256 ticks */
@@ -79,7 +78,7 @@ enum IndustryTrigger {
 };
 
 /** From where has callback #CBID_INDUSTRY_PROBABILITY been called */
-enum IndustryAvailabilityCallType {
+enum IndustryAvailabilityCallType : uint8_t {
 	IACT_MAPGENERATION,    ///< during random map generation
 	IACT_RANDOMCREATION,   ///< during creation of random ingame industry
 	IACT_USERCREATION,     ///< from the Fund/build window
@@ -92,7 +91,7 @@ uint32_t GetIndustryIDAtOffset(TileIndex new_tile, const Industry *i, uint32_t c
 void IndustryProductionCallback(Industry *ind, int reason);
 CommandCost CheckIfCallBackAllowsCreation(TileIndex tile, IndustryType type, size_t layout, uint32_t seed, uint16_t initial_random_bits, Owner founder, IndustryAvailabilityCallType creation_type);
 uint32_t GetIndustryProbabilityCallback(IndustryType type, IndustryAvailabilityCallType creation_type, uint32_t default_prob);
-bool IndustryTemporarilyRefusesCargo(Industry *ind, CargoID cargo_type);
+bool IndustryTemporarilyRefusesCargo(Industry *ind, CargoType cargo_type);
 
 IndustryType MapNewGRFIndustryType(IndustryType grf_type, uint32_t grf_id);
 

@@ -19,14 +19,12 @@ struct LoadFilter {
 	 * Initialise this filter.
 	 * @param chain The next filter in this chain.
 	 */
-	LoadFilter(std::shared_ptr<LoadFilter> chain) : chain(chain)
+	LoadFilter(std::shared_ptr<LoadFilter> chain) : chain(std::move(chain))
 	{
 	}
 
 	/** Make sure the writers are properly closed. */
-	virtual ~LoadFilter()
-	{
-	}
+	virtual ~LoadFilter() = default;
 
 	/**
 	 * Read a given number of bytes from the savegame.
@@ -64,14 +62,12 @@ struct SaveFilter {
 	 * Initialise this filter.
 	 * @param chain The next filter in this chain.
 	 */
-	SaveFilter(std::shared_ptr<SaveFilter> chain) : chain(chain)
+	SaveFilter(std::shared_ptr<SaveFilter> chain) : chain(std::move(chain))
 	{
 	}
 
 	/** Make sure the writers are properly closed. */
-	virtual ~SaveFilter()
-	{
-	}
+	virtual ~SaveFilter() = default;
 
 	/**
 	 * Write a given number of bytes into the savegame.

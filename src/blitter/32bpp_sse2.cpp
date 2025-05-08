@@ -20,23 +20,22 @@
 /** Instantiation of the SSE2 32bpp blitter factory. */
 static FBlitter_32bppSSE2 iFBlitter_32bppSSE2;
 
-Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &sprite, AllocatorProc *allocator)
+Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
 {
 	/* First uint32_t of a line = the number of transparent pixels from the left.
 	 * Second uint32_t of a line = the number of transparent pixels from the right.
 	 * Then all RGBA then all MV.
 	 */
-	ZoomLevel zoom_min = ZOOM_LVL_NORMAL;
-	ZoomLevel zoom_max = ZOOM_LVL_NORMAL;
-	if (sprite[ZOOM_LVL_NORMAL].type != SpriteType::Font) {
+	ZoomLevel zoom_min = ZOOM_LVL_MIN;
+	ZoomLevel zoom_max = ZOOM_LVL_MIN;
+	if (sprite[ZOOM_LVL_MIN].type != SpriteType::Font) {
 		zoom_min = _settings_client.gui.zoom_min;
 		zoom_max = _settings_client.gui.zoom_max;
 		if (zoom_max == zoom_min) zoom_max = ZOOM_LVL_MAX;
 	}
 
 	/* Calculate sizes and allocate. */
-	SpriteData sd;
-	memset(&sd, 0, sizeof(sd));
+	SpriteData sd{};
 	uint all_sprites_size = 0;
 	for (ZoomLevel z = zoom_min; z <= zoom_max; z++) {
 		const SpriteLoader::Sprite *src_sprite = &sprite[z];
@@ -51,11 +50,11 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 		all_sprites_size += rgba_size + mv_size;
 	}
 
-	Sprite *dst_sprite = (Sprite *) allocator(sizeof(Sprite) + sizeof(SpriteData) + all_sprites_size);
-	dst_sprite->height = sprite[ZOOM_LVL_NORMAL].height;
-	dst_sprite->width  = sprite[ZOOM_LVL_NORMAL].width;
-	dst_sprite->x_offs = sprite[ZOOM_LVL_NORMAL].x_offs;
-	dst_sprite->y_offs = sprite[ZOOM_LVL_NORMAL].y_offs;
+	Sprite *dst_sprite = allocator.Allocate<Sprite>(sizeof(Sprite) + sizeof(SpriteData) + all_sprites_size);
+	dst_sprite->height = sprite[ZOOM_LVL_MIN].height;
+	dst_sprite->width  = sprite[ZOOM_LVL_MIN].width;
+	dst_sprite->x_offs = sprite[ZOOM_LVL_MIN].x_offs;
+	dst_sprite->y_offs = sprite[ZOOM_LVL_MIN].y_offs;
 	memcpy(dst_sprite->data, &sd, sizeof(SpriteData));
 
 	/* Copy colours and determine flags. */
@@ -81,7 +80,7 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 
 						/* Get brightest value (or default brightness if it's a black pixel). */
 						const uint8_t rgb_max = std::max({src->r, src->g, src->b});
-						dst_mv->v = (rgb_max == 0) ? Blitter_32bppBase::DEFAULT_BRIGHTNESS : rgb_max;
+						dst_mv->v = (rgb_max == 0) ? DEFAULT_BRIGHTNESS : rgb_max;
 
 						/* Pre-convert the mapping channel to a RGB value. */
 						const Colour colour = AdjustBrightneSSE(Blitter_32bppBase::LookupColourInPalette(src->m), dst_mv->v);
@@ -92,7 +91,7 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 						dst_rgba->r = src->r;
 						dst_rgba->g = src->g;
 						dst_rgba->b = src->b;
-						dst_mv->v = Blitter_32bppBase::DEFAULT_BRIGHTNESS;
+						dst_mv->v = DEFAULT_BRIGHTNESS;
 					}
 				} else {
 					dst_rgba->data = 0;
@@ -129,10 +128,10 @@ Sprite *Blitter_32bppSSE_Base::Encode(const SpriteLoader::SpriteCollection &spri
 	}
 
 	/* Store sprite flags. */
-	sd.flags = SF_NONE;
-	if (has_translucency) sd.flags |= SF_TRANSLUCENT;
-	if (!has_remap) sd.flags |= SF_NO_REMAP;
-	if (!has_anim) sd.flags |= SF_NO_ANIM;
+	sd.flags = {};
+	if (has_translucency) sd.flags.Set(SpriteFlag::Translucent);
+	if (!has_remap) sd.flags.Set(SpriteFlag::NoRemap);
+	if (!has_anim) sd.flags.Set(SpriteFlag::NoAnim);
 	memcpy(dst_sprite->data, &sd, sizeof(SpriteData));
 
 	return dst_sprite;

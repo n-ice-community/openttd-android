@@ -12,6 +12,7 @@
 
 #include "script_company.hpp"
 #include "script_error.hpp"
+#include "../../signs_type.h"
 
 /**
  * Class that handles all sign related functions.
@@ -21,6 +22,8 @@ class ScriptSign : public ScriptObject {
 public:
 	/**
 	 * All sign related error messages.
+	 *
+	 * @see ScriptErrorType
 	 */
 	enum ErrorMessages {
 

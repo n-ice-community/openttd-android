@@ -82,6 +82,7 @@ void ChangeGameSpeed(bool enable_fast_forward);
 void DrawMouseCursor();
 void ScreenSizeChanged();
 void GameSizeChanged();
+void UpdateGUIZoom();
 bool AdjustGUIZoom(bool automatic);
 void UndrawMouseCursor();
 
@@ -103,7 +104,7 @@ int DrawStringMultiLine(int left, int right, int top, int bottom, StringID str, 
 void DrawCharCentered(char32_t c, const Rect &r, TextColour colour);
 
 void GfxFillRect(int left, int top, int right, int bottom, int colour, FillRectMode mode = FILLRECT_OPAQUE);
-void GfxFillPolygon(const std::vector<Point> &shape, int colour, FillRectMode mode = FILLRECT_OPAQUE);
+void GfxFillPolygon(std::span<const Point> shape, int colour, FillRectMode mode = FILLRECT_OPAQUE);
 void GfxDrawLine(int left, int top, int right, int bottom, int colour, int width = 1, int dash = 0);
 void DrawBox(int x, int y, int dx1, int dy1, int dx2, int dy2, int dx3, int dy3);
 void DrawRectOutline(const Rect &r, int colour, int width = 1, int dash = 0);
@@ -136,15 +137,14 @@ inline void GfxFillRect(const Rect &r, int colour, FillRectMode mode = FILLRECT_
 
 Dimension GetStringBoundingBox(std::string_view str, FontSize start_fontsize = FS_NORMAL);
 Dimension GetStringBoundingBox(StringID strid, FontSize start_fontsize = FS_NORMAL);
-uint GetStringListWidth(const StringID *list, FontSize fontsize = FS_NORMAL);
+uint GetStringListWidth(std::span<const StringID> list, FontSize fontsize = FS_NORMAL);
+Dimension GetStringListBoundingBox(std::span<const StringID> list, FontSize fontsize = FS_NORMAL);
 int GetStringHeight(std::string_view str, int maxw, FontSize fontsize = FS_NORMAL);
 int GetStringHeight(StringID str, int maxw);
-int GetStringLineCount(StringID str, int maxw);
+int GetStringLineCount(std::string_view str, int maxw);
 Dimension GetStringMultiLineBoundingBox(StringID str, const Dimension &suggestion);
-Dimension GetStringMultiLineBoundingBox(std::string_view str, const Dimension &suggestion);
+Dimension GetStringMultiLineBoundingBox(std::string_view str, const Dimension &suggestion, FontSize fontsize = FS_NORMAL);
 void LoadStringWidthTable(bool monospace = false);
-Point GetCharPosInString(std::string_view str, const char *ch, FontSize start_fontsize = FS_NORMAL);
-ptrdiff_t GetCharAtPosition(std::string_view str, int x, FontSize start_fontsize = FS_NORMAL);
 
 void DrawDirtyBlocks();
 void AddDirtyBlock(int left, int top, int right, int bottom);
@@ -186,7 +186,7 @@ bool ToggleFullScreen(bool fs);
 /* gfx.cpp */
 uint8_t GetCharacterWidth(FontSize size, char32_t key);
 uint8_t GetDigitWidth(FontSize size = FS_NORMAL);
-void GetBroadestDigit(uint *front, uint *next, FontSize size = FS_NORMAL);
+std::pair<uint8_t, uint8_t> GetBroadestDigit(FontSize size);
 
 int GetCharacterHeight(FontSize size);
 

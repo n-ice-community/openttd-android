@@ -53,7 +53,7 @@ public:
 	 * @pre IsValidEngine(engine_id).
 	 * @return The cargo-type of the engine.
 	 */
-	static CargoID GetCargoType(EngineID engine_id);
+	static CargoType GetCargoType(EngineID engine_id);
 
 	/**
 	 * Check if the cargo of an engine can be refitted to your requested. If
@@ -61,26 +61,26 @@ public:
 	 *  In case of articulated vehicles the function decides whether at least one
 	 *  part can carry the cargo.
 	 * @param engine_id The engine to check for refitting.
-	 * @param cargo_id The cargo to check for refitting.
+	 * @param cargo_type The cargo to check for refitting.
 	 * @pre IsValidEngine(engine_id).
-	 * @pre ScriptCargo::IsValidCargo(cargo_id).
+	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return True if the engine can carry this cargo, either via refit, or
 	 *  by default.
 	 */
-	static bool CanRefitCargo(EngineID engine_id, CargoID cargo_id);
+	static bool CanRefitCargo(EngineID engine_id, CargoType cargo_type);
 
 	/**
 	 * Check if the engine can pull a wagon with the given cargo.
 	 * @param engine_id The engine to check.
-	 * @param cargo_id The cargo to check.
+	 * @param cargo_type The cargo to check.
 	 * @pre IsValidEngine(engine_id).
 	 * @pre GetVehicleType(engine_id) == ScriptVehicle::VT_RAIL.
-	 * @pre ScriptCargo::IsValidCargo(cargo_id).
+	 * @pre ScriptCargo::IsValidCargo(cargo_type).
 	 * @return True if the engine can pull wagons carrying this cargo.
 	 * @note This function is not exhaustive; a true here does not mean
 	 *  that the vehicle can pull the wagons, a false does mean it can't.
 	 */
-	static bool CanPullCargo(EngineID engine_id, CargoID cargo_id);
+	static bool CanPullCargo(EngineID engine_id, CargoType cargo_type);
 
 	/**
 	 * Get the capacity of an engine. In case it can transport multiple cargoes, it
@@ -125,8 +125,8 @@ public:
 	 * Get the maximum age of a brand new engine.
 	 * @param engine_id The engine to get the maximum age of.
 	 * @pre IsValidEngine(engine_id).
-	 * @returns The maximum age of a new engine in days.
-	 * @note Age is in days; divide by 366 to get per year.
+	 * @returns The maximum age of a new engine in calendar-days.
+	 * @see \ref ScriptCalendarTime
 	 */
 	static SQInteger GetMaxAge(EngineID engine_id);
 
@@ -134,8 +134,8 @@ public:
 	 * Get the running cost of an engine.
 	 * @param engine_id The engine to get the running cost of.
 	 * @pre IsValidEngine(engine_id).
-	 * @return The running cost of a vehicle per year.
-	 * @note Cost is per year; divide by 365 to get per day.
+	 * @return The running cost of a vehicle per economy-year.
+	 * @see \ref ScriptEconomyTime
 	 */
 	static Money GetRunningCost(EngineID engine_id);
 
@@ -167,10 +167,11 @@ public:
 	static SQInteger GetMaxTractiveEffort(EngineID engine_id);
 
 	/**
-	 * Get the date this engine was designed.
+	 * Get the calendar-date this engine was designed.
 	 * @param engine_id The engine to get the design date of.
 	 * @pre IsValidEngine(engine_id).
-	 * @return The date this engine was designed.
+	 * @return The calendar-date this engine was designed.
+	 * @see \ref ScriptCalendarTime
 	 */
 	static ScriptDate::Date GetDesignDate(EngineID engine_id);
 

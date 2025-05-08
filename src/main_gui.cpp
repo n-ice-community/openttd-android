@@ -93,46 +93,48 @@ void CcPlaySound_EXPLOSION(Commands, const CommandCost &result, TileIndex tile)
  */
 bool DoZoomInOutWindow(ZoomStateChange how, Window *w)
 {
-	Viewport *vp;
-
 	assert(w != nullptr);
-	vp = w->viewport;
 
 	switch (how) {
 		case ZOOM_NONE:
 			/* On initialisation of the viewport we don't do anything. */
 			break;
 
-		case ZOOM_IN:
-			if (vp->zoom <= _settings_client.gui.zoom_min) return false;
-			vp->zoom = (ZoomLevel)((int)vp->zoom - 1);
-			vp->virtual_width >>= 1;
-			vp->virtual_height >>= 1;
+		case ZOOM_IN: {
+			ViewportData &vp = *w->viewport;
+			if (vp.zoom <= _settings_client.gui.zoom_min) return false;
+			--vp.zoom;
+			vp.virtual_width >>= 1;
+			vp.virtual_height >>= 1;
 
-			w->viewport->scrollpos_x += vp->virtual_width >> 1;
-			w->viewport->scrollpos_y += vp->virtual_height >> 1;
-			w->viewport->dest_scrollpos_x = w->viewport->scrollpos_x;
-			w->viewport->dest_scrollpos_y = w->viewport->scrollpos_y;
-			w->viewport->follow_vehicle = INVALID_VEHICLE;
+			vp.scrollpos_x += vp.virtual_width >> 1;
+			vp.scrollpos_y += vp.virtual_height >> 1;
+			vp.dest_scrollpos_x = vp.scrollpos_x;
+			vp.dest_scrollpos_y = vp.scrollpos_y;
 			break;
-		case ZOOM_OUT:
-			if (vp->zoom >= _settings_client.gui.zoom_max) return false;
-			vp->zoom = (ZoomLevel)((int)vp->zoom + 1);
+		}
 
-			w->viewport->scrollpos_x -= vp->virtual_width >> 1;
-			w->viewport->scrollpos_y -= vp->virtual_height >> 1;
-			w->viewport->dest_scrollpos_x = w->viewport->scrollpos_x;
-			w->viewport->dest_scrollpos_y = w->viewport->scrollpos_y;
+		case ZOOM_OUT: {
+			ViewportData &vp = *w->viewport;
+			if (vp.zoom >= _settings_client.gui.zoom_max) return false;
+			++vp.zoom;
 
-			vp->virtual_width <<= 1;
-			vp->virtual_height <<= 1;
-			w->viewport->follow_vehicle = INVALID_VEHICLE;
+			vp.scrollpos_x -= vp.virtual_width >> 1;
+			vp.scrollpos_y -= vp.virtual_height >> 1;
+			vp.dest_scrollpos_x = vp.scrollpos_x;
+			vp.dest_scrollpos_y = vp.scrollpos_y;
+
+			vp.virtual_width <<= 1;
+			vp.virtual_height <<= 1;
 			break;
+		}
 	}
-	if (vp != nullptr) { // the vp can be null when how == ZOOM_NONE
-		vp->virtual_left = w->viewport->scrollpos_x;
-		vp->virtual_top = w->viewport->scrollpos_y;
+
+	if (w->viewport != nullptr) { // the viewport can be null when how == ZOOM_NONE
+		w->viewport->virtual_left = w->viewport->scrollpos_x;
+		w->viewport->virtual_top = w->viewport->scrollpos_y;
 	}
+
 	/* Update the windows that have zoom-buttons to perhaps disable their buttons */
 	w->InvalidateData();
 	return true;
@@ -143,8 +145,7 @@ void ZoomInOrOutToCursorWindow(bool in, Window *w)
 	assert(w != nullptr);
 
 	if (_game_mode != GM_MENU) {
-		Viewport *vp = w->viewport;
-		if ((in && vp->zoom <= _settings_client.gui.zoom_min) || (!in && vp->zoom >= _settings_client.gui.zoom_max)) return;
+		if ((in && w->viewport->zoom <= _settings_client.gui.zoom_min) || (!in && w->viewport->zoom >= _settings_client.gui.zoom_max)) return;
 
 		Point pt = GetTileZoomCenterWindow(in, w);
 		if (pt.x != -1) {
@@ -159,29 +160,29 @@ void FixTitleGameZoom(int zoom_adjust)
 {
 	if (_game_mode != GM_MENU) return;
 
-	Viewport *vp = GetMainWindow()->viewport;
+	Viewport &vp = *GetMainWindow()->viewport;
 
 	/* Adjust the zoom in/out.
 	 * Can't simply add, since operator+ is not defined on the ZoomLevel type. */
-	vp->zoom = _gui_zoom;
-	while (zoom_adjust < 0 && vp->zoom != _settings_client.gui.zoom_min) {
-		vp->zoom--;
+	vp.zoom = _gui_zoom;
+	while (zoom_adjust < 0 && vp.zoom != _settings_client.gui.zoom_min) {
+		vp.zoom--;
 		zoom_adjust++;
 	}
-	while (zoom_adjust > 0 && vp->zoom != _settings_client.gui.zoom_max) {
-		vp->zoom++;
+	while (zoom_adjust > 0 && vp.zoom != _settings_client.gui.zoom_max) {
+		vp.zoom++;
 		zoom_adjust--;
 	}
 
-	vp->virtual_width = ScaleByZoom(vp->width, vp->zoom);
-	vp->virtual_height = ScaleByZoom(vp->height, vp->zoom);
+	vp.virtual_width = ScaleByZoom(vp.width, vp.zoom);
+	vp.virtual_height = ScaleByZoom(vp.height, vp.zoom);
 }
 
 static constexpr NWidgetPart _nested_main_window_widgets[] = {
 	NWidget(NWID_VIEWPORT, INVALID_COLOUR, WID_M_VIEWPORT), SetResize(1, 1),
 };
 
-enum {
+enum GlobalHotKeys : int32_t {
 	GHK_QUIT,
 	GHK_ABANDON,
 	GHK_CONSOLE,
@@ -212,16 +213,16 @@ enum {
 
 struct MainWindow : Window
 {
-	MainWindow(WindowDesc *desc) : Window(desc)
+	MainWindow(WindowDesc &desc) : Window(desc)
 	{
 		this->InitNested(0);
-		CLRBITS(this->flags, WF_WHITE_BORDER);
+		this->flags.Reset(WindowFlag::WhiteBorder);
 		ResizeWindow(this, _screen.width, _screen.height);
 
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_M_VIEWPORT);
 		nvp->InitializeViewport(this, TileXY(32, 32), ScaleZoomGUI(ZOOM_LVL_VIEWPORT));
 
-		this->viewport->overlay = std::make_shared<LinkGraphOverlay>(this, WID_M_VIEWPORT, 0, 0, 2);
+		this->viewport->overlay = std::make_shared<LinkGraphOverlay>(this, WID_M_VIEWPORT, 0, CompanyMask{}, 2);
 		this->refresh_timeout.Reset();
 	}
 
@@ -229,7 +230,7 @@ struct MainWindow : Window
 	void RefreshLinkGraph()
 	{
 		if (this->viewport->overlay->GetCargoMask() == 0 ||
-				this->viewport->overlay->GetCompanyMask() == 0) {
+				this->viewport->overlay->GetCompanyMask().None()) {
 			return;
 		}
 
@@ -257,18 +258,18 @@ struct MainWindow : Window
 	{
 		this->DrawWidgets();
 		if (_game_mode == GM_MENU) {
-			static const SpriteID title_sprites[] = {SPR_OTTD_O, SPR_OTTD_P, SPR_OTTD_E, SPR_OTTD_N, SPR_OTTD_T, SPR_OTTD_T, SPR_OTTD_D};
+			static const std::initializer_list<SpriteID> title_sprites = {SPR_OTTD_O, SPR_OTTD_P, SPR_OTTD_E, SPR_OTTD_N, SPR_OTTD_T, SPR_OTTD_T, SPR_OTTD_D};
 			uint letter_spacing = ScaleGUITrad(10);
-			int name_width = (lengthof(title_sprites) - 1) * letter_spacing;
+			int name_width = static_cast<int>(std::size(title_sprites) - 1) * letter_spacing;
 
-			for (uint i = 0; i < lengthof(title_sprites); i++) {
-				name_width += GetSpriteSize(title_sprites[i]).width;
+			for (const SpriteID &sprite : title_sprites) {
+				name_width += GetSpriteSize(sprite).width;
 			}
 			int off_x = (this->width - name_width) / 2;
 
-			for (uint i = 0; i < lengthof(title_sprites); i++) {
-				DrawSprite(title_sprites[i], PAL_NONE, off_x, ScaleGUITrad(50));
-				off_x += GetSpriteSize(title_sprites[i]).width + letter_spacing;
+			for (const SpriteID &sprite : title_sprites) {
+				DrawSprite(sprite, PAL_NONE, off_x, ScaleGUITrad(50));
+				off_x += GetSpriteSize(sprite).width + letter_spacing;
 			}
 		}
 	}
@@ -388,7 +389,7 @@ struct MainWindow : Window
 					const NetworkClientInfo *cio = NetworkClientInfo::GetByClientID(_network_own_client_id);
 					if (cio == nullptr) break;
 
-					ShowNetworkChatQueryWindow(NetworkClientPreferTeamChat(cio) ? DESTTYPE_TEAM : DESTTYPE_BROADCAST, cio->client_playas);
+					ShowNetworkChatQueryWindow(NetworkClientPreferTeamChat(cio) ? DESTTYPE_TEAM : DESTTYPE_BROADCAST, cio->client_playas.base());
 				}
 				break;
 
@@ -401,7 +402,7 @@ struct MainWindow : Window
 					const NetworkClientInfo *cio = NetworkClientInfo::GetByClientID(_network_own_client_id);
 					if (cio == nullptr) break;
 
-					ShowNetworkChatQueryWindow(DESTTYPE_TEAM, cio->client_playas);
+					ShowNetworkChatQueryWindow(DESTTYPE_TEAM, cio->client_playas.base());
 				}
 				break;
 
@@ -435,8 +436,15 @@ struct MainWindow : Window
 
 	void OnMouseWheel(int wheel) override
 	{
-		if (_settings_client.gui.scrollwheel_scrolling != 2) {
-			ZoomInOrOutToCursorWindow(wheel < 0, this);
+		if (_settings_client.gui.scrollwheel_scrolling != SWS_OFF) {
+			bool in = wheel < 0;
+
+			/* When following, only change zoom - otherwise zoom to the cursor. */
+			if (this->viewport->follow_vehicle != VehicleID::Invalid()) {
+				DoZoomInOutWindow(in ? ZOOM_IN : ZOOM_OUT, this);
+			} else {
+				ZoomInOrOutToCursorWindow(in, this);
+			}
 		}
 	}
 
@@ -517,8 +525,8 @@ struct MainWindow : Window
 static WindowDesc _main_window_desc(
 	WDP_MANUAL, nullptr, 0, 0,
 	WC_MAIN_WINDOW, WC_NONE,
-	WDF_NO_CLOSE,
-	std::begin(_nested_main_window_widgets), std::end(_nested_main_window_widgets),
+	WindowDefaultFlag::NoClose,
+	_nested_main_window_widgets,
 	&MainWindow::hotkeys
 );
 
@@ -549,7 +557,7 @@ void SetupColoursAndInitialWindow()
 		}
 	}
 
-	new MainWindow(&_main_window_desc);
+	new MainWindow(_main_window_desc);
 
 	/* XXX: these are not done */
 	switch (_game_mode) {

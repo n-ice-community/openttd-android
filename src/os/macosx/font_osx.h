@@ -11,19 +11,18 @@
 #define FONT_OSX_H
 
 #include "../../fontcache/truetypefontcache.h"
-#include "os/macosx/macos.h"
+#include "macos.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 
 class CoreTextFontCache : public TrueTypeFontCache {
-	CFAutoRelease<CTFontDescriptorRef> font_desc; ///< Font descriptor exlcuding font size.
+	CFAutoRelease<CTFontDescriptorRef> font_desc; ///< Font descriptor excluding font size.
 	CFAutoRelease<CTFontRef> font;                ///< CoreText font handle.
 
 	std::string font_name;                        ///< Cached font name.
 
 	void SetFontSize(int pixels);
 	const Sprite *InternalGetGlyph(GlyphID key, bool use_aa) override;
-	const void *InternalGetFontTable(uint32_t tag, size_t &length) override;
 public:
 	CoreTextFontCache(FontSize fs, CFAutoRelease<CTFontDescriptorRef> &&font, int pixels);
 	~CoreTextFontCache() {}
@@ -36,6 +35,5 @@ public:
 };
 
 void LoadCoreTextFont(FontSize fs);
-void LoadCoreTextFont(FontSize fs, const std::string &file_name, uint size);
 
 #endif /* FONT_OSX_H */

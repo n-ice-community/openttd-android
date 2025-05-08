@@ -73,7 +73,7 @@ void SetRandomSeed(uint32_t seed)
 uint32_t Random(const std::source_location location)
 {
 	if (_networking && (!_network_server || (NetworkClientSocket::IsValidID(0) && NetworkClientSocket::Get(0)->status != NetworkClientSocket::STATUS_INACTIVE))) {
-		Debug(random, 0, "{:08x}; {:02x}; {:04x}; {:02x}; {}:{}", TimerGameEconomy::date, TimerGameEconomy::date_fract, _frame_counter, (uint8_t)_current_company, location.file_name(), location.line());
+		Debug(random, 0, "{:08x}; {:02x}; {:04x}; {:02x}; {}:{}", TimerGameEconomy::date, TimerGameEconomy::date_fract, _frame_counter, _current_company, location.file_name(), location.line());
 	}
 
 	return _random.Next();
@@ -97,7 +97,7 @@ void RandomBytesWithFallback(std::span<uint8_t> buf)
 #if defined(_WIN32)
 	auto res = BCryptGenRandom(nullptr, static_cast<PUCHAR>(buf.data()), static_cast<ULONG>(buf.size()), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
 	if (res >= 0) return;
-#elif defined(__APPLE__) || defined(__NetBSD__) || defined(__FreeBSD__)
+#elif defined(__APPLE__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 	arc4random_buf(buf.data(), buf.size());
 	return;
 #elif defined(__GLIBC__) && ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 25)))

@@ -37,15 +37,22 @@
 #include "../gfx_func.h"
 #include "../error.h"
 #include "../misc_cmd.h"
+#include "../core/string_builder.hpp"
+#ifdef DEBUG_DUMP_COMMANDS
+#	include "../fileio_func.h"
+#endif
 #include <charconv>
-#include <sstream>
-#include <iomanip>
+
+#include "table/strings.h"
 
 #include "../safeguards.h"
 
 #ifdef DEBUG_DUMP_COMMANDS
-#include "../fileio_func.h"
-/** When running the server till the wait point, run as fast as we can! */
+/** Helper variable to make the dedicated server go fast until the (first) join.
+ * Used to load the desync debug logs, i.e. for reproducing a desync.
+ * There's basically no need to ever enable this, unless you really know what
+ * you are doing, i.e. debugging a desync.
+ * See docs/desync.md for details. */
 bool _ddc_fastforward = true;
 #endif /* DEBUG_DUMP_COMMANDS */
 
@@ -61,7 +68,6 @@ bool _network_server;     ///< network-server is active
 bool _network_available;  ///< is network mode available?
 bool _network_dedicated;  ///< are we a dedicated server?
 bool _is_network_server;  ///< Does this client wants to be a network-server?
-NetworkCompanyState *_network_company_states = nullptr; ///< Statistics about some companies.
 ClientID _network_own_client_id;      ///< Our client identifier.
 ClientID _redirect_console_to_client; ///< If not invalid, redirect the console output to a client.
 uint8_t _network_reconnect;             ///< Reconnect timeout
@@ -79,9 +85,6 @@ uint32_t _sync_seed_2;                  ///< Second part of the seed.
 #endif
 uint32_t _sync_frame;                   ///< The frame to perform the sync check.
 bool _network_first_time;             ///< Whether we have finished joining or not.
-CompanyMask _network_company_passworded; ///< Bitmask of the password status of all companies.
-
-static_assert((int)NETWORK_COMPANY_NAME_LENGTH == MAX_LENGTH_COMPANY_NAME_CHARS * MAX_CHAR_LENGTH);
 
 /** The amount of clients connected */
 uint8_t _network_clients_connected = 0;
@@ -121,6 +124,28 @@ NetworkClientInfo::~NetworkClientInfo()
 }
 
 /**
+ * Returns whether the given company can be joined by this client.
+ * @param company_id The id of the company.
+ * @return \c true when this company is allowed to join, otherwise \c false.
+ */
+bool NetworkClientInfo::CanJoinCompany(CompanyID company_id) const
+{
+	Company *c = Company::GetIfValid(company_id);
+	return c != nullptr && c->allow_list.Contains(this->public_key);
+}
+
+/**
+ * Returns whether the given company can be joined by this client.
+ * @param company_id The id of the company.
+ * @return \c true when this company is allowed to join, otherwise \c false.
+ */
+bool NetworkCanJoinCompany(CompanyID company_id)
+{
+	NetworkClientInfo *info = NetworkClientInfo::GetByClientID(_network_own_client_id);
+	return info != nullptr && info->CanJoinCompany(company_id);
+}
+
+/**
  * Return the client state given it's client-identifier
  * @param client_id the ClientID to search for
  * @return return a pointer to the corresponding NetworkClientSocket struct or nullptr when not found
@@ -143,7 +168,7 @@ NetworkClientInfo::~NetworkClientInfo()
  */
 static auto FindKey(auto *authorized_keys, std::string_view authorized_key)
 {
-	return std::find_if(authorized_keys->begin(), authorized_keys->end(), [authorized_key](auto &value) { return StrEqualsIgnoreCase(value, authorized_key); });
+	return std::ranges::find_if(*authorized_keys, [authorized_key](auto &value) { return StrEqualsIgnoreCase(value, authorized_key); });
 }
 
 /**
@@ -159,10 +184,12 @@ bool NetworkAuthorizedKeys::Contains(std::string_view key) const
 /**
  * Add the given key to the authorized keys, when it is not already contained.
  * @param key The key to add.
- * @return \c true when the key was added, \c false when the key already existed.
+ * @return \c true when the key was added, \c false when the key already existed or the key was empty.
  */
 bool NetworkAuthorizedKeys::Add(std::string_view key)
 {
+	if (key.empty()) return false;
+
 	auto iter = FindKey(this, key);
 	if (iter != this->end()) return false;
 
@@ -199,120 +226,54 @@ uint8_t NetworkSpectatorCount()
 	return count;
 }
 
-/**
- * Change the company password of a given company.
- * @param company_id ID of the company the password should be changed for.
- * @param password The unhashed password we like to set ('*' or '' resets the password)
- * @return The password.
- */
-std::string NetworkChangeCompanyPassword(CompanyID company_id, std::string password)
-{
-	if (password.compare("*") == 0) password = "";
-
-	if (_network_server) {
-		NetworkServerSetCompanyPassword(company_id, password, false);
-	} else {
-		NetworkClientSetCompanyPassword(password);
-	}
-
-	return password;
-}
-
-/**
- * Hash the given password using server ID and game seed.
- * @param password Password to hash.
- * @param password_server_id Server ID.
- * @param password_game_seed Game seed.
- * @return The hashed password.
- */
-std::string GenerateCompanyPasswordHash(const std::string &password, const std::string &password_server_id, uint32_t password_game_seed)
-{
-	if (password.empty()) return password;
-
-	size_t password_length = password.size();
-	size_t password_server_id_length = password_server_id.size();
-
-	std::ostringstream salted_password;
-	/* Add the password with the server's ID and game seed as the salt. */
-	for (uint i = 0; i < NETWORK_SERVER_ID_LENGTH - 1; i++) {
-		char password_char = (i < password_length ? password[i] : 0);
-		char server_id_char = (i < password_server_id_length ? password_server_id[i] : 0);
-		char seed_char = password_game_seed >> (i % 32);
-		salted_password << (char)(password_char ^ server_id_char ^ seed_char); // Cast needed, otherwise interpreted as integer to format
-	}
-
-	Md5 checksum;
-	MD5Hash digest;
-
-	/* Generate the MD5 hash */
-	std::string salted_password_string = salted_password.str();
-	checksum.Append(salted_password_string.data(), salted_password_string.size());
-	checksum.Finish(digest);
-
-	return FormatArrayAsHex(digest);
-}
-
-/**
- * Check if the company we want to join requires a password.
- * @param company_id id of the company we want to check the 'passworded' flag for.
- * @return true if the company requires a password.
- */
-bool NetworkCompanyIsPassworded(CompanyID company_id)
-{
-	return HasBit(_network_company_passworded, company_id);
-}
 
 /* This puts a text-message to the console, or in the future, the chat-box,
  *  (to keep it all a bit more general)
  * If 'self_send' is true, this is the client who is sending the message */
-void NetworkTextMessage(NetworkAction action, TextColour colour, bool self_send, const std::string &name, const std::string &str, int64_t data, const std::string &data_str)
+void NetworkTextMessage(NetworkAction action, TextColour colour, bool self_send, const std::string &name, const std::string &str, StringParameter &&data)
 {
-	StringID strid;
-	switch (action) {
-		case NETWORK_ACTION_SERVER_MESSAGE:
-			/* Ignore invalid messages */
-			strid = STR_NETWORK_SERVER_MESSAGE;
-			colour = CC_DEFAULT;
-			break;
-		case NETWORK_ACTION_COMPANY_SPECTATOR:
-			colour = CC_DEFAULT;
-			strid = STR_NETWORK_MESSAGE_CLIENT_COMPANY_SPECTATE;
-			break;
-		case NETWORK_ACTION_COMPANY_JOIN:
-			colour = CC_DEFAULT;
-			strid = STR_NETWORK_MESSAGE_CLIENT_COMPANY_JOIN;
-			break;
-		case NETWORK_ACTION_COMPANY_NEW:
-			colour = CC_DEFAULT;
-			strid = STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW;
-			break;
-		case NETWORK_ACTION_JOIN:
-			/* Show the Client ID for the server but not for the client. */
-			strid = _network_server ? STR_NETWORK_MESSAGE_CLIENT_JOINED_ID :  STR_NETWORK_MESSAGE_CLIENT_JOINED;
-			break;
-		case NETWORK_ACTION_LEAVE:          strid = STR_NETWORK_MESSAGE_CLIENT_LEFT; break;
-		case NETWORK_ACTION_NAME_CHANGE:    strid = STR_NETWORK_MESSAGE_NAME_CHANGE; break;
-		case NETWORK_ACTION_GIVE_MONEY:     strid = STR_NETWORK_MESSAGE_GIVE_MONEY; break;
-		case NETWORK_ACTION_CHAT_COMPANY:   strid = self_send ? STR_NETWORK_CHAT_TO_COMPANY : STR_NETWORK_CHAT_COMPANY; break;
-		case NETWORK_ACTION_CHAT_CLIENT:    strid = self_send ? STR_NETWORK_CHAT_TO_CLIENT  : STR_NETWORK_CHAT_CLIENT;  break;
-		case NETWORK_ACTION_KICKED:         strid = STR_NETWORK_MESSAGE_KICKED; break;
-		case NETWORK_ACTION_EXTERNAL_CHAT:  strid = STR_NETWORK_CHAT_EXTERNAL; break;
-		default:                            strid = STR_NETWORK_CHAT_ALL; break;
-	}
-
-	SetDParamStr(0, name);
-	SetDParamStr(1, str);
-	SetDParam(2, data);
-	SetDParamStr(3, data_str);
+	std::string message;
+	StringBuilder builder(message);
 
 	/* All of these strings start with "***". These characters are interpreted as both left-to-right and
 	 * right-to-left characters depending on the context. As the next text might be an user's name, the
 	 * user name's characters will influence the direction of the "***" instead of the language setting
 	 * of the game. Manually set the direction of the "***" by inserting a text-direction marker. */
-	std::ostringstream stream;
-	std::ostreambuf_iterator<char> iterator(stream);
-	Utf8Encode(iterator, _current_text_dir == TD_LTR ? CHAR_TD_LRM : CHAR_TD_RLM);
-	std::string message = stream.str() + GetString(strid);
+	builder.PutUtf8(_current_text_dir == TD_LTR ? CHAR_TD_LRM : CHAR_TD_RLM);
+
+	switch (action) {
+		case NETWORK_ACTION_SERVER_MESSAGE:
+			/* Ignore invalid messages */
+			builder += GetString(STR_NETWORK_SERVER_MESSAGE, str);
+			colour = CC_DEFAULT;
+			break;
+		case NETWORK_ACTION_COMPANY_SPECTATOR:
+			colour = CC_DEFAULT;
+			builder += GetString(STR_NETWORK_MESSAGE_CLIENT_COMPANY_SPECTATE, name);
+			break;
+		case NETWORK_ACTION_COMPANY_JOIN:
+			colour = CC_DEFAULT;
+			builder += GetString(STR_NETWORK_MESSAGE_CLIENT_COMPANY_JOIN, name, str);
+			break;
+		case NETWORK_ACTION_COMPANY_NEW:
+			colour = CC_DEFAULT;
+			builder += GetString(STR_NETWORK_MESSAGE_CLIENT_COMPANY_NEW, name, std::move(data));
+			break;
+		case NETWORK_ACTION_JOIN:
+			/* Show the Client ID for the server but not for the client. */
+			builder += _network_server ?
+					GetString(STR_NETWORK_MESSAGE_CLIENT_JOINED_ID, name, std::move(data)) :
+					GetString(STR_NETWORK_MESSAGE_CLIENT_JOINED, name);
+			break;
+		case NETWORK_ACTION_LEAVE:          builder += GetString(STR_NETWORK_MESSAGE_CLIENT_LEFT, name, std::move(data)); break;
+		case NETWORK_ACTION_NAME_CHANGE:    builder += GetString(STR_NETWORK_MESSAGE_NAME_CHANGE, name, str); break;
+		case NETWORK_ACTION_GIVE_MONEY:     builder += GetString(STR_NETWORK_MESSAGE_GIVE_MONEY, name, std::move(data), str); break;
+		case NETWORK_ACTION_KICKED:         builder += GetString(STR_NETWORK_MESSAGE_KICKED, name, str); break;
+		case NETWORK_ACTION_CHAT_COMPANY:   builder += GetString(self_send ? STR_NETWORK_CHAT_TO_COMPANY : STR_NETWORK_CHAT_COMPANY, name, str); break;
+		case NETWORK_ACTION_CHAT_CLIENT:    builder += GetString(self_send ? STR_NETWORK_CHAT_TO_CLIENT  : STR_NETWORK_CHAT_CLIENT, name, str);  break;
+		case NETWORK_ACTION_EXTERNAL_CHAT:  builder += GetString(STR_NETWORK_CHAT_EXTERNAL, std::move(data), name, str); break;
+		default:                            builder += GetString(STR_NETWORK_CHAT_ALL, name, str); break;
+	}
 
 	Debug(desync, 1, "msg: {:08x}; {:02x}; {}", TimerGameEconomy::date, TimerGameEconomy::date_fract, message);
 	IConsolePrint(colour, message);
@@ -338,7 +299,7 @@ uint NetworkCalculateLag(const NetworkClientSocket *cs)
 void ShowNetworkError(StringID error_string)
 {
 	_switch_mode = SM_MENU;
-	ShowErrorMessage(error_string, INVALID_STRING_ID, WL_CRITICAL);
+	ShowErrorMessage(GetEncodedString(error_string), {}, WL_CRITICAL);
 }
 
 /**
@@ -373,6 +334,7 @@ StringID GetNetworkErrorMsg(NetworkErrorCode err)
 		STR_NETWORK_ERROR_CLIENT_TIMEOUT_JOIN,
 		STR_NETWORK_ERROR_CLIENT_INVALID_CLIENT_NAME,
 		STR_NETWORK_ERROR_CLIENT_NOT_ON_ALLOW_LIST,
+		STR_NETWORK_ERROR_CLIENT_NO_AUTHENTICATION_METHOD_AVAILABLE,
 	};
 	static_assert(lengthof(network_error_strings) == NETWORK_ERROR_END);
 
@@ -386,43 +348,44 @@ StringID GetNetworkErrorMsg(NetworkErrorCode err)
  * @param prev_mode The previous pause mode.
  * @param changed_mode The pause mode that got changed.
  */
-void NetworkHandlePauseChange(PauseMode prev_mode, PauseMode changed_mode)
+void NetworkHandlePauseChange(PauseModes prev_mode, PauseMode changed_mode)
 {
 	if (!_networking) return;
 
 	switch (changed_mode) {
-		case PM_PAUSED_NORMAL:
-		case PM_PAUSED_JOIN:
-		case PM_PAUSED_GAME_SCRIPT:
-		case PM_PAUSED_ACTIVE_CLIENTS:
-		case PM_PAUSED_LINK_GRAPH: {
-			bool changed = ((_pause_mode == PM_UNPAUSED) != (prev_mode == PM_UNPAUSED));
-			bool paused = (_pause_mode != PM_UNPAUSED);
+		case PauseMode::Normal:
+		case PauseMode::Join:
+		case PauseMode::GameScript:
+		case PauseMode::ActiveClients:
+		case PauseMode::LinkGraph: {
+			bool changed = _pause_mode.None() != prev_mode.None();
+			bool paused = _pause_mode.Any();
 			if (!paused && !changed) return;
 
-			StringID str;
+			std::string str;
 			if (!changed) {
-				int i = -1;
-
-				if ((_pause_mode & PM_PAUSED_NORMAL) != PM_UNPAUSED)         SetDParam(++i, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_MANUAL);
-				if ((_pause_mode & PM_PAUSED_JOIN) != PM_UNPAUSED)           SetDParam(++i, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_CONNECTING_CLIENTS);
-				if ((_pause_mode & PM_PAUSED_GAME_SCRIPT) != PM_UNPAUSED)    SetDParam(++i, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_GAME_SCRIPT);
-				if ((_pause_mode & PM_PAUSED_ACTIVE_CLIENTS) != PM_UNPAUSED) SetDParam(++i, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_NOT_ENOUGH_PLAYERS);
-				if ((_pause_mode & PM_PAUSED_LINK_GRAPH) != PM_UNPAUSED)     SetDParam(++i, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_LINK_GRAPH);
-				str = STR_NETWORK_SERVER_MESSAGE_GAME_STILL_PAUSED_1 + i;
+				std::array<StringParameter, 5> params{};
+				auto it = params.begin();
+				if (_pause_mode.Test(PauseMode::Normal))        *it++ = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_MANUAL;
+				if (_pause_mode.Test(PauseMode::Join))          *it++ = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_CONNECTING_CLIENTS;
+				if (_pause_mode.Test(PauseMode::GameScript))    *it++ = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_GAME_SCRIPT;
+				if (_pause_mode.Test(PauseMode::ActiveClients)) *it++ = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_NOT_ENOUGH_PLAYERS;
+				if (_pause_mode.Test(PauseMode::LinkGraph))     *it++ = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_LINK_GRAPH;
+				str = GetStringWithArgs(STR_NETWORK_SERVER_MESSAGE_GAME_STILL_PAUSED_1 + std::distance(params.begin(), it) - 1, {params.begin(), it});
 			} else {
+				StringID reason;
 				switch (changed_mode) {
-					case PM_PAUSED_NORMAL:         SetDParam(0, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_MANUAL); break;
-					case PM_PAUSED_JOIN:           SetDParam(0, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_CONNECTING_CLIENTS); break;
-					case PM_PAUSED_GAME_SCRIPT:    SetDParam(0, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_GAME_SCRIPT); break;
-					case PM_PAUSED_ACTIVE_CLIENTS: SetDParam(0, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_NOT_ENOUGH_PLAYERS); break;
-					case PM_PAUSED_LINK_GRAPH:     SetDParam(0, STR_NETWORK_SERVER_MESSAGE_GAME_REASON_LINK_GRAPH); break;
+					case PauseMode::Normal:        reason = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_MANUAL; break;
+					case PauseMode::Join:          reason = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_CONNECTING_CLIENTS; break;
+					case PauseMode::GameScript:    reason = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_GAME_SCRIPT; break;
+					case PauseMode::ActiveClients: reason = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_NOT_ENOUGH_PLAYERS; break;
+					case PauseMode::LinkGraph:     reason = STR_NETWORK_SERVER_MESSAGE_GAME_REASON_LINK_GRAPH; break;
 					default: NOT_REACHED();
 				}
-				str = paused ? STR_NETWORK_SERVER_MESSAGE_GAME_PAUSED : STR_NETWORK_SERVER_MESSAGE_GAME_UNPAUSED;
+				str = GetString(paused ? STR_NETWORK_SERVER_MESSAGE_GAME_PAUSED : STR_NETWORK_SERVER_MESSAGE_GAME_UNPAUSED, reason);
 			}
 
-			NetworkTextMessage(NETWORK_ACTION_SERVER_MESSAGE, CC_DEFAULT, false, "", GetString(str));
+			NetworkTextMessage(NETWORK_ACTION_SERVER_MESSAGE, CC_DEFAULT, false, "", str);
 			break;
 		}
 
@@ -442,7 +405,7 @@ void NetworkHandlePauseChange(PauseMode prev_mode, PauseMode changed_mode)
  */
 static void CheckPauseHelper(bool pause, PauseMode pm)
 {
-	if (pause == ((_pause_mode & pm) != PM_UNPAUSED)) return;
+	if (pause == _pause_mode.Test(pm)) return;
 
 	Command<CMD_PAUSE>::Post(pm, pause);
 }
@@ -470,12 +433,12 @@ static uint NetworkCountActiveClients()
  */
 static void CheckMinActiveClients()
 {
-	if ((_pause_mode & PM_PAUSED_ERROR) != PM_UNPAUSED ||
+	if (_pause_mode.Test(PauseMode::Error) ||
 			!_network_dedicated ||
-			(_settings_client.network.min_active_clients == 0 && (_pause_mode & PM_PAUSED_ACTIVE_CLIENTS) == PM_UNPAUSED)) {
+			(_settings_client.network.min_active_clients == 0 && !_pause_mode.Test(PauseMode::ActiveClients))) {
 		return;
 	}
-	CheckPauseHelper(NetworkCountActiveClients() < _settings_client.network.min_active_clients, PM_PAUSED_ACTIVE_CLIENTS);
+	CheckPauseHelper(NetworkCountActiveClients() < _settings_client.network.min_active_clients, PauseMode::ActiveClients);
 }
 
 /**
@@ -496,11 +459,11 @@ static bool NetworkHasJoiningClient()
  */
 static void CheckPauseOnJoin()
 {
-	if ((_pause_mode & PM_PAUSED_ERROR) != PM_UNPAUSED ||
-			(!_settings_client.network.pause_on_join && (_pause_mode & PM_PAUSED_JOIN) == PM_UNPAUSED)) {
+	if (_pause_mode.Test(PauseMode::Error) ||
+			(!_settings_client.network.pause_on_join && !_pause_mode.Test(PauseMode::Join))) {
 		return;
 	}
-	CheckPauseHelper(NetworkHasJoiningClient(), PM_PAUSED_JOIN);
+	CheckPauseHelper(NetworkHasJoiningClient(), PauseMode::Join);
 }
 
 /**
@@ -617,7 +580,9 @@ NetworkAddress ParseConnectionString(const std::string &connection_string, uint1
  */
 static void InitializeNetworkPools(bool close_admins = true)
 {
-	PoolBase::Clean(PT_NCLIENT | (close_admins ? PT_NADMIN : PT_NONE));
+	PoolTypes to_clean{PoolType::NetworkClient};
+	if (close_admins) to_clean.Set(PoolType::NetworkAdmin);
+	PoolBase::Clean(to_clean);
 }
 
 /**
@@ -657,10 +622,6 @@ void NetworkClose(bool close_admins)
 
 	NetworkFreeLocalCommandQueue();
 
-	delete[] _network_company_states;
-	_network_company_states = nullptr;
-	_network_company_passworded = 0;
-
 	InitializeNetworkPools(close_admins);
 }
 
@@ -687,7 +648,7 @@ public:
 	{
 		Debug(net, 9, "Query::OnFailure(): connection_string={}", this->connection_string);
 
-		NetworkGameList *item = NetworkGameListAddItem(connection_string);
+		NetworkGame *item = NetworkGameListAddItem(connection_string);
 		item->status = NGLS_OFFLINE;
 		item->refreshing = false;
 
@@ -713,7 +674,7 @@ void NetworkQueryServer(const std::string &connection_string)
 	Debug(net, 9, "NetworkQueryServer(): connection_string={}", connection_string);
 
 	/* Mark the entry as refreshing, so the GUI can show the refresh is pending. */
-	NetworkGameList *item = NetworkGameListAddItem(connection_string);
+	NetworkGame *item = NetworkGameListAddItem(connection_string);
 	item->refreshing = true;
 
 	TCPConnecter::Create<TCPQueryConnecter>(connection_string);
@@ -728,14 +689,14 @@ void NetworkQueryServer(const std::string &connection_string)
  * @param never_expire Whether the entry can expire (removed when no longer found in the public listing).
  * @return The entry on the game list.
  */
-NetworkGameList *NetworkAddServer(const std::string &connection_string, bool manually, bool never_expire)
+NetworkGame *NetworkAddServer(const std::string &connection_string, bool manually, bool never_expire)
 {
 	if (connection_string.empty()) return nullptr;
 
 	/* Ensure the item already exists in the list */
-	NetworkGameList *item = NetworkGameListAddItem(connection_string);
+	NetworkGame *item = NetworkGameListAddItem(connection_string);
 	if (item->info.server_name.empty()) {
-		ClearGRFConfigList(&item->info.grfconfig);
+		ClearGRFConfigList(item->info.grfconfig);
 		item->info.server_name = connection_string;
 
 		UpdateNetworkGameWindow();
@@ -766,14 +727,14 @@ void GetBindAddresses(NetworkAddressList *addresses, uint16_t port)
 	}
 }
 
-/* Generates the list of manually added hosts from NetworkGameList and
+/* Generates the list of manually added hosts from NetworkGame and
  * dumps them into the array _network_host_list. This array is needed
  * by the function that generates the config file. */
 void NetworkRebuildHostList()
 {
 	_network_host_list.clear();
 
-	for (NetworkGameList *item = _network_game_list; item != nullptr; item = item->next) {
+	for (const auto &item : _network_game_list) {
 		if (item->manually) _network_host_list.emplace_back(item->connection_string);
 	}
 }
@@ -807,7 +768,7 @@ public:
 
 /**
  * Join a client to the server at with the given connection string.
- * The default for the passwords is \c nullptr. When the server or company needs a
+ * The default for the passwords is \c nullptr. When the server needs a
  * password and none is given, the user is asked to enter the password in the GUI.
  * This function will return false whenever some information required to join is not
  * correct such as the company number or the client's name, or when there is not
@@ -819,10 +780,9 @@ public:
  * @param connection_string     The IP address, port and company number to join as.
  * @param default_company       The company number to join as when none is given.
  * @param join_server_password  The password for the server.
- * @param join_company_password The password for the company.
  * @return Whether the join has started.
  */
-bool NetworkClientConnectGame(const std::string &connection_string, CompanyID default_company, const std::string &join_server_password, const std::string &join_company_password)
+bool NetworkClientConnectGame(const std::string &connection_string, CompanyID default_company, const std::string &join_server_password)
 {
 	Debug(net, 9, "NetworkClientConnectGame(): connection_string={}", connection_string);
 
@@ -832,10 +792,9 @@ bool NetworkClientConnectGame(const std::string &connection_string, CompanyID de
 	if (!_network_available) return false;
 	if (!NetworkValidateOurClientName()) return false;
 
-	_network_join.connection_string = resolved_connection_string;
+	_network_join.connection_string = std::move(resolved_connection_string);
 	_network_join.company = join_as;
 	_network_join.server_password = join_server_password;
-	_network_join.company_password = join_company_password;
 
 	if (_game_mode == GM_MENU) {
 		/* From the menu we can immediately continue with the actual join. */
@@ -843,7 +802,7 @@ bool NetworkClientConnectGame(const std::string &connection_string, CompanyID de
 	} else {
 		/* When already playing a game, first go back to the main menu. This
 		 * disconnects the user from the current game, meaning we can safely
-		 * load in the new. After all, there is little point in continueing to
+		 * load in the new. After all, there is little point in continuing to
 		 * play on a server if we are connecting to another one.
 		 */
 		_switch_mode = SM_JOIN_GAME;
@@ -878,9 +837,12 @@ static void NetworkInitGameInfo()
 	/* There should be always space for the server. */
 	assert(NetworkClientInfo::CanAllocateItem());
 	NetworkClientInfo *ci = new NetworkClientInfo(CLIENT_ID_SERVER);
-	ci->client_playas = _network_dedicated ? COMPANY_SPECTATOR : COMPANY_FIRST;
+	ci->client_playas = COMPANY_SPECTATOR;
 
 	ci->client_name = _settings_client.network.client_name;
+
+	NetworkAuthenticationClientHandler::EnsureValidSecretKeyAndUpdatePublicKey(_settings_client.network.client_secret_key, _settings_client.network.client_public_key);
+	ci->public_key = _settings_client.network.client_public_key;
 }
 
 /**
@@ -898,7 +860,7 @@ bool NetworkValidateServerName(std::string &server_name)
 	StrTrimInPlace(server_name);
 	if (!server_name.empty()) return true;
 
-	ShowErrorMessage(STR_NETWORK_ERROR_BAD_SERVER_NAME, INVALID_STRING_ID, WL_ERROR);
+	ShowErrorMessage(GetEncodedString(STR_NETWORK_ERROR_BAD_SERVER_NAME), {}, WL_ERROR);
 	return false;
 }
 
@@ -942,8 +904,8 @@ bool NetworkServerStart()
 	Debug(net, 5, "Starting listeners for clients");
 	if (!ServerNetworkGameSocketHandler::Listen(_settings_client.network.server_port)) return false;
 
-	/* Only listen for admins when the password isn't empty. */
-	if (!_settings_client.network.admin_password.empty()) {
+	/* Only listen for admins when the authentication is configured. */
+	if (_settings_client.network.AdminAuthenticationConfigured()) {
 		Debug(net, 5, "Starting listeners for admins");
 		if (!ServerNetworkAdminSocketHandler::Listen(_settings_client.network.server_admin_port)) return false;
 	}
@@ -952,7 +914,6 @@ bool NetworkServerStart()
 	Debug(net, 5, "Starting listeners for incoming server queries");
 	NetworkUDPServerListen();
 
-	_network_company_states = new NetworkCompanyState[MAX_COMPANIES];
 	_network_server = true;
 	_networking = true;
 	_frame_counter = 0;
@@ -962,7 +923,6 @@ bool NetworkServerStart()
 	_network_own_client_id = CLIENT_ID_SERVER;
 
 	_network_clients_connected = 0;
-	_network_company_passworded = 0;
 
 	NetworkInitGameInfo();
 
@@ -975,10 +935,40 @@ bool NetworkServerStart()
 	/* if the server is dedicated ... add some other script */
 	if (_network_dedicated) IConsoleCmdExec("exec scripts/on_dedicated.scr 0");
 
-	/* welcome possibly still connected admins - this can only happen on a dedicated server. */
-	if (_network_dedicated) ServerNetworkAdminSocketHandler::WelcomeAll();
-
 	return true;
+}
+
+/**
+ * Perform tasks when the server is started. This consists of things
+ * like putting the server's client in a valid company and resetting the restart time.
+ */
+void NetworkOnGameStart()
+{
+	if (!_network_server) return;
+
+	/* Update the static game info to set the values from the new game. */
+	NetworkServerUpdateGameInfo();
+
+	ChangeNetworkRestartTime(true);
+
+	if (!_network_dedicated) {
+		Company *c = Company::GetIfValid(GetFirstPlayableCompanyID());
+		NetworkClientInfo *ci = NetworkClientInfo::GetByClientID(CLIENT_ID_SERVER);
+		if (c != nullptr && ci != nullptr) {
+			ci->client_playas = c->index;
+
+			/*
+			 * If the company has not been named yet, the company was just started.
+			 * Otherwise it would have gotten a name already, so announce it as a new company.
+			 */
+			if (c->name_1 == STR_SV_UNNAMED && c->name.empty()) NetworkServerNewCompany(c, ci);
+		}
+
+		ShowClientList();
+	} else {
+		/* welcome possibly still connected admins - this can only happen on a dedicated server. */
+		ServerNetworkAdminSocketHandler::WelcomeAll();
+	}
 }
 
 /* The server is rebooting...
@@ -1120,18 +1110,18 @@ void NetworkGameLoop()
 
 #ifdef DEBUG_DUMP_COMMANDS
 		/* Loading of the debug commands from -ddesync>=1 */
-		static FILE *f = FioFOpenFile("commands.log", "rb", SAVE_DIR);
+		static auto f = FioFOpenFile("commands.log", "rb", SAVE_DIR);
 		static TimerGameEconomy::Date next_date(0);
 		static uint32_t next_date_fract;
 		static CommandPacket *cp = nullptr;
 		static bool check_sync_state = false;
 		static uint32_t sync_state[2];
-		if (f == nullptr && next_date == 0) {
+		if (!f.has_value() && next_date == 0) {
 			Debug(desync, 0, "Cannot open commands.log");
 			next_date = TimerGameEconomy::Date(1);
 		}
 
-		while (f != nullptr && !feof(f)) {
+		while (f.has_value() && !feof(*f)) {
 			if (TimerGameEconomy::date == next_date && TimerGameEconomy::date_fract == next_date_fract) {
 				if (cp != nullptr) {
 					NetworkSendCommand(cp->cmd, cp->err_msg, nullptr, cp->company, cp->data);
@@ -1151,10 +1141,20 @@ void NetworkGameLoop()
 				}
 			}
 
+			/* Skip all entries in the command-log till we caught up with the current game again. */
+			if (TimerGameEconomy::date > next_date || (TimerGameEconomy::date == next_date && TimerGameEconomy::date_fract > next_date_fract)) {
+				Debug(desync, 0, "Skipping to next command at {:08x}:{:02x}", next_date, next_date_fract);
+				if (cp != nullptr) {
+					delete cp;
+					cp = nullptr;
+				}
+				check_sync_state = false;
+			}
+
 			if (cp != nullptr || check_sync_state) break;
 
 			char buff[4096];
-			if (fgets(buff, lengthof(buff), f) == nullptr) break;
+			if (fgets(buff, lengthof(buff), *f) == nullptr) break;
 
 			char *p = buff;
 			/* Ignore the "[date time] " part of the message */
@@ -1201,7 +1201,7 @@ void NetworkGameLoop()
 				cp = new CommandPacket();
 				cp->company = COMPANY_SPECTATOR;
 				cp->cmd = CMD_PAUSE;
-				cp->data = EndianBufferWriter<>::FromValue(CommandTraits<CMD_PAUSE>::Args{ PM_PAUSED_NORMAL, true });
+				cp->data = EndianBufferWriter<>::FromValue(CommandTraits<CMD_PAUSE>::Args{ PauseMode::Normal, true });
 				_ddc_fastforward = false;
 			} else if (strncmp(p, "sync: ", 6) == 0) {
 				uint32_t next_date_raw;
@@ -1210,7 +1210,8 @@ void NetworkGameLoop()
 				assert(ret == 4);
 				check_sync_state = true;
 			} else if (strncmp(p, "msg: ", 5) == 0 || strncmp(p, "client: ", 8) == 0 ||
-						strncmp(p, "load: ", 6) == 0 || strncmp(p, "save: ", 6) == 0) {
+						strncmp(p, "load: ", 6) == 0 || strncmp(p, "save: ", 6) == 0 ||
+						strncmp(p, "warning: ", 9) == 0) {
 				/* A message that is not very important to the log playback, but part of the log. */
 #ifndef DEBUG_FAILED_DUMP_COMMANDS
 			} else if (strncmp(p, "cmdf: ", 6) == 0) {
@@ -1222,10 +1223,9 @@ void NetworkGameLoop()
 				NOT_REACHED();
 			}
 		}
-		if (f != nullptr && feof(f)) {
+		if (f.has_value() && feof(*f)) {
 			Debug(desync, 0, "End of commands.log");
-			fclose(f);
-			f = nullptr;
+			f.reset();
 		}
 #endif /* DEBUG_DUMP_COMMANDS */
 		if (_frame_counter >= _frame_counter_max) {
@@ -1279,11 +1279,6 @@ void NetworkGameLoop()
 	NetworkSend();
 }
 
-static void NetworkGenerateServerId()
-{
-	_settings_client.network.network_id = GenerateUid("OpenTTD Server ID");
-}
-
 /** This tries to launch the network for a given OS */
 void NetworkStartUp()
 {
@@ -1292,9 +1287,6 @@ void NetworkStartUp()
 	/* Network is available */
 	_network_available = NetworkCoreInitialize();
 	_network_dedicated = false;
-
-	/* Generate an server id when there is none yet */
-	if (_settings_client.network.network_id.empty()) NetworkGenerateServerId();
 
 	_network_game_info = {};
 

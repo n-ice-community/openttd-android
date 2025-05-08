@@ -60,16 +60,16 @@ void ResetViewportAfterLoadGame()
 	w->viewport->dest_scrollpos_x = _saved_scrollpos_x;
 	w->viewport->dest_scrollpos_y = _saved_scrollpos_y;
 
-	Viewport *vp = w->viewport;
-	vp->zoom = std::min(_saved_scrollpos_zoom, ZOOM_LVL_MAX);
-	vp->virtual_width = ScaleByZoom(vp->width, vp->zoom);
-	vp->virtual_height = ScaleByZoom(vp->height, vp->zoom);
+	Viewport &vp = *w->viewport;
+	vp.zoom = std::min(_saved_scrollpos_zoom, ZOOM_LVL_MAX);
+	vp.virtual_width = ScaleByZoom(vp.width, vp.zoom);
+	vp.virtual_height = ScaleByZoom(vp.height, vp.zoom);
 
 	/* If zoom_max is ZOOM_LVL_MIN then the setting has not been loaded yet, therefore all levels are allowed. */
 	if (_settings_client.gui.zoom_max != ZOOM_LVL_MIN) {
 		/* Ensure zoom level is allowed */
-		while (vp->zoom < _settings_client.gui.zoom_min) DoZoomInOutWindow(ZOOM_OUT, w);
-		while (vp->zoom > _settings_client.gui.zoom_max) DoZoomInOutWindow(ZOOM_IN, w);
+		while (vp.zoom < _settings_client.gui.zoom_min) DoZoomInOutWindow(ZOOM_OUT, w);
+		while (vp.zoom > _settings_client.gui.zoom_max) DoZoomInOutWindow(ZOOM_IN, w);
 	}
 
 	DoZoomInOutWindow(ZOOM_NONE, w); // update button status
@@ -99,9 +99,9 @@ static const SaveLoad _date_desc[] = {
 	SLEG_CONDVAR("pause_mode",             _pause_mode,             SLE_UINT8,                   SLV_4, SL_MAX_VERSION),
 	SLEG_CONDSSTR("id",                    _game_session_stats.savegame_id, SLE_STR,                     SLV_SAVEGAME_ID, SL_MAX_VERSION),
 	/* For older savegames, we load the current value as the "period"; afterload will set the "fired" and "elapsed". */
-	SLEG_CONDVAR("next_competitor_start",        _new_competitor_timeout.period,          SLE_FILE_U16 | SLE_VAR_U32,  SL_MIN_VERSION, SLV_109),
-	SLEG_CONDVAR("next_competitor_start",        _new_competitor_timeout.period,          SLE_UINT32,                  SLV_109, SLV_AI_START_DATE),
-	SLEG_CONDVAR("competitors_interval",         _new_competitor_timeout.period,          SLE_UINT32,                  SLV_AI_START_DATE, SL_MAX_VERSION),
+	SLEG_CONDVAR("next_competitor_start",        _new_competitor_timeout.period.value,    SLE_FILE_U16 | SLE_VAR_U32,  SL_MIN_VERSION, SLV_109),
+	SLEG_CONDVAR("next_competitor_start",        _new_competitor_timeout.period.value,    SLE_UINT32,                  SLV_109, SLV_AI_START_DATE),
+	SLEG_CONDVAR("competitors_interval",         _new_competitor_timeout.period.value,    SLE_UINT32,                  SLV_AI_START_DATE, SL_MAX_VERSION),
 	SLEG_CONDVAR("competitors_interval_elapsed", _new_competitor_timeout.storage.elapsed, SLE_UINT32,                  SLV_AI_START_DATE, SL_MAX_VERSION),
 	SLEG_CONDVAR("competitors_interval_fired",   _new_competitor_timeout.fired,           SLE_BOOL,                    SLV_AI_START_DATE, SL_MAX_VERSION),
 };

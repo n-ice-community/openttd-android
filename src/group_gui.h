@@ -13,15 +13,16 @@
 #include "company_type.h"
 #include "vehicle_type.h"
 
-void ShowCompanyGroup(CompanyID company, VehicleType veh, GroupID group = INVALID_GROUP, bool need_existing_window = false);
+void ShowCompanyGroup(CompanyID company, VehicleType veh, GroupID group = GroupID::Invalid());
 void ShowCompanyGroupForVehicle(const Vehicle *v);
 void DeleteGroupHighlightOfVehicle(const Vehicle *v);
 
 struct GUIGroupListItem {
 	const Group *group;
-	int8_t indent;              ///< Display indentation level.
+	uint8_t indent; ///< Display indentation level.
+	uint16_t level_mask; ///< Bitmask of indentation continuation.
 
-	constexpr GUIGroupListItem(const Group *group, int8_t indent) : group(group), indent(indent) {}
+	constexpr GUIGroupListItem(const Group *group, int8_t indent) : group(group), indent(indent), level_mask(0) {}
 };
 
 using GUIGroupList = GUIList<GUIGroupListItem>;
