@@ -2004,8 +2004,8 @@ static void HandleMouseDragNoTitlebars()
 				NWidgetScrollbar *scroll = NULL;
 				if (widget && widget->type == WWT_MATRIX) {
 					NWidgetLeaf *list = _focused_window->GetWidget<NWidgetLeaf>(widgetId);
-					if (list && list->scrollbar_index >= 0) {
-						scroll = _focused_window->GetWidget<NWidgetScrollbar>(list->scrollbar_index);
+					if (list && list->GetScrollbarIndex() >= 0) {
+						scroll = _focused_window->GetWidget<NWidgetScrollbar>(list->GetScrollbarIndex());
 					}
 				}
 				if (widget && widget->type == NWID_MATRIX) {
@@ -2378,9 +2378,9 @@ static EventState HandleWindowDragging()
 
 			w->SetDirty();
 			if (GetWindowDraggedOffScreen(w)) {
-				GuiShowTooltips(w, STR_TOOLTIP_CLOSE_WINDOW, TCC_NONE);
+				GuiShowTooltips(w, GetEncodedString(STR_TOOLTIP_CLOSE_WINDOW), TCC_NONE);
 			} else {
-				GuiShowTooltips(w, STR_NULL, TCC_NONE); // Hide tooltip
+				GuiShowTooltips(w, GetEncodedString(STR_NULL), TCC_NONE); // Hide tooltip
 			}
 
 			return ES_HANDLED;
@@ -3094,7 +3094,7 @@ static void MouseLoop(MouseClick click, int mousewheel)
 
 			case MC_LEFT_UP:
 				if (!_left_button_dragged && mouse_down_on_viewport) {
-					HandleViewportMouseUp(vp, x, y);
+					HandleViewportMouseUp(*vp, x, y);
 					MoveAllHiddenWindowsBackToScreen();
 				} else if (_left_button_dragged && mouse_down_on_viewport) {
 					BuildConfirmationWindowProcessViewportClick();
@@ -3117,7 +3117,7 @@ static void MouseLoop(MouseClick click, int mousewheel)
 				break;
 		}
 	}
-	if (vp == nullptr || (w->flags & WF_DISABLE_VP_SCROLL)) {
+	if (vp == nullptr || w->flags.Test(WindowFlag::DisableVpScroll)) {
 		switch (click) {
 			case MC_LEFT_UP:
 				DispatchLeftButtonUpEvent(w, x - w->left, y - w->top);
@@ -3590,7 +3590,7 @@ void CloseConstructionWindows()
 {
 	/* Note: the container remains stable, even when deleting windows. */
 	for (Window *w : Window::Iterate()) {
-		if (w->window_desc->flags & WDF_CONSTRUCTION) {
+		if (w->window_desc.flags.Test(WindowDefaultFlag::Construction)) {
 			w->Close();
 		}
 	}
@@ -3608,7 +3608,7 @@ void CloseToolbarLinkedWindows()
 
 	/* Note: the container remains stable, even when deleting windows. */
 	for (Window *w : Window::Iterate()) {
-		if (w->window_desc->default_pos == WDP_ALIGN_TOOLBAR) {
+		if (w->window_desc.default_pos == WDP_ALIGN_TOOLBAR) {
 			w->Close();
 		}
 	}

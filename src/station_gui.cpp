@@ -1440,12 +1440,6 @@ struct StationViewWindow : public Window {
 					fill.width = 0;
 				}
 				break;
-
-			case WID_SV_SORT_ORDER:
-			case WID_SV_GROUP:
-				*size = maxdim(GetStringBoundingBox(STR_BUTTON_SORT_BY), GetStringBoundingBox(STR_STATION_VIEW_GROUP));
-				size->width += padding.width;
-				break;
 		}
 	}
 

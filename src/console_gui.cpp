@@ -224,13 +224,13 @@ struct IConsoleWindow : Window
 		}
 	}
 
-	void OnQueryTextFinished(char *str) override
+	void OnQueryTextFinished(std::optional<std::string> str) override
 	{
 		_focused_window = this;
 
-		if (str == NULL) return;
+		if (!str) return;
 
-		_iconsole_cmdline.Assign(str);
+		_iconsole_cmdline.Assign(str.value());
 		this->OnKeyPress(0, WKC_RETURN);
 	}
 

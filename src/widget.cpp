@@ -216,7 +216,7 @@ static void ScrollbarClickPositioning(Window *w, NWidgetScrollbar *sb, int x, in
 	}
 
 	if (_scrollbar_finger_drag) {
-		w->mouse_capture_widget = sb->index;
+		w->mouse_capture_widget = sb->GetIndex();
 		_cursorpos_drag_start.x = x;
 		_cursorpos_drag_start.y = y;
 		_scrollbar_size = std::max(1, (int) sb->current_y * sb->GetCount() / sb->GetCapacity());
@@ -789,7 +789,7 @@ void Window::DrawWidgets() const
 	}
 
 	/* Dim the window if it's about to close */
-	if ((this->flags & WF_DRAGGING) && !_settings_client.gui.windows_titlebars && GetWindowDraggedOffScreen(this)) {
+	if (this->flags.Test(WindowFlag::Dragging) && !_settings_client.gui.windows_titlebars && GetWindowDraggedOffScreen(this)) {
 		GfxFillRect(2, 2, this->width - 3, this->height - 3, PALETTE_TO_TRANSPARENT, FILLRECT_RECOLOUR);
 	}
 }
@@ -2225,7 +2225,7 @@ void NWidgetMatrix::SetCount(int count)
  * Assign a scrollbar to this matrix.
  * @param sb The scrollbar to assign to us.
  */
-void NWidgetMatrix::SetScrollbar(Scrollbar *sb, int index)
+void NWidgetMatrix::SetScrollbar(Scrollbar *sb, WidgetID index)
 {
 	this->sb = sb;
 	this->sb_index = index;
@@ -2236,10 +2236,11 @@ Scrollbar *NWidgetMatrix::GetScrollbar()
 	return this->sb;
 }
 
-int NWidgetMatrix::GetScrollbarWidget()
+WidgetID NWidgetMatrix::GetScrollbarWidget()
 {
 	return this->sb_index;
 }
+
 
 /**
  * Get current element.
@@ -3170,9 +3171,6 @@ void NWidgetLeaf::SetupSmallestSize(Window *w)
 				size = maxdim(size, NWidgetLeaf::resizebox_dimension);
 				break;
 			}
-				size = maxdim(size, NWidgetLeaf::resizebox_dimension);
-				break;
-			}
 			case WWT_EDITBOX: {
 				Dimension sprite_size = GetScaledSpriteSize(_current_text_dir == TD_RTL ? SPR_IMG_DELETE_RIGHT : SPR_IMG_DELETE_LEFT);
 				size.width = std::max(size.width, ScaleGUITrad(30) + sprite_size.width);
@@ -3215,51 +3213,48 @@ void NWidgetLeaf::SetupSmallestSize(Window *w)
 				size = maxdim(size, NWidgetLeaf::closebox_dimension);
 				break;
 			}
-			size = maxdim(size, NWidgetLeaf::closebox_dimension);
-			break;
-		}
-		case WWT_TEXTBTN:
-		case WWT_PUSHTXTBTN:
-		case WWT_TEXTBTN_2: {
-			padding = {WidgetDimensions::scaled.framerect.Horizontal(), WidgetDimensions::scaled.framerect.Vertical()};
-			Dimension d2 = GetStringBoundingBox(GetStringForWidget(w, this), this->text_size);
-			d2.width += padding.width;
-			d2.height += padding.height;
-			size = maxdim(size, d2);
-			break;
-		}
-		case WWT_LABEL:
-		case WWT_TEXT: {
-			size = maxdim(size, GetStringBoundingBox(GetStringForWidget(w, this), this->text_size));
-			break;
-		}
-		case WWT_CAPTION: {
-			padding = {WidgetDimensions::scaled.captiontext.Horizontal(), WidgetDimensions::scaled.captiontext.Vertical()};
-			Dimension d2 = GetStringBoundingBox(GetStringForWidget(w, this), this->text_size);
-			d2.width += padding.width;
-			d2.height += padding.height;
-			size = maxdim(size, d2);
-			break;
-		}
-		case WWT_DROPDOWN:
-		case NWID_BUTTON_DROPDOWN:
-		case NWID_PUSHBUTTON_DROPDOWN: {
-			if (NWidgetLeaf::dropdown_dimension.width == 0) {
-				NWidgetLeaf::dropdown_dimension = GetScaledSpriteSize(SPR_ARROW_DOWN);
-				NWidgetLeaf::dropdown_dimension.width += WidgetDimensions::scaled.vscrollbar.Horizontal();
-				NWidgetLeaf::dropdown_dimension.height += WidgetDimensions::scaled.vscrollbar.Vertical();
+			case WWT_TEXTBTN:
+			case WWT_PUSHTXTBTN:
+			case WWT_TEXTBTN_2: {
+				padding = {WidgetDimensions::scaled.framerect.Horizontal(), WidgetDimensions::scaled.framerect.Vertical()};
+				Dimension d2 = GetStringBoundingBox(GetStringForWidget(w, this), this->text_size);
+				d2.width += padding.width;
+				d2.height += padding.height;
+				size = maxdim(size, d2);
+				break;
 			}
-			padding = {WidgetDimensions::scaled.dropdowntext.Horizontal() + NWidgetLeaf::dropdown_dimension.width + WidgetDimensions::scaled.fullbevel.Horizontal(), WidgetDimensions::scaled.dropdowntext.Vertical()};
-			Dimension d2 = GetStringBoundingBox(GetStringForWidget(w, this), this->text_size);
-			d2.width += padding.width;
-			d2.height = std::max(d2.height + padding.height, NWidgetLeaf::dropdown_dimension.height);
-			size = maxdim(size, d2);
-			break;
+			case WWT_LABEL:
+			case WWT_TEXT: {
+				size = maxdim(size, GetStringBoundingBox(GetStringForWidget(w, this), this->text_size));
+				break;
+			}
+			case WWT_CAPTION: {
+				padding = {WidgetDimensions::scaled.captiontext.Horizontal(), WidgetDimensions::scaled.captiontext.Vertical()};
+				Dimension d2 = GetStringBoundingBox(GetStringForWidget(w, this), this->text_size);
+				d2.width += padding.width;
+				d2.height += padding.height;
+				size = maxdim(size, d2);
+				break;
+			}
+			case WWT_DROPDOWN:
+			case NWID_BUTTON_DROPDOWN:
+			case NWID_PUSHBUTTON_DROPDOWN: {
+				if (NWidgetLeaf::dropdown_dimension.width == 0) {
+					NWidgetLeaf::dropdown_dimension = GetScaledSpriteSize(SPR_ARROW_DOWN);
+					NWidgetLeaf::dropdown_dimension.width += WidgetDimensions::scaled.vscrollbar.Horizontal();
+					NWidgetLeaf::dropdown_dimension.height += WidgetDimensions::scaled.vscrollbar.Vertical();
+				}
+				padding = {WidgetDimensions::scaled.dropdowntext.Horizontal() + NWidgetLeaf::dropdown_dimension.width + WidgetDimensions::scaled.fullbevel.Horizontal(), WidgetDimensions::scaled.dropdowntext.Vertical()};
+				Dimension d2 = GetStringBoundingBox(GetStringForWidget(w, this), this->text_size);
+				d2.width += padding.width;
+				d2.height = std::max(d2.height + padding.height, NWidgetLeaf::dropdown_dimension.height);
+				size = maxdim(size, d2);
+				break;
+			}
+			default:
+				NOT_REACHED();
 		}
-		default:
-			NOT_REACHED();
 	}
-}
 
 	if (this->index >= 0) w->UpdateWidgetSize(this->index, size, padding, fill, resize);
 
@@ -3361,7 +3356,6 @@ void NWidgetLeaf::Draw(const Window *w)
 		case WWT_STICKYBOX:
 			DrawStickyBox(r, this->colour, w->flags.Test(WindowFlag::Sticky));
 			break;
-		}
 
 		case WWT_DEFSIZEBOX:
 			DrawImageButtons(r, WWT_DEFSIZEBOX, this->colour, clicked, SPR_WINDOW_DEFSIZE, SA_CENTER);
@@ -3494,14 +3488,14 @@ void ApplyNWidgetPartAttribute(const NWidgetPart &nwid, NWidgetBase *dest)
 			dest->SetPadding(nwid.u.padding);
 			break;
 
-			case WPT_SIZINGTYPE: {
-				NWidgetResizeBase *nwrb = dynamic_cast<NWidgetResizeBase *>(dest.get());
-				if (nwrb == nullptr)  [[unlikely]] throw std::runtime_error("WPT_SIZINGTYPE requires NWidgetResizeBase");
-				assert(nwid_begin->u.sizing_type < NWST_END);
-				nwrb->sizing_type = nwid_begin->u.sizing_type;
-				nwrb->SetMinimalSize(0, 0);
-				break;
-			}
+		case WPT_SIZINGTYPE: {
+			NWidgetResizeBase *nwrb = dynamic_cast<NWidgetResizeBase *>(dest);
+			if (nwrb == nullptr)  [[unlikely]] throw std::runtime_error("WPT_SIZINGTYPE requires NWidgetResizeBase");
+			assert(nwid.u.sizing_type < NWST_END);
+			nwrb->sizing_type = nwid.u.sizing_type;
+			nwrb->SetMinimalSize(0, 0);
+			break;
+		}
 
 		case WPT_PIPSPACE: {
 			NWidgetPIPContainer *nwc = dynamic_cast<NWidgetPIPContainer *>(dest);

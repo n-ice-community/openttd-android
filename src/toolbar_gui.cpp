@@ -179,7 +179,7 @@ static void PopupMainCompanyToolbMenu(Window *w, WidgetID widget, CompanyMask gr
 				list.push_back(MakeDropDownListStringItem(STR_NETWORK_COMPANY_LIST_SPECTATE, CTMN_SPECTATE));
 			}
 
-			list.emplace_back(new DropDownListStringItem(STR_NETWORK_CHAT_ALL_CAPTION, CTMN_SPEAK_ALL, false));
+			list.emplace_back(MakeDropDownListStringItem(STR_NETWORK_CHAT_ALL_CAPTION, CTMN_SPEAK_ALL));
 			break;
 
 		case WID_TN_STORY:
@@ -929,8 +929,8 @@ static CallBackFunction ToolbarBuildRailClick(Window *w)
 			elem->result += MENU_IDX_TRAM;
 			list.emplace_back(elem);
 		}
-		list.emplace_back(new DropDownListIconItem(SPR_IMG_BUILDWATER, PAL_NONE, STR_WATERWAYS_MENU_WATERWAYS_CONSTRUCTION, MENU_IDX_WATER, false));
-		list.emplace_back(new DropDownListIconItem(SPR_IMG_BUILDAIR, PAL_NONE, STR_AIRCRAFT_MENU_AIRPORT_CONSTRUCTION, MENU_IDX_AIR, false));
+		list.emplace_back(MakeDropDownListIconItem(SPR_IMG_BUILDWATER, PAL_NONE, STR_WATERWAYS_MENU_WATERWAYS_CONSTRUCTION, MENU_IDX_WATER));
+		list.emplace_back(MakeDropDownListIconItem(SPR_IMG_BUILDAIR, PAL_NONE, STR_AIRCRAFT_MENU_AIRPORT_CONSTRUCTION, MENU_IDX_AIR));
 	}
 	ShowDropDownList(w, std::move(list), _last_built_railtype, WID_TN_RAILS, false);
 	if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
@@ -1548,11 +1548,11 @@ public:
 		--nbuttons;
 
 		if (type == NWID_HORIZONTAL) {
-			w->window_desc->pref_width = nbuttons * this->smallest_x;
+			w->window_desc.pref_width = nbuttons * this->smallest_x;
 		} else {
 			uint given_width, arrangable_count, button_count, spacer_count;
 			const WidgetID *arrangement = GetButtonArrangement(given_width, arrangable_count, button_count, spacer_count);
-			w->window_desc->pref_height = arrangable_count * this->smallest_y;
+			w->window_desc.pref_height = arrangable_count * this->smallest_y;
 		}
 
 		/* Allow space for all buttons, and include spacers at quarter the width of buttons. */
@@ -2966,13 +2966,13 @@ static std::unique_ptr<NWidgetBase> MakeMainToolbar()
 		hor->Add(std::move(leaf));
 	}
 
-	auto spacer= std::make_unique<NWidgetSpacer>(0, 0);
+	auto spacer = std::make_unique<NWidgetSpacer>(0, 0);
 	spacer->SetMinimalSize(20, 20);
-	auto ctrl_btn = std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, STR_TABLET_CTRL, STR_TABLET_CTRL_TOOLTIP);
+	auto ctrl_btn = std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, WidgetData{ .string = STR_TABLET_CTRL }, STR_TABLET_CTRL_TOOLTIP);
 	ctrl_btn->SetMinimalSize(20, 20);
-	auto shift_btn = std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, STR_TABLET_SHIFT, STR_TABLET_SHIFT_TOOLTIP);
+	auto shift_btn = std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, WidgetData{ .string = STR_TABLET_SHIFT }, STR_TABLET_SHIFT_TOOLTIP);
 	shift_btn->SetMinimalSize(20, 20);
-	auto close_btn = std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, STR_TABLET_CLOSE, STR_TABLET_CLOSE_TOOLTIP);
+	auto close_btn = std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, WidgetData{ .string = STR_TABLET_CLOSE }, STR_TABLET_CLOSE_TOOLTIP);
 	close_btn->SetMinimalSize(20, 20);
 
 	hor->Add(std::move(spacer));
@@ -2998,15 +2998,15 @@ static std::unique_ptr<NWidgetBase> MakeVerticalLeftToolbar()
 {
 	auto tb = std::make_unique<NWidgetVerticalToolbarContainer>(NWidgetVerticalToolbarContainer::Side::LEFT);
 	for (uint i = 0; i <= WID_TN_SWITCH_BAR; i++) {
-		auto leaf = std::make_unique<NWidgetLeaf>(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, toolbar_button_sprites[i], STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i);
+		auto leaf = std::make_unique<NWidgetLeaf>(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, WidgetData{.sprite = toolbar_button_sprites[i]}, STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i);
 		leaf->SetMinimalSize(20, 20);
 		tb->Add(std::move(leaf));
 	}
 
 	std::array<std::unique_ptr<NWidgetLeaf>, 3> rem = {
-		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, STR_TABLET_CTRL, STR_TABLET_CTRL_TOOLTIP),
-		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, STR_TABLET_SHIFT, STR_TABLET_SHIFT_TOOLTIP),
-		std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, STR_TABLET_CLOSE, STR_TABLET_CLOSE_TOOLTIP)
+		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, WidgetData{ .string = STR_TABLET_CTRL }, STR_TABLET_CTRL_TOOLTIP),
+		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, WidgetData{ .string = STR_TABLET_SHIFT }, STR_TABLET_SHIFT_TOOLTIP),
+		std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, WidgetData{ .string = STR_TABLET_CLOSE }, STR_TABLET_CLOSE_TOOLTIP)
 	};
 
 	for (auto&& leaf: rem) {
@@ -3021,11 +3021,11 @@ static const NWidgetPart _nested_toolbar_vertical_left_widgets[] = {
 	NWidgetFunction(MakeVerticalLeftToolbar),
 };
 
-static WindowDesc _toolb_vertical_left_desc(__FILE__, __LINE__,
+static WindowDesc _toolb_vertical_left_desc(
 	WDP_MANUAL, nullptr, 0, 0,
 	WC_MAIN_TOOLBAR, WC_NONE,
-	WDF_NO_FOCUS | WDF_NO_CLOSE,
-	std::begin(_nested_toolbar_vertical_left_widgets), std::end(_nested_toolbar_vertical_left_widgets),
+	{WindowDefaultFlag::NoFocus, WindowDefaultFlag::NoClose},
+	_nested_toolbar_vertical_left_widgets,
 	&MainToolbarWindow::hotkeys
 );
 
@@ -3033,15 +3033,15 @@ static std::unique_ptr<NWidgetBase> MakeVerticalRightToolbar()
 {
 	auto tb = std::make_unique<NWidgetVerticalToolbarContainer>(NWidgetVerticalToolbarContainer::Side::RIGHT);
 	for (uint i = 0; i <= WID_TN_SWITCH_BAR; i++) {
-		auto leaf = std::make_unique<NWidgetLeaf>(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, toolbar_button_sprites[i], STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i);
+		auto leaf = std::make_unique<NWidgetLeaf>(i == WID_TN_SAVE ? WWT_IMGBTN_2 : WWT_IMGBTN, COLOUR_GREY, i, WidgetData{.sprite = toolbar_button_sprites[i]}, STR_TOOLBAR_TOOLTIP_PAUSE_GAME + i);
 		leaf->SetMinimalSize(20, 20);
 		tb->Add(std::move(leaf));
 	}
 
 	std::array<std::unique_ptr<NWidgetLeaf>, 3> rem = {
-		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, STR_TABLET_CTRL, STR_TABLET_CTRL_TOOLTIP),
-		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, STR_TABLET_SHIFT, STR_TABLET_SHIFT_TOOLTIP),
-		std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, STR_TABLET_CLOSE, STR_TABLET_CLOSE_TOOLTIP)
+		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_CTRL, WidgetData{.string = STR_TABLET_CTRL}, STR_TABLET_CTRL_TOOLTIP),
+		std::make_unique<NWidgetLeaf>(WWT_TEXTBTN, COLOUR_GREY, WID_TN_SHIFT, WidgetData{.string = STR_TABLET_SHIFT}, STR_TABLET_SHIFT_TOOLTIP),
+		std::make_unique<NWidgetLeaf>(WWT_PUSHTXTBTN, COLOUR_GREY, WID_TN_DELETE, WidgetData{.string = STR_TABLET_CLOSE}, STR_TABLET_CLOSE_TOOLTIP)
 	};
 
 	for (auto&& leaf: rem) {
@@ -3056,11 +3056,11 @@ static const NWidgetPart _nested_toolbar_vertical_right_widgets[] = {
 	NWidgetFunction(MakeVerticalRightToolbar),
 };
 
-static WindowDesc _toolb_vertical_right_desc(__FILE__, __LINE__,
+static WindowDesc _toolb_vertical_right_desc(
 	WDP_MANUAL, nullptr, 0, 0,
 	WC_MAIN_TOOLBAR_RIGHT, WC_NONE,
-	WDF_NO_FOCUS | WDF_NO_CLOSE,
-	std::begin(_nested_toolbar_vertical_right_widgets), std::end(_nested_toolbar_vertical_right_widgets),
+	{WindowDefaultFlag::NoFocus, WindowDefaultFlag::NoClose},
+	_nested_toolbar_vertical_right_widgets,
 	&MainToolbarWindow::hotkeys
 );
 

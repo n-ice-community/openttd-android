@@ -100,8 +100,7 @@ struct StatusBarWindow : Window {
 				d = maxdim(d, GetStringBoundingBox(STR_STATUSBAR_PAUSED));
 
 				if (Company::IsValidID(_local_company)) {
-					SetDParam(0, _local_company);
-					d = maxdim(d, GetStringBoundingBox(STR_STATUSBAR_COMPANY_NAME));
+					d = maxdim(d, GetStringBoundingBox(GetString(STR_STATUSBAR_COMPANY_NAME, _local_company)));
 				}
 				break;
 

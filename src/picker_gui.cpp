@@ -217,7 +217,7 @@ void PickerWindow::ConstructWindow()
 		this->GetWidget<NWidgetCore>(WID_PW_TYPE_ITEM)->SetToolTip(this->callbacks.GetTypeTooltip());
 
 		auto *matrix = this->GetWidget<NWidgetMatrix>(WID_PW_TYPE_MATRIX);
-		matrix->SetScrollbar(this->GetScrollbar(WID_PW_TYPE_SCROLL));
+		matrix->SetScrollbar(this->GetScrollbar(WID_PW_TYPE_SCROLL), WID_PW_TYPE_SCROLL);
 
 		this->querystrings[WID_PW_TYPE_FILTER] = &this->type_editbox;
 	} else {

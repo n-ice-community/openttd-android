@@ -139,7 +139,7 @@ void SetFont(FontSize fontsize, const std::string &font, uint size)
 void ResizeFont(FontSize fontsize, uint size)
 {
 	FontCacheSubSetting *setting = GetFontCacheSubSetting(fontsize);
-	SetFont(fontsize, setting->font, size, setting->aa);
+	SetFont(fontsize, setting->font, size);
 }
 
 #ifdef WITH_FREETYPE

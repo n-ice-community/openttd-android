@@ -70,7 +70,6 @@ static constexpr NWidgetPart _nested_textfile_widgets[] = {
 		EndContainer(),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_TEXTBTN, COLOUR_MAUVE, WID_TF_WRAPTEXT), SetDataTip(STR_TEXTFILE_WRAP_TEXT, STR_TEXTFILE_WRAP_TEXT_TOOLTIP),
 		NWidget(NWID_HSCROLLBAR, COLOUR_MAUVE, WID_TF_HSCROLLBAR),
 		NWidget(WWT_RESIZEBOX, COLOUR_MAUVE),
 	EndContainer(),

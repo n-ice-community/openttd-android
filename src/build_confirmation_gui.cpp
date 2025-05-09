@@ -36,10 +36,10 @@ static const NWidgetPart _nested_build_info_widgets[] = {
 };
 
 static WindowDesc _build_info_desc(
-  WDP_MANUAL, nullptr, 0, 0, // Coordinates and sizes are not used,
+	WDP_MANUAL, "", 0, 0, // Coordinates and sizes are not used,
 	WC_TOOLTIPS, WC_NONE,
-	WDF_NO_FOCUS,
-	std::begin(_nested_build_info_widgets), std::end(_nested_build_info_widgets)
+	WindowDefaultFlag::NoFocus,
+	_nested_build_info_widgets
 );
 
 /** Window for displaying accepted goods for a station. */
@@ -60,16 +60,16 @@ struct BuildInfoWindow : public Window
 		new BuildInfoWindow(station, sct);
 	}
 
-	BuildInfoWindow(bool station, StationCoverageType sct) : Window(&_build_info_desc)
+	BuildInfoWindow(bool station, StationCoverageType sct) : Window(_build_info_desc)
 	{
 		this->station = station;
 		this->sct = sct;
 		this->InitNested();
 
-		CLRBITS(this->flags, WF_WHITE_BORDER);
+		this->flags.Reset(WindowFlag::WhiteBorder);
 	}
 
-	Point OnInitialPosition(int16_t sm_width, int16_t sm_height, int window_number) override
+	Point OnInitialPosition(int16_t sm_width, [[maybe_unused]] int16_t sm_height, [[maybe_unused]] int window_number) override
 	{
 		Point pt;
 		pt.y = GetMainViewTop();
@@ -77,36 +77,34 @@ struct BuildInfoWindow : public Window
 		return pt;
 	}
 
-	void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize) override
+	void UpdateWidgetSize([[maybe_unused]] int widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize) override
 	{
-		size->width  = GetStringBoundingBox(STR_STATION_BUILD_COVERAGE_AREA_TITLE).width * 2.5;
-		size->height = GetStringHeight(STR_STATION_BUILD_COVERAGE_AREA_TITLE, size->width) * (this->station ? 3 : 1);
+		size.width  = GetStringBoundingBox(STR_STATION_BUILD_COVERAGE_AREA_TITLE).width * 2.5;
+		size.height = GetStringHeight(STR_STATION_BUILD_COVERAGE_AREA_TITLE, size.width) * (this->station ? 3 : 1);
 
 		/* Increase slightly to have some space around the box. */
-		size->width  += 2 + WidgetDimensions::scaled.framerect.Horizontal();
-		size->height += 6 + WidgetDimensions::scaled.framerect.Vertical();
+		size.width  += 2 + WidgetDimensions::scaled.framerect.Horizontal();
+		size.height += 6 + WidgetDimensions::scaled.framerect.Vertical();
 	}
 
-	void DrawWidget(const Rect &r, int widget) const override
+	void DrawWidget(const Rect &r, [[maybe_unused]] int widget) const override
 	{
 		/* There is only one widget. */
-		DrawFrameRect(r.left, r.top, r.right, r.bottom, COLOUR_GREY, FR_NONE);
-    Rect tr = r.Shrink(WidgetDimensions::scaled.frametext);
+		DrawFrameRect(r.left, r.top, r.right, r.bottom, COLOUR_GREY, FrameFlags{});
+		Rect tr = r.Shrink(WidgetDimensions::scaled.frametext);
 
 		Money cost = BuildInfoWindow::cost;
-		StringID msg = STR_MESSAGE_ESTIMATED_COST;
-		SetDParam(0, cost);
 		if (cost < 0) {
-			msg = STR_MESSAGE_ESTIMATED_INCOME;
-			SetDParam(0, -cost);
+			tr.top = DrawStringMultiLine(tr, GetString(STR_MESSAGE_ESTIMATED_INCOME, -cost));
+		} else {
+			tr.top = DrawStringMultiLine(tr, GetString(STR_MESSAGE_ESTIMATED_COST, cost));
 		}
-		tr.top = DrawStringMultiLine(tr, msg);
 
 		if (!this->station) return;
 
-		tr.top = DrawStationCoverageAreaText(tr.left, tr.right, tr.top, sct, _thd.outersize.x / TILE_SIZE / 2, false);
+		tr.top = DrawStationCoverageAreaText(tr, sct, _thd.outersize.x / TILE_SIZE / 2, false);
 		if (top - r.top <= GetStringHeight(STR_STATION_BUILD_COVERAGE_AREA_TITLE, r.right - r.left) * 1.5) {
-			DrawStationCoverageAreaText(tr.left, tr.right, tr.top, sct, _thd.outersize.x / TILE_SIZE / 2, true);
+			DrawStationCoverageAreaText(tr, sct, _thd.outersize.x / TILE_SIZE / 2, true);
 		}
 	}
 };
@@ -122,7 +120,7 @@ struct BuildConfirmationWindow : Window {
 	Point selstart;      ///< The selection start on the viewport.
 	Point selend;        ///< The selection end on the viewport.
 
-	BuildConfirmationWindow(WindowDesc *desc) : Window(desc)
+	BuildConfirmationWindow(WindowDesc &desc) : Window(desc)
 	{
 		// Save tile selection points, they will be reset by subsequent code, and we must keep them
 		selstart = _thd.selstart;
@@ -137,8 +135,8 @@ struct BuildConfirmationWindow : Window {
 		pt.x = w->viewport->scrollpos_x + ScaleByZoom(_cursor.pos.x - nvp->current_x / 2, w->viewport->zoom);
 		pt.y = w->viewport->scrollpos_y + ScaleByZoom(_cursor.pos.y - nvp->current_y / 4, w->viewport->zoom);
 
-		nvp->InitializeViewport(this, 0, w->viewport->zoom);
-		nvp->disp_flags |= ND_SHADE_DIMMED;
+		nvp->InitializeViewport(this, TileIndex{}, w->viewport->zoom);
+		nvp->disp_flags | NWidgetDisplayFlag::ShadeDimmed;
 
 		this->viewport->scrollpos_x = pt.x;
 		this->viewport->scrollpos_y = pt.y;
@@ -185,12 +183,12 @@ struct BuildConfirmationWindow : Window {
 		HideBuildConfirmationWindow(); // this == NULL after this call
 	}
 
-	void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize) override
+	void UpdateWidgetSize(int widget, Dimension &size, const Dimension &padding, Dimension &fill, Dimension &resize) override
 	{
 		switch (widget) {
 			case WID_BC_OK:
-				size->width = GetMinButtonSize() * 2;
-				size->height = GetMinButtonSize() * 3;
+				size.width = GetMinButtonSize() * 2;
+				size.height = GetMinButtonSize() * 3;
 				break;
 		}
 	}
@@ -205,13 +203,13 @@ struct BuildConfirmationWindow : Window {
 
 	void DrawButtonFrame(int x, int y, int w, int h, int str)
 	{
-		DrawFrameRect(x, y, x + w, y + h, COLOUR_GREY, FR_BORDERONLY);
+		DrawFrameRect(x, y, x + w, y + h, COLOUR_GREY, FrameFlag::BorderOnly);
 		Dimension d = GetStringBoundingBox(str);
 		DrawFrameRect(x + w / 2 - d.width / 2 - 1,
 						y + h / 2 - d.height / 2 - 2,
 						x + w / 2 + d.width / 2 + 1,
 						y + h / 2 - d.height / 2 + d.height,
-						COLOUR_GREY, FR_NONE);
+						COLOUR_GREY, FrameFlags{});
 		DrawString(x, x + w, y + h / 2 - d.height / 2 - 2, str, TC_FROMSTRING, SA_HOR_CENTER);
 	}
 };
@@ -228,8 +226,8 @@ static const NWidgetPart _nested_build_confirmation_widgets[] = {
 static WindowDesc _build_confirmation_desc(
 	WDP_MANUAL, "build_confirmation", 0, 0,
 	WC_BUILD_CONFIRMATION, WC_NONE,
-	0,
-	std::begin(_nested_build_confirmation_widgets), std::end(_nested_build_confirmation_widgets)
+	WindowDefaultFlags{},
+	_nested_build_confirmation_widgets
 );
 
 /**
@@ -246,7 +244,7 @@ void ShowBuildConfirmationWindow()
 		return;
 	}
 
-	BuildConfirmationWindow *w = new BuildConfirmationWindow(&_build_confirmation_desc);
+	BuildConfirmationWindow *w = new BuildConfirmationWindow(_build_confirmation_desc);
 
 	int old_left = w->left;
 	int old_top = w->top;

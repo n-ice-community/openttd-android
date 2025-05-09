@@ -531,7 +531,7 @@ struct GameOptionsWindow : Window {
 			case WID_GO_SMALL_FONT_VALUE:
 			case WID_GO_LARGE_FONT_VALUE:
 			case WID_GO_MONO_FONT_VALUE: {
-				return this->font_sizes[static_cast<FontSize>(Clamp(widget - WID_GO_NORMAL_FONT_VALUE, FS_BEGIN, FS_END))];
+				return GetString(STR_JUST_INT, this->font_sizes[static_cast<FontSize>(Clamp(widget - WID_GO_NORMAL_FONT_VALUE, FS_BEGIN, FS_END))]);
 			}
 			case WID_GO_LANG_DROPDOWN:         return _current_language->own_name;
 			case WID_GO_BASE_GRF_DROPDOWN:     return GetListLabel(BaseGraphics::GetUsedSet());
@@ -581,7 +581,7 @@ struct GameOptionsWindow : Window {
 				break;
 
 			case WID_GO_GUI_BUTTON_RATIO:
-				DrawSliderWidget(r, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE, this->button_ratio, _scale_labels);
+				DrawSliderWidget(r, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE, SCALE_NMARKS, this->button_ratio, ScaleMarkFunc);
 				break;
 
 			case WID_GO_VIDEO_DRIVER_INFO:
@@ -832,8 +832,7 @@ struct GameOptionsWindow : Window {
 				int index = Clamp(widget - WID_GO_NORMAL_FONT_VALUE, FS_BEGIN, FS_END);
 				this->query_widget = widget;
 				FontSize fs = static_cast<FontSize>(index);
-				SetDParam(0, this->font_sizes[fs]);
-				ShowQueryString(STR_JUST_INT, STR_GAME_OPTIONS_FONT_NORMAL + index, 3, this, CS_NUMERAL, QSF_NONE);
+				ShowQueryString(GetString(STR_JUST_INT, this->font_sizes[fs]), STR_GAME_OPTIONS_FONT_NORMAL + index, 3, this, CS_NUMERAL, QueryStringFlags{});
 				break;
 			}
 
@@ -863,8 +862,7 @@ struct GameOptionsWindow : Window {
 				break;
 
 			case WID_GO_GUI_BUTTON_RATIO:
-				if (ClickSliderWidget(this->GetWidget<NWidgetBase>(widget)->GetCurrentRect(), pt, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE, this->button_ratio)) {
-					if (!_ctrl_pressed) this->button_ratio = ((this->button_ratio + 12) / 25) * 25;
+				if (ClickSliderWidget(this->GetWidget<NWidgetBase>(widget)->GetCurrentRect(), pt, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE, _ctrl_pressed ? 0 : SCALE_NMARKS, this->button_ratio)) {
 					this->SetWidgetDirty(widget);
 				}
 
@@ -965,12 +963,12 @@ struct GameOptionsWindow : Window {
 		}
 	}
 
-	void OnQueryTextFinished(char *str) override
+	void OnQueryTextFinished(std::optional<std::string> str) override
 	{
-		if (str == nullptr) return;
+		if (!str) return;
 
 		int index = Clamp(this->query_widget -  WID_GO_NORMAL_FONT_VALUE, FS_BEGIN, FS_END);
-		this->font_sizes[index] = Clamp(atoi(str), 0, 200);
+		this->font_sizes[index] = Clamp(atoi(str->c_str()), 0, 200);
 	}
 
 
@@ -1189,28 +1187,28 @@ static constexpr NWidgetPart _nested_game_options_widgets[] = {
 						EndContainer(),
 #endif /* HAS_TRUETYPE_FONT */
 				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
-					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_NORMAL), SetMinimalSize(0, 12), SetFill(1, 0), SetDataTip(STR_GAME_OPTIONS_FONT_NORMAL, STR_NULL),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_L), SetDataTip(AWV_DECREASE, STR_NULL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_VALUE), SetDataTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_R), SetDataTip(AWV_INCREASE, STR_NULL),
+					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_NORMAL), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_NORMAL, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_L), SetStringTip(AWV_DECREASE, STR_NULL),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_R), SetStringTip(AWV_INCREASE, STR_NULL),
 				EndContainer(),
 				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
-					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_SMALL), SetMinimalSize(0, 12), SetFill(1, 0), SetDataTip(STR_GAME_OPTIONS_FONT_SMALL, STR_NULL),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_SMALL_FONT_L), SetDataTip(AWV_DECREASE, STR_NULL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_SMALL_FONT_VALUE), SetDataTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_SMALL_FONT_R), SetDataTip(AWV_INCREASE, STR_NULL),
+					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_SMALL), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_SMALL, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_SMALL_FONT_L), SetStringTip(AWV_DECREASE, STR_NULL),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_SMALL_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_SMALL_FONT_R), SetStringTip(AWV_INCREASE, STR_NULL),
 				EndContainer(),
 				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
-					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_LARGE), SetMinimalSize(0, 12), SetFill(1, 0), SetDataTip(STR_GAME_OPTIONS_FONT_LARGE, STR_NULL),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_LARGE_FONT_L), SetDataTip(AWV_DECREASE, STR_NULL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_LARGE_FONT_VALUE), SetDataTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_LARGE_FONT_R), SetDataTip(AWV_INCREASE, STR_NULL),
+					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_LARGE), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_LARGE, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_LARGE_FONT_L), SetStringTip(AWV_DECREASE, STR_NULL),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_LARGE_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_LARGE_FONT_R), SetStringTip(AWV_INCREASE, STR_NULL),
 				EndContainer(),
 				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
-					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_MONO), SetMinimalSize(0, 12), SetFill(1, 0), SetDataTip(STR_GAME_OPTIONS_FONT_MONO, STR_NULL),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_MONO_FONT_L), SetDataTip(AWV_DECREASE, STR_NULL),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_MONO_FONT_VALUE), SetDataTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
-					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_MONO_FONT_R), SetDataTip(AWV_INCREASE, STR_NULL),
+					NWidget(WWT_TEXT, COLOUR_GREY), SetTextStyle(TC_BLACK, FS_MONO), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_MONO, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_MONO_FONT_L), SetStringTip(AWV_DECREASE, STR_NULL),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_MONO_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_MONO_FONT_R), SetStringTip(AWV_INCREASE, STR_NULL),
 				EndContainer(),
 			EndContainer(),
 

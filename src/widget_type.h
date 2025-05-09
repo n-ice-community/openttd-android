@@ -621,9 +621,9 @@ public:
 
 	void SetClicked(int clicked);
 	void SetCount(int count);
-	void SetScrollbar(Scrollbar *sb, int index);
+	void SetScrollbar(Scrollbar *sb, WidgetID index);
+	WidgetID GetScrollbarWidget();
 	Scrollbar *GetScrollbar();
-	int GetScrollbarWidget();
 	int GetCurrentElement() const;
 
 	void SetupSmallestSize(Window *w) override;
@@ -634,12 +634,12 @@ public:
 	void Draw(const Window *w) override;
 protected:
 	const WidgetID index = -1; ///< If non-negative, index in the #Window::widget_lookup.
+	WidgetID sb_index = -1; ///< The scrollbar widget index.
 	Colours colour{}; ///< Colour of this widget.
 	int clicked = -1; ///< The currently clicked element.
 	int count = -1; ///< Amount of valid elements.
 	int current_element = 0; ///< The element currently being processed.
 	Scrollbar *sb = nullptr;  ///< The scrollbar we're associated with.
-	int sb_index = 0;   ///< The scrollbar widget index.
 private:
 	int widget_w = 0; ///< The width of the child widget including inter spacing.
 	int widget_h = 0; ///< The height of the child widget including inter spacing.

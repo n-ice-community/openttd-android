@@ -126,7 +126,7 @@ static constexpr NWidgetPart _nested_load_dialog_widgets[] = {
 				EndContainer(),
 			EndContainer(),
 			NWidget(NWID_HORIZONTAL),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_SL_LOAD_NETWORK_BUTTON), SetDataTip(STR_SAVELOAD_LOAD_NETWORK_BUTTON, STR_SAVELOAD_LOAD_NETWORK_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_SL_LOAD_NETWORK_BUTTON), SetStringTip(STR_SAVELOAD_LOAD_NETWORK_BUTTON, STR_SAVELOAD_LOAD_NETWORK_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
 				NWidget(WWT_RESIZEBOX, COLOUR_GREY),
 			EndContainer(),
 		EndContainer(),

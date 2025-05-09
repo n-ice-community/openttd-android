@@ -772,7 +772,7 @@ struct BuildRailToolbarWindow : Window {
 
 		                        auto proc = [=](bool test, StationID to_join) -> bool {
 			                        if (test) {
-				                        return Command<CMD_BUILD_RAIL_STATION>::Do(CommandFlagsToDCFlags(GetCommandFlags<CMD_BUILD_RAIL_STATION>()), end_tile, rt, params.axis, numtracks, platlength, params.sel_class, params.sel_type, StationID::Invalid, adjacent).Succeeded();
+				                        return Command<CMD_BUILD_RAIL_STATION>::Do(CommandFlagsToDCFlags(GetCommandFlags<CMD_BUILD_RAIL_STATION>()), end_tile, rt, params.axis, numtracks, platlength, params.sel_class, params.sel_type, StationID::Invalid(), adjacent).Succeeded();
 			                        } else {
 				                        return Command<CMD_BUILD_RAIL_STATION>::Post(STR_ERROR_CAN_T_BUILD_RAILROAD_STATION, CcStation, end_tile, rt, params.axis, numtracks, platlength, params.sel_class, params.sel_type, to_join, adjacent);
 			                        }

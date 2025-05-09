@@ -467,32 +467,16 @@ struct GenerateLandscapeWindow : public Window {
 				}
 				return GetString(_sea_lakes[_settings_newgame.difficulty.quantity_sea_lakes]);
 
-			case WID_GL_HEIGHTMAP_NAME_TEXT: SetDParamStr(0, this->name); break;
-			case WID_GL_RIVER_PULLDOWN:      SetDParam(0, _rivers[_settings_newgame.game_creation.amount_of_rivers]); break;
-			case WID_GL_SMOOTHNESS_PULLDOWN: SetDParam(0, _smoothness[_settings_newgame.game_creation.tgen_smoothness]); break;
-			case WID_GL_VARIETY_PULLDOWN:    SetDParam(0, _variety[_settings_newgame.game_creation.variety]); break;
-			case WID_GL_BORDERS_RANDOM:      SetDParam(0, (_settings_newgame.game_creation.water_borders == BORDERS_RANDOM) ? STR_MAPGEN_BORDER_RANDOMIZE : STR_MAPGEN_BORDER_MANUAL); break;
-			case WID_GL_WATER_NE: {
-				std::string param = fmt::format("{}: {}", GetString(STR_MAPGEN_NORTHEAST), GetString((_settings_newgame.game_creation.water_borders == BORDERS_RANDOM) ? STR_MAPGEN_BORDER_RANDOM : HasBit(_settings_newgame.game_creation.water_borders, BORDER_NE) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM));
-				SetDParamStr(0, param);
-				break;
-			}
-			case WID_GL_WATER_NW: {
-				std::string param = fmt::format("{}: {}", GetString(STR_MAPGEN_NORTHWEST), GetString((_settings_newgame.game_creation.water_borders == BORDERS_RANDOM) ? STR_MAPGEN_BORDER_RANDOM : HasBit(_settings_newgame.game_creation.water_borders, BORDER_NW) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM));
-				SetDParamStr(0, param);
-				break;
-			}
-			case WID_GL_WATER_SE: {
-				std::string param = fmt::format("{}: {}", GetString(STR_MAPGEN_SOUTHEAST), GetString((_settings_newgame.game_creation.water_borders == BORDERS_RANDOM) ? STR_MAPGEN_BORDER_RANDOM : HasBit(_settings_newgame.game_creation.water_borders, BORDER_SE) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM));
-				SetDParamStr(0, param);
-				break;
-			}
-			case WID_GL_WATER_SW: {
-				std::string param = fmt::format("{}: {}", GetString(STR_MAPGEN_SOUTHWEST), GetString((_settings_newgame.game_creation.water_borders == BORDERS_RANDOM) ? STR_MAPGEN_BORDER_RANDOM : HasBit(_settings_newgame.game_creation.water_borders, BORDER_SW) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM));
-				SetDParamStr(0, param);
-				break;
-			}
-			case WID_GL_HEIGHTMAP_ROTATION_PULLDOWN: SetDParam(0, _rotation[_settings_newgame.game_creation.heightmap_rotation]); break;
+			case WID_GL_HEIGHTMAP_NAME_TEXT: return this->name;
+			case WID_GL_RIVER_PULLDOWN:      return GetString(_rivers[_settings_newgame.game_creation.amount_of_rivers]);
+			case WID_GL_SMOOTHNESS_PULLDOWN: return GetString(_smoothness[_settings_newgame.game_creation.tgen_smoothness]);
+			case WID_GL_VARIETY_PULLDOWN:    return GetString(_variety[_settings_newgame.game_creation.variety]);
+			case WID_GL_BORDERS_RANDOM:      return GetString((_settings_newgame.game_creation.water_borders == BorderFlag::Random) ? STR_MAPGEN_BORDER_RANDOMIZE : STR_MAPGEN_BORDER_MANUAL);
+			case WID_GL_WATER_NE: return GetString((_settings_newgame.game_creation.water_borders == BorderFlag::Random) ? STR_MAPGEN_BORDER_RANDOM : _settings_newgame.game_creation.water_borders.Test(BorderFlag::NorthEast) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM);
+			case WID_GL_WATER_NW: return GetString((_settings_newgame.game_creation.water_borders == BorderFlag::Random) ? STR_MAPGEN_BORDER_RANDOM : _settings_newgame.game_creation.water_borders.Test(BorderFlag::NorthWest) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM);
+			case WID_GL_WATER_SE: return GetString((_settings_newgame.game_creation.water_borders == BorderFlag::Random) ? STR_MAPGEN_BORDER_RANDOM : _settings_newgame.game_creation.water_borders.Test(BorderFlag::SouthEast) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM);
+			case WID_GL_WATER_SW: return GetString((_settings_newgame.game_creation.water_borders == BorderFlag::Random) ? STR_MAPGEN_BORDER_RANDOM : _settings_newgame.game_creation.water_borders.Test(BorderFlag::SouthWest) ? STR_MAPGEN_BORDER_WATER : STR_MAPGEN_BORDER_FREEFORM);
+			case WID_GL_HEIGHTMAP_ROTATION_PULLDOWN: return GetString(_rotation[_settings_newgame.game_creation.heightmap_rotation]);
 
 			case WID_GL_HEIGHTMAP_SIZE_TEXT:
 				if (_settings_newgame.game_creation.heightmap_rotation == HM_CLOCKWISE) {

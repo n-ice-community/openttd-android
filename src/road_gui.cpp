@@ -1371,37 +1371,7 @@ public:
 		this->LowerWidget(WID_BROS_STATION_NE + _roadstop_gui.orientation);
 		this->LowerWidget(WID_BROS_LT_OFF + _settings_client.gui.station_show_coverage);
 
-		this->window_class = (rs == ROADSTOP_BUS) ? WC_BUS_STATION : WC_TRUCK_STATION;
-		if (!newstops || _roadstop_gui_settings.roadstop_class >= (int)RoadStopClass::GetClassCount()) {
-			/* There's no new stops available or the list has reduced in size.
-			 * Now, set the default road stops as selected. */
-			_roadstop_gui_settings.roadstop_class = ROADSTOP_CLASS_DFLT;
-			_roadstop_gui_settings.roadstop_type = 0;
-		}
-		if (newstops) {
-			/* The currently selected class doesn't have any stops for this RoadStopType, reset the selection. */
-			if (!GetIfClassHasNewStopsByType(RoadStopClass::Get(_roadstop_gui_settings.roadstop_class), rs, _cur_roadtype)) {
-				_roadstop_gui_settings.roadstop_class = ROADSTOP_CLASS_DFLT;
-				_roadstop_gui_settings.roadstop_type = 0;
-			}
-			_roadstop_gui_settings.roadstop_count = RoadStopClass::Get(_roadstop_gui_settings.roadstop_class)->GetSpecCount();
-			_roadstop_gui_settings.roadstop_type = std::min((int)_roadstop_gui_settings.roadstop_type, _roadstop_gui_settings.roadstop_count - 1);
-
-			/* Reset back to default class if the previously selected class is not available for this road stop type. */
-			if (!GetIfClassHasNewStopsByType(RoadStopClass::Get(_roadstop_gui_settings.roadstop_class), roadStopType, _cur_roadtype)) {
-				_roadstop_gui_settings.roadstop_class = ROADSTOP_CLASS_DFLT;
-			}
-
-			this->SelectFirstAvailableTypeIfUnavailable();
-
-			NWidgetMatrix *matrix = this->GetWidget<NWidgetMatrix>(WID_BROS_MATRIX);
-			matrix->SetScrollbar(this->vscrollMatrix);
-			matrix->SetCount(_roadstop_gui_settings.roadstop_count);
-			matrix->SetClicked(_roadstop_gui_settings.roadstop_type);
-
-			this->EnsureSelectedClassIsVisible();
-			this->CheckOrientationValid();
-		}
+		this->window_class = (rs == RoadStopType::Bus) ? WC_BUS_STATION : WC_TRUCK_STATION;
 	}
 
 	void Close([[maybe_unused]] int data = 0) override
