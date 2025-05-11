@@ -52,7 +52,7 @@ static void MidiMixMusic(int16_t *stream, size_t len)
 static FMusicDriver_LibTimidity iFMusicDriver_LibTimidity;
 
 enum { TIMIDITY_MAX_VOLUME = 50 };
-const char *MusicDriver_LibTimidity::Start(const StringList &param)
+std::optional<std::string_view> MusicDriver_LibTimidity::Start(const StringList &parm)
 {
 	std::lock_guard<std::mutex> lock{ _midi.synth_mutex };
 
@@ -77,7 +77,7 @@ const char *MusicDriver_LibTimidity::Start(const StringList &param)
 	_midi.options.channels = 2;
 	_midi.options.buffer_size = _midi.options.rate;
 
-	return NULL;
+	return std::nullopt;
 }
 
 void MusicDriver_LibTimidity::Stop()
@@ -145,7 +145,7 @@ bool MusicDriver_LibTimidity::IsSongPlaying()
 	return (_midi.status == MIDI_PLAYING);
 }
 
-void MusicDriver_LibTimidity::SetVolume(byte vol)
+void MusicDriver_LibTimidity::SetVolume(uint8_t vol)
 {
 	std::lock_guard<std::mutex> lock{ _midi.synth_mutex };
 
