@@ -912,7 +912,7 @@ void QueryString::ClickEditBox(Window *w, Point pt, WidgetID wid, int click_coun
 		ShowOnScreenKeyboard(w, wid);
 	}
 #ifdef __ANDROID__
-	strecpy(_android_text_input, this->text.buf, lastof(_android_text_input));
+	strecpy(std::span{_android_text_input}, this->text.GetText());
 	this->text.DeleteAll();
 	SDL_ANDROID_GetScreenKeyboardTextInputAsync(_android_text_input, sizeof(_android_text_input));
 #endif

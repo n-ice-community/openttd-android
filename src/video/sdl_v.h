@@ -15,7 +15,7 @@
 /** The SDL video driver. */
 class VideoDriver_SDL : public VideoDriver {
 public:
-	const char *Start(const StringList &param) override;
+	std::optional<std::string_view> Start(const StringList &parm) override;
 
 	void Stop() override;
 
@@ -31,7 +31,7 @@ public:
 
 	bool ClaimMousePointer() override;
 
-	const char *GetName() const override { return "sdl"; }
+	std::string_view GetName() const override { return "sdl"; }
 
 #ifdef __ANDROID__
 	float GetDPIScale() override;
@@ -53,7 +53,7 @@ private:
 class FVideoDriver_SDL : public DriverFactoryBase {
 public:
 	FVideoDriver_SDL() : DriverFactoryBase(Driver::DT_VIDEO, 5, "sdl", "SDL Video Driver") {}
-	Driver *CreateInstance() const override { return new VideoDriver_SDL(); }
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<VideoDriver_SDL>(); }
 };
 
 #endif /* VIDEO_SDL_H */

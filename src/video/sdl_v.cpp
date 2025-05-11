@@ -128,15 +128,15 @@ void VideoDriver_SDL::CheckPaletteAnim()
 	Blitter *blitter = BlitterFactory::GetCurrentBlitter();
 
 	switch (blitter->UsePaletteAnimation()) {
-		case Blitter::PALETTE_ANIMATION_VIDEO_BACKEND:
+		case Blitter::PaletteAnimation::VideoBackend:
 			UpdatePalette();
 			break;
 
-		case Blitter::PALETTE_ANIMATION_BLITTER:
+		case Blitter::PaletteAnimation::Blitter:
 			blitter->PaletteAnimate(_local_palette);
 			break;
 
-		case Blitter::PALETTE_ANIMATION_NONE:
+		case Blitter::PaletteAnimation::None:
 			break;
 
 		default:
@@ -429,10 +429,10 @@ struct SDLVkMapping {
 	uint8_t map_to;
 };
 
-#define AS(x, z) {x, 0, z}
-#define AM(x, y, z, w) {x, (uint8_t)(y - x), z}
+#define AS(x, z) SDLVkMapping{x, 0, z}
+#define AM(x, y, z, w) SDLVkMapping{x, (uint8_t)(y - x), z}
 
-static const SDLVkMapping _vk_mapping[] = {
+static const std::array _vk_mapping = {
 	/* Pageup stuff + up/down */
 	AM(SDLK_PAGEUP, SDLK_PAGEDOWN, WKC_PAGEUP, WKC_PAGEDOWN),
 	AS(SDLK_UP,     WKC_UP),
@@ -486,12 +486,11 @@ static const SDLVkMapping _vk_mapping[] = {
 
 static uint ConvertSdlKeyIntoMy(SDL_keysym *sym, char32_t *character)
 {
-	const SDLVkMapping *map;
 	uint key = 0;
 
-	for (map = _vk_mapping; map != endof(_vk_mapping); ++map) {
-		if ((uint)(sym->sym - map->vk_from) <= map->vk_count) {
-			key = sym->sym - map->vk_from + map->map_to;
+	for (const auto &map : _vk_mapping) {
+		if ((uint)(sym->sym - map.vk_from) <= map.vk_count) {
+			key = sym->sym - map.vk_from + map.map_to;
 			break;
 		}
 	}
@@ -670,7 +669,7 @@ bool VideoDriver_SDL::PollEvent()
 	return true;
 }
 
-const char *VideoDriver_SDL::Start(const StringList &param)
+std::optional<std::string_view> VideoDriver_SDL::Start(const StringList &param)
 {
 	char buf[30];
 	_use_hwpalette = GetDriverParamInt(param, "hw_palette", 2);
@@ -701,7 +700,7 @@ const char *VideoDriver_SDL::Start(const StringList &param)
 
 	this->is_game_threaded = !GetDriverParamBool(param, "no_threads") && !GetDriverParamBool(param, "no_thread");
 
-	return nullptr;
+	return std::nullopt;
 }
 
 void VideoDriver_SDL::SetupKeyboard()

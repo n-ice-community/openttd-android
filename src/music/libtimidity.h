@@ -16,7 +16,7 @@
 class MusicDriver_LibTimidity : public MusicDriver {
 	int volume;
 public:
-	const char *Start(const StringList &param) override;
+	std::optional<std::string_view> Start(const StringList &parm) override;
 
 	void Stop() override;
 
@@ -26,16 +26,16 @@ public:
 
 	bool IsSongPlaying() override;
 
-	void SetVolume(byte vol) override;
+	void SetVolume(uint8_t vol) override;
 
-	const char *GetName() const override { return "libtimidity"; }
+	std::string_view GetName() const override { return "libtimidity"; };
 };
 
 /** Factory for the libtimidity driver. */
 class FMusicDriver_LibTimidity : public DriverFactoryBase {
 public:
 	FMusicDriver_LibTimidity() : DriverFactoryBase(Driver::DT_MUSIC, 5, "libtimidity", "LibTimidity MIDI Driver") {}
-	Driver *CreateInstance() const override { return new MusicDriver_LibTimidity(); }
+	std::unique_ptr<Driver> CreateInstance() const override { return std::make_unique<MusicDriver_LibTimidity>();};
 };
 
 #endif /* MUSIC_LIBTIMIDITY_H */
