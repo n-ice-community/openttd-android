@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_config.h Functions to find and configure NewGRFs. */
@@ -107,12 +107,14 @@ struct GRFIdentifier {
 
 /** Information about why GRF had problems during initialisation */
 struct GRFError {
-	GRFError(StringID severity, StringID message = {});
+	GRFError(StringID severity, uint32_t nfo_line, StringID message = {})
+		: message(message), severity(severity), nfo_line(nfo_line) {}
 
 	std::string custom_message{}; ///< Custom message (if present)
 	std::string data{}; ///< Additional data for message and custom_message
 	StringID message{}; ///< Default message
 	StringID severity{}; ///< Info / Warning / Error / Fatal
+	uint32_t nfo_line; ///< Line within NewGRF of error.
 	std::array<uint32_t, 2> param_value{}; ///< Values of GRF parameters to show for message and custom_message
 };
 
@@ -169,7 +171,7 @@ struct GRFConfig {
 	GRFTextWrapper name{}; ///< NOSAVE: GRF name (Action 0x08)
 	GRFTextWrapper info{}; ///< NOSAVE: GRF info (author, copyright, ...) (Action 0x08)
 	GRFTextWrapper url{}; ///< NOSAVE: URL belonging to this GRF.
-	std::optional<GRFError> error = std::nullopt; ///< NOSAVE: Error/Warning during GRF loading (Action 0x0B)
+	std::vector<GRFError> errors; ///< NOSAVE: Error/Warning during GRF loading (Action 0x0B)
 
 	uint32_t version = 0; ///< NOSAVE: Version a NewGRF can set so only the newest NewGRF is shown
 	uint32_t min_loadable_version = 0; ///< NOSAVE: Minimum compatible version a NewGRF can define

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file economy_type.h Types related to the economy. */
@@ -205,16 +205,6 @@ enum PriceCategory : uint8_t {
 	PCAT_NONE,         ///< Not affected by difficulty settings
 	PCAT_RUNNING,      ///< Price is affected by "vehicle running cost" difficulty setting
 	PCAT_CONSTRUCTION, ///< Price is affected by "construction cost" difficulty setting
-};
-
-/**
- * Describes properties of price bases.
- */
-struct PriceBaseSpec {
-	Money start_price;      ///< Default value at game start, before adding multipliers.
-	PriceCategory category; ///< Price is affected by certain difficulty settings.
-	uint grf_feature;       ///< GRF Feature that decides whether price multipliers apply locally or globally, #GSF_END if none.
-	Price fallback_price;   ///< Fallback price multiplier for new prices but old grfs.
 };
 
 /** The "steps" in loan size, in British Pounds! */

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file engine_base.h Base class for engines. */
@@ -35,7 +35,8 @@ using EngineDisplayFlags = EnumBitSet<EngineDisplayFlag, uint8_t>;
 typedef Pool<Engine, EngineID, 64> EnginePool;
 extern EnginePool _engine_pool;
 
-struct Engine : EnginePool::PoolItem<&_engine_pool> {
+class Engine : public EnginePool::PoolItem<&_engine_pool> {
+public:
 	CompanyMask company_avail{}; ///< Bit for each company whether the engine is available for that company.
 	CompanyMask company_hidden{}; ///< Bit for each company whether the engine is normally hidden in the build gui for that company.
 	CompanyMask preview_asked{}; ///< Bit for each company which has already been offered a preview.
@@ -64,26 +65,18 @@ struct Engine : EnginePool::PoolItem<&_engine_pool> {
 	EngineID display_last_variant = EngineID::Invalid(); ///< NOSAVE client-side-only last variant selected.
 	EngineInfo info{};
 
-	union {
-		RailVehicleInfo rail;
-		RoadVehicleInfo road;
-		ShipVehicleInfo ship;
-		AircraftVehicleInfo air;
-	} u{};
-
 	uint16_t list_position = 0;
 
 	/* NewGRF related data */
-	/**
-	 * Properties related the the grf file.
-	 * NUM_CARGO real cargo plus two pseudo cargo sprite groups.
-	 * Used for obtaining the sprite offset of custom sprites, and for
-	 * evaluating callbacks.
-	 */
-	VariableGRFFileProps grf_prop{};
+	CargoGRFFileProps grf_prop{}; ///< Link to NewGRF
 	std::vector<WagonOverride> overrides{};
 	std::vector<BadgeID> badges{};
 
+private:
+	/* Vehicle-type specific information. */
+	std::variant<std::monostate, RailVehicleInfo, RoadVehicleInfo, ShipVehicleInfo, AircraftVehicleInfo> vehicle_info{};
+
+public:
 	Engine() {}
 	Engine(VehicleType type, uint16_t local_id);
 	bool IsEnabled() const;
@@ -183,6 +176,18 @@ struct Engine : EnginePool::PoolItem<&_engine_pool> {
 		bool operator() (size_t index) { return Engine::Get(index)->type == this->vt; }
 	};
 
+	template <typename T>
+	inline T &VehInfo()
+	{
+		return std::get<T>(this->vehicle_info);
+	}
+
+	template <typename T>
+	inline const T &VehInfo() const
+	{
+		return std::get<T>(this->vehicle_info);
+	}
+
 	/**
 	 * Returns an iterable ensemble of all valid engines of the given type
 	 * @param vt the VehicleType for engines to be valid
@@ -218,7 +223,7 @@ struct EngineIDMappingKeyProjection {
 
 /**
  * Stores the mapping of EngineID to the internal id of newgrfs.
- * Note: This is not part of Engine, as the data in the EngineOverrideManager and the engine pool get resetted in different cases.
+ * Note: This is not part of Engine, as the data in the EngineOverrideManager and the engine pool get reset in different cases.
  */
 struct EngineOverrideManager {
 	std::array<std::vector<EngineIDMapping>, VEH_COMPANY_END> mappings;
@@ -240,22 +245,22 @@ inline const EngineInfo *EngInfo(EngineID e)
 
 inline const RailVehicleInfo *RailVehInfo(EngineID e)
 {
-	return &Engine::Get(e)->u.rail;
+	return &Engine::Get(e)->VehInfo<RailVehicleInfo>();
 }
 
 inline const RoadVehicleInfo *RoadVehInfo(EngineID e)
 {
-	return &Engine::Get(e)->u.road;
+	return &Engine::Get(e)->VehInfo<RoadVehicleInfo>();
 }
 
 inline const ShipVehicleInfo *ShipVehInfo(EngineID e)
 {
-	return &Engine::Get(e)->u.ship;
+	return &Engine::Get(e)->VehInfo<ShipVehicleInfo>();
 }
 
 inline const AircraftVehicleInfo *AircraftVehInfo(EngineID e)
 {
-	return &Engine::Get(e)->u.air;
+	return &Engine::Get(e)->VehInfo<AircraftVehicleInfo>();
 }
 
 #endif /* ENGINE_BASE_H */

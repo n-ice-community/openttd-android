@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file waypoint_sl.cpp Code handling saving and loading of waypoints */
@@ -49,14 +49,14 @@ static std::vector<OldWaypoint> _old_waypoints;
  * Update the waypoint orders to get the new waypoint ID.
  * @param o the order 'list' to check.
  */
-static void UpdateWaypointOrder(Order *o)
+static void UpdateWaypointOrder(Order &o)
 {
-	if (!o->IsType(OT_GOTO_WAYPOINT)) return;
+	if (!o.IsType(OT_GOTO_WAYPOINT)) return;
 
 	for (OldWaypoint &wp : _old_waypoints) {
-		if (wp.index != o->GetDestination()) continue;
+		if (wp.index != o.GetDestination()) continue;
 
-		o->SetDestination(wp.new_index);
+		o.SetDestination(wp.new_index);
 		return;
 	}
 }
@@ -100,11 +100,11 @@ void MoveWaypointsToBaseStations()
 		TileIndex t = wp.xy;
 		/* Sometimes waypoint (sign) locations became disconnected from their actual location in
 		 * the map array. If this is the case, try to locate the actual location in the map array */
-		if (!IsTileType(t, MP_RAILWAY) || GetRailTileType(t) != 2 /* RAIL_TILE_WAYPOINT */ || Tile(t).m2() != wp.index) {
+		if (!IsTileType(t, MP_RAILWAY) || GetRailTileType(t) != RailTileType{2} /* RAIL_TILE_WAYPOINT */ || Tile(t).m2() != wp.index) {
 			Debug(sl, 0, "Found waypoint tile {} with invalid position", t);
 			t = INVALID_TILE;
 			for (auto tile : Map::Iterate()) {
-				if (IsTileType(tile, MP_RAILWAY) && GetRailTileType(tile) == 2 /* RAIL_TILE_WAYPOINT */ && tile.m2() == wp.index) {
+				if (IsTileType(tile, MP_RAILWAY) && GetRailTileType(tile) == RailTileType{2} /* RAIL_TILE_WAYPOINT */ && tile.m2() == wp.index) {
 					t = TileIndex(tile);
 					Debug(sl, 0, "Found actual waypoint position at {}", TileIndex(tile));
 					break;
@@ -136,7 +136,9 @@ void MoveWaypointsToBaseStations()
 		SetRailStationReservation(tile, reserved);
 
 		if (wp.spec != nullptr) {
-			SetCustomStationSpecIndex(tile, AllocateSpecToStation(wp.spec, new_wp, true));
+			auto specindex = AllocateSpecToStation(wp.spec, new_wp);
+			if (specindex.has_value()) AssignSpecToStation(wp.spec, new_wp, *specindex);
+			SetCustomStationSpecIndex(tile, specindex.value_or(0));
 		}
 		new_wp->rect.BeforeAddTile(tile, StationRect::ADD_FORCE);
 
@@ -147,13 +149,13 @@ void MoveWaypointsToBaseStations()
 	for (OrderList *ol : OrderList::Iterate()) {
 		if (ol->GetFirstSharedVehicle()->type != VEH_TRAIN) continue;
 
-		for (Order *o = ol->GetFirstOrder(); o != nullptr; o = o->next) UpdateWaypointOrder(o);
+		for (Order &o : ol->GetOrders()) UpdateWaypointOrder(o);
 	}
 
 	for (Vehicle *v : Vehicle::Iterate()) {
 		if (v->type != VEH_TRAIN) continue;
 
-		UpdateWaypointOrder(&v->current_order);
+		UpdateWaypointOrder(v->current_order);
 	}
 
 	ResetOldWaypoints();

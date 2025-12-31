@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file refresh.h Declaration of link refreshing utility. */
@@ -56,8 +56,8 @@ protected:
 	 * line.
 	 */
 	struct Hop {
-		OrderID from;  ///< Last order where vehicle could interact with cargo or absolute first order.
-		OrderID to;    ///< Next order to be processed.
+		VehicleOrderID from;  ///< Last order where vehicle could interact with cargo or absolute first order.
+		VehicleOrderID to;    ///< Next order to be processed.
 		CargoType cargo; ///< Cargo the consist is probably carrying or INVALID_CARGO if unknown.
 
 		/**
@@ -72,7 +72,7 @@ protected:
 		 * @param to Second order of the hop.
 		 * @param cargo Cargo the consist is probably carrying when passing the hop.
 		 */
-		Hop(OrderID from, OrderID to, CargoType cargo) : from(from), to(to), cargo(cargo) {}
+		Hop(VehicleOrderID from, VehicleOrderID to, CargoType cargo) : from(from), to(to), cargo(cargo) {}
 
 		constexpr auto operator<=>(const Hop &) const noexcept = default;
 	};
@@ -92,10 +92,10 @@ protected:
 
 	bool HandleRefit(CargoType refit_cargo);
 	void ResetRefit();
-	void RefreshStats(const Order *cur, const Order *next);
-	const Order *PredictNextOrder(const Order *cur, const Order *next, RefreshFlags flags, uint num_hops = 0);
+	void RefreshStats(VehicleOrderID cur, VehicleOrderID next);
+	VehicleOrderID PredictNextOrder(VehicleOrderID cur, VehicleOrderID next, RefreshFlags flags, uint num_hops = 0);
 
-	void RefreshLinks(const Order *cur, const Order *next, RefreshFlags flags, uint num_hops = 0);
+	void RefreshLinks(VehicleOrderID cur, VehicleOrderID next, RefreshFlags flags, uint num_hops = 0);
 };
 
 #endif /* REFRESH_H */

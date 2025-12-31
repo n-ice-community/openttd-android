@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file survey.cpp Functions to survey the current game / system, for crashlog and network-survey. */
@@ -18,6 +18,7 @@
 #include "timer/timer_game_tick.h"
 #include "timer/timer_game_calendar.h"
 #include "timer/timer_game_economy.h"
+#include "3rdparty/fmt/ranges.h"
 
 #include "currency.h"
 #include "fontcache.h"
@@ -256,7 +257,7 @@ void SurveyConfiguration(nlohmann::json &survey)
 {
 	survey["network"] = _networking ? (_network_server ? "server" : "client") : "no";
 	if (_current_language != nullptr) {
-		survey["language"]["filename"] = FS2OTTD(_current_language->file.filename());
+		survey["language"]["filename"] = FS2OTTD(_current_language->file.filename().native());
 		survey["language"]["name"] = _current_language->name;
 		survey["language"]["isocode"] = _current_language->isocode;
 	}
@@ -274,7 +275,7 @@ void SurveyConfiguration(nlohmann::json &survey)
 		survey["video_info"] = VideoDriver::GetInstance()->GetInfoString();
 	}
 	if (BaseGraphics::GetUsedSet() != nullptr) {
-		survey["graphics_set"] = fmt::format("{}.{}", BaseGraphics::GetUsedSet()->name, BaseGraphics::GetUsedSet()->version);
+		survey["graphics_set"] = fmt::format("{}.{}", BaseGraphics::GetUsedSet()->name, fmt::join(BaseGraphics::GetUsedSet()->version, "."));
 		const GRFConfig *extra_cfg = BaseGraphics::GetUsedSet()->GetExtraConfig();
 		if (extra_cfg != nullptr && !extra_cfg->param.empty()) {
 			survey["graphics_set_parameters"] = std::span<const uint32_t>(extra_cfg->param);
@@ -283,10 +284,10 @@ void SurveyConfiguration(nlohmann::json &survey)
 		}
 	}
 	if (BaseMusic::GetUsedSet() != nullptr) {
-		survey["music_set"] = fmt::format("{}.{}", BaseMusic::GetUsedSet()->name, BaseMusic::GetUsedSet()->version);
+		survey["music_set"] = fmt::format("{}.{}", BaseMusic::GetUsedSet()->name, fmt::join(BaseMusic::GetUsedSet()->version, "."));
 	}
 	if (BaseSounds::GetUsedSet() != nullptr) {
-		survey["sound_set"] = fmt::format("{}.{}", BaseSounds::GetUsedSet()->name, BaseSounds::GetUsedSet()->version);
+		survey["sound_set"] = fmt::format("{}.{}", BaseSounds::GetUsedSet()->name, fmt::join(BaseSounds::GetUsedSet()->version, "."));
 	}
 }
 
@@ -297,10 +298,16 @@ void SurveyConfiguration(nlohmann::json &survey)
  */
 void SurveyFont(nlohmann::json &survey)
 {
-	survey["small"] = FontCache::Get(FS_SMALL)->GetFontName();
-	survey["medium"] = FontCache::Get(FS_NORMAL)->GetFontName();
-	survey["large"] = FontCache::Get(FS_LARGE)->GetFontName();
-	survey["mono"] = FontCache::Get(FS_MONO)->GetFontName();
+	for (FontSize fs = FS_BEGIN; fs < FS_END; fs++) {
+		const FontCacheSubSetting *setting = GetFontCacheSubSetting(fs);
+		auto &font = survey[std::string(FontSizeToName(fs))];
+		font["configured"]["font"] = setting->font;
+		font["configured"]["size"] = setting->size;
+	}
+	for (const auto &fc : FontCache::Get()) {
+		auto &font = survey[std::string(FontSizeToName(fc->GetSize()))];
+		font["active"].push_back(fc->GetFontName());
+	}
 }
 
 /**
@@ -311,7 +318,7 @@ void SurveyFont(nlohmann::json &survey)
 void SurveyCompanies(nlohmann::json &survey)
 {
 	for (const Company *c : Company::Iterate()) {
-		auto &company = survey[std::to_string(c->index.base())];
+		auto &company = survey[fmt::format("{}", c->index.base())];
 		if (c->ai_info == nullptr) {
 			company["type"] = "human";
 		} else {

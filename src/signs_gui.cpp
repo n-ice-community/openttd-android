@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file signs_gui.cpp The GUI for signs. */
@@ -20,6 +20,7 @@
 #include "viewport_func.h"
 #include "querystring_gui.h"
 #include "sortlist_type.h"
+#include "tilehighlight_func.h"
 #include "stringfilter_type.h"
 #include "string_func.h"
 #include "settings_type.h"
@@ -133,11 +134,6 @@ struct SignList {
 bool SignList::match_case = false;
 std::string SignList::default_name;
 
-/** Enum referring to the Hotkeys in the sign list window */
-enum SignListHotkeys : int32_t {
-	SLHK_FOCUS_FILTER_BOX, ///< Focus the edit box for editing the filter string
-};
-
 struct SignListWindow : Window, SignList {
 	QueryString filter_editbox; ///< Filter editbox;
 	int text_offset = 0; ///< Offset of the sign text relative to the left edge of the WID_SIL_LIST widget.
@@ -178,7 +174,7 @@ struct SignListWindow : Window, SignList {
 	 * new string is zero-length or not the clear button is made
 	 * disabled/enabled. The sign list is updated according to the new filter.
 	 */
-	void SetFilterString(const char *new_filter_string)
+	void SetFilterString(std::string_view new_filter_string)
 	{
 		/* check if there is a new filter string */
 		this->string_filter.SetFilterTerm(new_filter_string);
@@ -265,7 +261,7 @@ struct SignListWindow : Window, SignList {
 				Dimension spr_dim = GetSpriteSize(SPR_COMPANY_ICON);
 				this->text_offset = WidgetDimensions::scaled.frametext.left + spr_dim.width + 2; // 2 pixels space between icon and the sign text.
 				resize.height = std::max<uint>(GetCharacterHeight(FS_NORMAL), spr_dim.height + 2);
-				resize.height = std::max(GetMinButtonSize(), resize.height);
+				fill.height = resize.height = std::max(GetMinButtonSize(), resize.height);
 				Dimension d = {(uint)(this->text_offset + WidgetDimensions::scaled.frametext.right), padding.height + 5 * resize.height};
 				size = maxdim(size, d);
 				break;
@@ -278,21 +274,6 @@ struct SignListWindow : Window, SignList {
 				size.width  += padding.width;
 				break;
 		}
-	}
-
-	EventState OnHotkey(int hotkey) override
-	{
-		switch (hotkey) {
-			case SLHK_FOCUS_FILTER_BOX:
-				this->SetFocusedWidget(WID_SIL_FILTER_TEXT);
-				SetFocusedWindow(this); // The user has asked to give focus to the text box, so make sure this window is focused.
-				break;
-
-			default:
-				return ES_NOT_HANDLED;
-		}
-
-		return ES_HANDLED;
 	}
 
 	void OnEditboxChanged(WidgetID widget) override
@@ -311,7 +292,7 @@ struct SignListWindow : Window, SignList {
 	}
 
 	/** Resort the sign listing on a regular interval. */
-	IntervalTimer<TimerWindow> rebuild_interval = {std::chrono::seconds(3), [this](auto) {
+	const IntervalTimer<TimerWindow> rebuild_interval = {std::chrono::seconds(3), [this](auto) {
 		this->BuildSortSignList();
 		this->SetDirty();
 	}};
@@ -348,11 +329,11 @@ struct SignListWindow : Window, SignList {
 	}
 
 	static inline HotkeyList hotkeys{"signlist", {
-		Hotkey('F', "focus_filter_box", SLHK_FOCUS_FILTER_BOX),
+		Hotkey('F', "focus_filter_box", WID_SIL_FILTER_TEXT),
 	}, SignListGlobalHotkeys};
 };
 
-static constexpr NWidgetPart _nested_sign_list_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_sign_list_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
 		NWidget(WWT_CAPTION, COLOUR_BROWN, WID_SIL_CAPTION),
@@ -403,16 +384,27 @@ Window *ShowSignList()
  * @param text  the new name.
  * @return true if the window will already be removed after returning.
  */
-static bool RenameSign(SignID index, const char *text)
+static bool RenameSign(SignID index, std::string_view text)
 {
-	bool remove = StrEmpty(text);
-	Command<CMD_RENAME_SIGN>::Post(StrEmpty(text) ? STR_ERROR_CAN_T_DELETE_SIGN : STR_ERROR_CAN_T_CHANGE_SIGN_NAME, index, text);
+	bool remove = text.empty();
+	Command<CMD_RENAME_SIGN>::Post(remove ? STR_ERROR_CAN_T_DELETE_SIGN : STR_ERROR_CAN_T_CHANGE_SIGN_NAME, index, std::string{text});
 	return remove;
+}
+
+/**
+ * Actually move the sign.
+ * @param index the sign to move.
+ * @param tile on which to move the sign to.
+ */
+void MoveSign(SignID index, TileIndex tile)
+{
+	Command<CMD_MOVE_SIGN>::Post(STR_ERROR_CAN_T_PLACE_SIGN_HERE, index, tile);
 }
 
 struct SignWindow : Window, SignList {
 	QueryString name_editbox;
 	SignID cur_sign{};
+	WidgetID last_user_action = INVALID_WIDGET; ///< Last started user action.
 
 	SignWindow(WindowDesc &desc, const Sign *si) : Window(desc), name_editbox(MAX_LENGTH_SIGN_NAME_CHARS * MAX_CHAR_LENGTH, MAX_LENGTH_SIGN_NAME_CHARS)
 	{
@@ -510,12 +502,6 @@ struct SignWindow : Window, SignList {
 				break;
 			}
 
-			case WID_QES_DELETE:
-				/* Only need to set the buffer to null, the rest is handled as the OK button */
-				RenameSign(this->cur_sign, "");
-				/* don't delete this, we are deleted in Sign::~Sign() -> DeleteRenameSignWindow() */
-				break;
-
 			case WID_QES_OK:
 				if (RenameSign(this->cur_sign, this->name_editbox.text.GetText())) break;
 				[[fallthrough]];
@@ -523,11 +509,40 @@ struct SignWindow : Window, SignList {
 			case WID_QES_CANCEL:
 				this->Close();
 				break;
+
+			case WID_QES_DELETE:
+				/* Only need to set the buffer to null, the rest is handled as the OK button */
+				RenameSign(this->cur_sign, "");
+				/* don't delete this, we are deleted in Sign::~Sign() -> DeleteRenameSignWindow() */
+				break;
+
+			case WID_QES_MOVE:
+				HandlePlacePushButton(this, WID_QES_MOVE, SPR_CURSOR_SIGN, HT_RECT);
+				this->last_user_action = widget;
+				break;
 		}
+	}
+
+	void OnPlaceObject([[maybe_unused]] Point pt, TileIndex tile) override
+	{
+		switch (this->last_user_action) {
+			case WID_QES_MOVE: // Place sign button
+				RenameSign(this->cur_sign, this->name_editbox.text.GetText());
+				MoveSign(this->cur_sign, tile);
+				this->Close();
+				break;
+
+			default: NOT_REACHED();
+		}
+	}
+
+	void OnPlaceObjectAbort() override
+	{
+		this->RaiseButtons();
 	}
 };
 
-static constexpr NWidgetPart _nested_query_sign_edit_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_query_sign_edit_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY, WID_QES_CAPTION), SetTextStyle(TC_WHITE),
@@ -540,14 +555,14 @@ static constexpr NWidgetPart _nested_query_sign_edit_widgets[] = {
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_QES_OK), SetMinimalSize(61, 12), SetStringTip(STR_BUTTON_OK),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_QES_CANCEL), SetMinimalSize(60, 12), SetStringTip(STR_BUTTON_CANCEL),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_QES_DELETE), SetMinimalSize(60, 12), SetStringTip(STR_TOWN_VIEW_DELETE_BUTTON),
-		NWidget(WWT_PANEL, COLOUR_GREY), SetFill(1, 1), EndContainer(),
+		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QES_MOVE), SetMinimalSize(60, 12), SetStringTip(STR_BUTTON_MOVE),
 		NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_QES_PREVIOUS), SetMinimalSize(11, 12), SetArrowWidgetTypeTip(AWV_DECREASE, STR_EDIT_SIGN_PREVIOUS_SIGN_TOOLTIP),
 		NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_QES_NEXT), SetMinimalSize(11, 12), SetArrowWidgetTypeTip(AWV_INCREASE, STR_EDIT_SIGN_NEXT_SIGN_TOOLTIP),
 	EndContainer(),
 };
 
 static WindowDesc _query_sign_edit_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_QUERY_STRING, WC_NONE,
 	WindowDefaultFlag::Construction,
 	_nested_query_sign_edit_widgets
@@ -559,8 +574,8 @@ static WindowDesc _query_sign_edit_desc(
  */
 void HandleClickOnSign(const Sign *si)
 {
-	/* If we can't rename the sign, don't even open the rename GUI. */
-	if (!CompanyCanRenameSign(si)) return;
+	/* If we can't edit the sign, don't even open the rename GUI. */
+	if (!CompanyCanEditSign(si)) return;
 
 	if (_ctrl_pressed && (si->owner == _local_company || (si->owner == OWNER_DEITY && _game_mode == GM_EDITOR))) {
 		RenameSign(si->index, "");

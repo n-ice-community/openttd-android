@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file town_type.h Types related to towns. */
@@ -90,6 +90,14 @@ enum TownLayout : uint8_t {
 	NUM_TLS,             ///< Number of town layouts
 };
 DECLARE_ENUM_AS_ADDABLE(TownLayout)
+
+/** Options for growing towns. */
+enum class TownExpandMode : uint8_t {
+	Buildings, ///< Allow town to place buildings.
+	Roads, ///< Allow town to place roads.
+};
+
+using TownExpandModes = EnumBitSet<TownExpandMode, uint8_t>;
 
 /** Town founding setting values. It needs to be 8bits, because we save and load it as such */
 enum TownFounding : uint8_t {

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file gfx_layout.cpp Handling of laying out text. */
@@ -10,10 +10,15 @@
 #include "stdafx.h"
 #include "core/math_func.hpp"
 #include "gfx_layout.h"
+#include "gfx_func.h"
 #include "string_func.h"
 #include "strings_func.h"
 #include "core/utf8.hpp"
 #include "debug.h"
+#include "timer/timer.h"
+#include "timer/timer_window.h"
+#include "viewport_func.h"
+#include "window_func.h"
 
 #include "table/control_codes.h"
 
@@ -35,22 +40,51 @@
 
 
 /** Cache of ParagraphLayout lines. */
-Layouter::LineCache *Layouter::linecache;
+std::unique_ptr<Layouter::LineCache> Layouter::linecache;
 
-/** Cache of Font instances. */
-Layouter::FontColourMap Layouter::fonts[FS_END];
+class RuntimeMissingGlyphSearcher : public MissingGlyphSearcher {
+	std::array<std::set<char32_t>, FS_END> glyphs{};
+public:
+	RuntimeMissingGlyphSearcher() : MissingGlyphSearcher(FONTSIZES_ALL) {}
 
+	FontLoadReason GetLoadReason() override { return FontLoadReason::MissingFallback; }
 
-/**
- * Construct a new font.
- * @param size   The font size to use for this font.
- * @param colour The colour to draw this font in.
- */
-Font::Font(FontSize size, TextColour colour) :
-		fc(FontCache::Get(size)), colour(colour)
-{
-	assert(size < FS_END);
-}
+	inline void Insert(FontSize fs, char32_t c)
+	{
+		this->glyphs[fs].insert(c);
+		this->search_timeout.Reset();
+	}
+
+	std::set<char32_t> GetRequiredGlyphs(FontSizes fontsizes) override
+	{
+		std::set<char32_t> r;
+		for (FontSize fs : fontsizes) {
+			r.merge(this->glyphs[fs]);
+		}
+		return r;
+	}
+
+	TimeoutTimer<TimerWindow> search_timeout{std::chrono::milliseconds(250), [this]()
+	{
+		FontSizes changed_fontsizes{};
+		for (FontSize fs = FS_BEGIN; fs != FS_END; ++fs) {
+			auto &missing = this->glyphs[fs];
+			if (missing.empty()) continue;
+
+			if (FontProviderManager::FindFallbackFont({}, fs, this)) changed_fontsizes.Set(fs);
+			missing.clear();
+		}
+
+		if (!changed_fontsizes.Any()) return;
+
+		FontCache::LoadFontCaches(changed_fontsizes);
+		LoadStringWidthTable(changed_fontsizes);
+		UpdateAllVirtCoords();
+		ReInitAllWindows(true);
+	}};
+};
+
+static RuntimeMissingGlyphSearcher _missing_glyphs;
 
 /**
  * Helper for getting a ParagraphLayouter of the given type.
@@ -58,7 +92,7 @@ Font::Font(FontSize size, TextColour colour) :
  * @note In case no ParagraphLayouter could be constructed, line.layout will be nullptr.
  * @param line The cache item to store our layouter in.
  * @param str The string to create a layouter for.
- * @param state The state of the font and color.
+ * @param state The state of the font and colour.
  * @tparam T The type of layouter we want.
  */
 template <typename T>
@@ -71,7 +105,7 @@ static inline void GetLayouter(Layouter::LineCacheItem &line, std::string_view s
 	const typename T::CharType *buffer_last = buff_begin + str.size() + 1;
 	typename T::CharType *buff = buff_begin;
 	FontMap &font_mapping = line.runs;
-	Font *f = Layouter::GetFont(state.fontsize, state.cur_colour);
+	Font f{state.font_index, state.cur_colour};
 
 	font_mapping.clear();
 
@@ -80,7 +114,10 @@ static inline void GetLayouter(Layouter::LineCacheItem &line, std::string_view s
 	 * whenever the font changes, and convert the wide characters into a format
 	 * usable by ParagraphLayout.
 	 */
-	for (char32_t c : Utf8View(str)) {
+	Utf8View view(str);
+	for (auto it = view.begin(); it != view.end(); /* nothing */) {
+		auto cur = it;
+		uint32_t c = *it++;
 		if (c == '\0' || c == '\n') {
 			/* Caller should already have filtered out these characters. */
 			NOT_REACHED();
@@ -95,19 +132,41 @@ static inline void GetLayouter(Layouter::LineCacheItem &line, std::string_view s
 		} else {
 			/* Filter out non printable characters */
 			if (!IsPrintable(c)) continue;
-			/* Filter out text direction characters that shouldn't be drawn, and
-			 * will not be handled in the fallback case because they are mostly
-			 * needed for RTL languages which need more proper shaping support. */
-			if (!T::SUPPORTS_RTL && IsTextDirectionChar(c)) continue;
-			buff += T::AppendToBuffer(buff, buffer_last, c);
-			if (buff >= buffer_last) break;
-			continue;
+
+			if (IsTextDirectionChar(c)) {
+				/* Filter out text direction characters that shouldn't be drawn, and
+				 * will not be handled in the fallback case because they are mostly
+				 * needed for RTL languages which need more proper shaping support. */
+				if constexpr (!T::SUPPORTS_RTL) continue;
+
+				buff += T::AppendToBuffer(buff, buffer_last, c);
+				if (buff >= buffer_last) break;
+				continue;
+			}
+
+			FontIndex font_index = FontCache::GetFontIndexForCharacter(state.fontsize, c);
+
+			if (font_index == INVALID_FONT_INDEX) {
+				_missing_glyphs.Insert(state.fontsize, c);
+				font_index = FontCache::GetDefaultFontIndex(state.fontsize);
+			}
+
+			if (state.font_index == font_index) {
+				buff += T::AppendToBuffer(buff, buffer_last, c);
+				if (buff >= buffer_last) break;
+				continue;
+			}
+
+			/* This character goes in the next run so don't advance. */
+			state.font_index = font_index;
+
+			it = cur;
 		}
 
-		if (font_mapping.empty() || font_mapping.back().first != buff - buff_begin) {
+		if (buff - buff_begin > 0 && (font_mapping.empty() || font_mapping.back().first != buff - buff_begin)) {
 			font_mapping.emplace_back(buff - buff_begin, f);
 		}
-		f = Layouter::GetFont(state.fontsize, state.cur_colour);
+		f = {state.font_index, state.cur_colour};
 	}
 
 	/* Better safe than sorry. */
@@ -116,6 +175,14 @@ static inline void GetLayouter(Layouter::LineCacheItem &line, std::string_view s
 	if (font_mapping.empty() || font_mapping.back().first != buff - buff_begin) {
 		font_mapping.emplace_back(buff - buff_begin, f);
 	}
+
+	if constexpr (!std::is_same_v<T, FallbackParagraphLayoutFactory>) {
+		/* Don't layout if all runs use a built-in font and we're not using the fallback layouter. */
+		if (std::ranges::all_of(font_mapping, [](const auto &i) { return i.second.GetFontCache().IsBuiltInFont(); })) {
+			return;
+		}
+	}
+
 	line.layout = T::GetParagraphLayout(buff_begin, buff, font_mapping);
 	line.state_after = state;
 }
@@ -128,7 +195,7 @@ static inline void GetLayouter(Layouter::LineCacheItem &line, std::string_view s
  */
 Layouter::Layouter(std::string_view str, int maxw, FontSize fontsize) : string(str)
 {
-	FontState state(TC_INVALID, fontsize);
+	FontState state(TC_INVALID, fontsize, FontCache::GetDefaultFontIndex(fontsize));
 
 	while (true) {
 		auto line_length = str.find_first_of('\n');
@@ -174,11 +241,21 @@ Layouter::Layouter(std::string_view str, int maxw, FontSize fontsize) : string(s
 			}
 		}
 
-		/* Move all lines into a local cache so we can reuse them later on more easily. */
-		for (;;) {
-			auto l = line.layout->NextLine(maxw);
-			if (l == nullptr) break;
-			this->push_back(std::move(l));
+		if (line.cached_width != maxw) {
+			/* First run or width has changed, so we need to go through the layouter. Lines are moved into a cache to
+			 * be reused if the width is not changed. */
+			line.cached_layout.clear();
+			line.cached_width = maxw;
+			for (;;) {
+				auto l = line.layout->NextLine(maxw);
+				if (l == nullptr) break;
+				line.cached_layout.push_back(std::move(l));
+			}
+		}
+
+		/* Retrieve layout from the cache. */
+		for (const auto &l : line.cached_layout) {
+			this->push_back(l.get());
 		}
 
 		/* Break out if this was the last line. */
@@ -214,7 +291,7 @@ static bool IsConsumedFormattingCode(char32_t ch)
 	if (ch == SCC_PUSH_COLOUR) return true;
 	if (ch == SCC_POP_COLOUR) return true;
 	if (ch >= SCC_FIRST_FONT && ch <= SCC_LAST_FONT) return true;
-	// All other characters defined in Unicode standard are assumed to be non-consumed.
+	/* All other characters defined in Unicode standard are assumed to be non-consumed. */
 	return false;
 }
 
@@ -329,18 +406,6 @@ ptrdiff_t Layouter::GetCharAtPosition(int x, size_t line_index) const
 }
 
 /**
- * Get a static font instance.
- */
-Font *Layouter::GetFont(FontSize size, TextColour colour)
-{
-	FontColourMap::iterator it = fonts[size].find(colour);
-	if (it != fonts[size].end()) return it->second.get();
-
-	fonts[size][colour] = std::make_unique<Font>(size, colour);
-	return fonts[size][colour].get();
-}
-
-/**
  * Perform initialization of layout engine.
  */
 void Layouter::Initialize()
@@ -352,12 +417,9 @@ void Layouter::Initialize()
 
 /**
  * Reset cached font information.
- * @param size Font size to reset.
  */
-void Layouter::ResetFontCache(FontSize size)
+void Layouter::ResetFontCache([[maybe_unused]] FontSize size)
 {
-	fonts[size].clear();
-
 	/* We must reset the linecache since it references the just freed fonts */
 	ResetLineCache();
 
@@ -380,19 +442,20 @@ Layouter::LineCacheItem &Layouter::GetCachedParagraphLayout(std::string_view str
 {
 	if (linecache == nullptr) {
 		/* Create linecache on first access to avoid trouble with initialisation order of static variables. */
-		linecache = new LineCache();
+		linecache = std::make_unique<LineCache>(4096);
 	}
 
-	if (auto match = linecache->find(LineCacheQuery{state, str});
-		match != linecache->end()) {
-		return match->second;
+	if (auto match = linecache->GetIfValid(LineCacheQuery{state, str});
+		match != nullptr) {
+		return *match;
 	}
 
 	/* Create missing entry */
 	LineCacheKey key;
 	key.state_before = state;
 	key.str.assign(str);
-	return (*linecache)[std::move(key)];
+	linecache->Insert(key, {});
+	return *linecache->GetIfValid(key);
 }
 
 /**
@@ -400,33 +463,21 @@ Layouter::LineCacheItem &Layouter::GetCachedParagraphLayout(std::string_view str
  */
 void Layouter::ResetLineCache()
 {
-	if (linecache != nullptr) linecache->clear();
-}
-
-/**
- * Reduce the size of linecache if necessary to prevent infinite growth.
- */
-void Layouter::ReduceLineCache()
-{
-	if (linecache != nullptr) {
-		/* TODO LRU cache would be fancy, but not exactly necessary */
-		if (linecache->size() > 4096) ResetLineCache();
-	}
+	if (linecache != nullptr) linecache->Clear();
 }
 
 /**
  * Get the leading corner of a character in a single-line string relative
  * to the start of the string.
  * @param str String containing the character.
- * @param ch Pointer to the character in the string.
+ * @param pos Index to the character in the string.
  * @param start_fontsize Font size to start the text with.
  * @return Upper left corner of the glyph associated with the character.
  */
-ParagraphLayouter::Position GetCharPosInString(std::string_view str, const char *ch, FontSize start_fontsize)
+ParagraphLayouter::Position GetCharPosInString(std::string_view str, size_t pos, FontSize start_fontsize)
 {
-	/* Ensure "ch" is inside "str" or at the exact end. */
-	assert(ch >= str.data() && (ch - str.data()) <= static_cast<ptrdiff_t>(str.size()));
-	auto it_ch = str.begin() + (ch - str.data());
+	assert(pos <= str.size());
+	auto it_ch = str.begin() + pos;
 
 	Layouter layout(str, INT32_MAX, start_fontsize);
 	return layout.GetCharPosition(it_ch);

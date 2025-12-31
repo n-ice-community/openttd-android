@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_client.h Client part of the network protocol. */
@@ -74,7 +74,7 @@ protected:
 	static NetworkRecvStatus SendIdentify();
 	void CheckConnection();
 public:
-	ClientNetworkGameSocketHandler(SOCKET s, const std::string &connection_string);
+	ClientNetworkGameSocketHandler(SOCKET s, std::string_view connection_string);
 	~ClientNetworkGameSocketHandler();
 
 	NetworkRecvStatus CloseConnection(NetworkRecvStatus status) override;
@@ -88,9 +88,9 @@ public:
 
 	static NetworkRecvStatus SendAuthResponse();
 
-	static NetworkRecvStatus SendChat(NetworkAction action, DestType type, int dest, const std::string &msg, int64_t data);
+	static NetworkRecvStatus SendChat(NetworkAction action, DestType type, int dest, std::string_view msg, int64_t data);
 	static NetworkRecvStatus SendSetName(const std::string &name);
-	static NetworkRecvStatus SendRCon(const std::string &password, const std::string &command);
+	static NetworkRecvStatus SendRCon(std::string_view password, std::string_view command);
 	static NetworkRecvStatus SendMove(CompanyID company);
 
 	static bool IsConnected();

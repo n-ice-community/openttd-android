@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_tunnel.cpp Implementation of ScriptTunnel. */
@@ -51,7 +51,7 @@
  * Helper function to connect a just built tunnel to nearby roads.
  * @param instance The script instance we have to built the road for.
  */
-static void _DoCommandReturnBuildTunnel2(class ScriptInstance *instance)
+static void _DoCommandReturnBuildTunnel2(class ScriptInstance &instance)
 {
 	if (!ScriptTunnel::_BuildTunnelRoad2()) {
 		ScriptInstance::DoCommandReturn(instance);
@@ -67,7 +67,7 @@ static void _DoCommandReturnBuildTunnel2(class ScriptInstance *instance)
  * Helper function to connect a just built tunnel to nearby roads.
  * @param instance The script instance we have to built the road for.
  */
-static void _DoCommandReturnBuildTunnel1(class ScriptInstance *instance)
+static void _DoCommandReturnBuildTunnel1(class ScriptInstance &instance)
 {
 	if (!ScriptTunnel::_BuildTunnelRoad1()) {
 		ScriptInstance::DoCommandReturn(instance);

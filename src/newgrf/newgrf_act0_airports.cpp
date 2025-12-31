@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_airports.cpp NewGRF Action 0x00 handler for airports. */
@@ -93,10 +93,8 @@ static ChangeInfoResult AirportChangeInfo(uint first, uint last, int prop, ByteR
 						tile.ti.x = buf.ReadByte();
 						tile.ti.y = buf.ReadByte();
 						if (tile.ti.x == 0 && tile.ti.y == 0x80) {
-							/* Convert terminator to our own. */
-							tile.ti.x = -0x80;
-							tile.ti.y = 0;
-							tile.gfx = 0;
+							/* Terminator, remove and finish up. */
+							layout.tiles.pop_back();
 							break;
 						}
 
@@ -210,7 +208,7 @@ static ChangeInfoResult AirportTilesChangeInfo(uint first, uint last, int prop, 
 
 					tsp->enabled = true;
 
-					tsp->animation.status = ANIM_STATUS_NO_ANIMATION;
+					tsp->animation = {};
 
 					tsp->grf_prop.local_id = id;
 					tsp->grf_prop.subst_id = subs_id;
@@ -239,7 +237,7 @@ static ChangeInfoResult AirportTilesChangeInfo(uint first, uint last, int prop, 
 
 			case 0x0F: // Animation information
 				tsp->animation.frames = buf.ReadByte();
-				tsp->animation.status = buf.ReadByte();
+				tsp->animation.status = static_cast<AnimationStatus>(buf.ReadByte());
 				break;
 
 			case 0x10: // Animation speed
@@ -247,7 +245,7 @@ static ChangeInfoResult AirportTilesChangeInfo(uint first, uint last, int prop, 
 				break;
 
 			case 0x11: // Animation triggers
-				tsp->animation.triggers = buf.ReadByte();
+				tsp->animation.triggers = static_cast<AirportAnimationTriggers>(buf.ReadByte());
 				break;
 
 			case 0x12: // Badge list

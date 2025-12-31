@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_server.h Server part of the network protocol. */
@@ -89,13 +89,13 @@ public:
 	NetworkRecvStatus SendQuit(ClientID client_id);
 	NetworkRecvStatus SendShutdown();
 	NetworkRecvStatus SendNewGame();
-	NetworkRecvStatus SendRConResult(uint16_t colour, const std::string &command);
+	NetworkRecvStatus SendRConResult(uint16_t colour, std::string_view command);
 	NetworkRecvStatus SendMove(ClientID client_id, CompanyID company_id);
 
 	NetworkRecvStatus SendClientInfo(NetworkClientInfo *ci);
-	NetworkRecvStatus SendError(NetworkErrorCode error, const std::string &reason = {});
-	NetworkRecvStatus SendChat(NetworkAction action, ClientID client_id, bool self_send, const std::string &msg, int64_t data);
-	NetworkRecvStatus SendExternalChat(const std::string &source, TextColour colour, const std::string &user, const std::string &msg);
+	NetworkRecvStatus SendError(NetworkErrorCode error, std::string_view reason = {});
+	NetworkRecvStatus SendChat(NetworkAction action, ClientID client_id, bool self_send, std::string_view msg, int64_t data);
+	NetworkRecvStatus SendExternalChat(std::string_view source, TextColour colour, std::string_view user, std::string_view msg);
 	NetworkRecvStatus SendJoin(ClientID client_id);
 	NetworkRecvStatus SendFrame();
 	NetworkRecvStatus SendSync();
@@ -110,12 +110,12 @@ public:
 	 * Get the name used by the listener.
 	 * @return the name to show in debug logs and the like.
 	 */
-	static const char *GetName()
+	static std::string_view GetName()
 	{
 		return "server";
 	}
 
-	const std::string &GetClientIP();
+	std::string_view GetClientIP();
 	std::string_view GetPeerPublicKey() const { return this->peer_public_key; }
 
 	static ServerNetworkGameSocketHandler *GetByClientID(ClientID client_id);

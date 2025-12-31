@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file company_func.h Functions related to companies. */
@@ -36,8 +36,9 @@ CommandCost CheckTileOwnership(TileIndex tile);
 extern CompanyID _local_company;
 extern CompanyID _current_company;
 
-extern ReferenceThroughBaseContainer<std::array<Colours, MAX_COMPANIES>> _company_colours;
-extern CompanyManagerFace _company_manager_face;
+extern TypedIndexContainer<std::array<Colours, MAX_COMPANIES>, CompanyID> _company_colours;
+extern std::string _company_manager_face;
+PaletteID GetCompanyPalette(CompanyID company);
 
 /**
  * Is the current company the local company?

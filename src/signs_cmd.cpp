@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file signs_cmd.cpp Handling of sign related commands. */
@@ -68,7 +68,7 @@ CommandCost CmdRenameSign(DoCommandFlags flags, SignID sign_id, const std::strin
 {
 	Sign *si = Sign::GetIfValid(sign_id);
 	if (si == nullptr) return CMD_ERROR;
-	if (!CompanyCanRenameSign(si)) return CMD_ERROR;
+	if (!CompanyCanEditSign(si)) return CMD_ERROR;
 
 	/* Rename the signs when empty, otherwise remove it */
 	if (!text.empty()) {
@@ -90,6 +90,36 @@ CommandCost CmdRenameSign(DoCommandFlags flags, SignID sign_id, const std::strin
 
 			InvalidateWindowData(WC_SIGN_LIST, 0, 0);
 		}
+	}
+
+	return CommandCost();
+}
+
+/**
+ * Move a sign to the given coordinates. Ownership of signs
+ * has no meaning/effect whatsoever except for eyecandy.
+ * @param flags type of operation
+ * @param sign_id index of the sign to be moved
+ * @param tile tile to place the sign at
+ * @return the cost of this operation or an error
+ */
+CommandCost CmdMoveSign(DoCommandFlags flags, SignID sign_id, TileIndex tile)
+{
+	Sign *si = Sign::GetIfValid(sign_id);
+	if (si == nullptr) return CMD_ERROR;
+	if (!CompanyCanEditSign(si)) return CMD_ERROR;
+
+	/* Move the sign */
+	if (flags.Test(DoCommandFlag::Execute)) {
+		int x = TileX(tile) * TILE_SIZE;
+		int y = TileY(tile) * TILE_SIZE;
+
+		si->x = x;
+		si->y = y;
+		si->z = GetSlopePixelZ(x, y);
+		if (_game_mode != GM_EDITOR) si->owner = _current_company;
+
+		si->UpdateVirtCoord();
 	}
 
 	return CommandCost();

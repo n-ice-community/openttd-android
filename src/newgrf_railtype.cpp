@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_railtype.cpp NewGRF handling of rail types. */
@@ -33,9 +33,9 @@
 			case 0x41: return 0;
 			case 0x42: return 0;
 			case 0x43: return TimerGameCalendar::date.base();
-			case 0x44: return HZB_TOWN_EDGE;
+			case 0x44: return to_underlying(HouseZone::TownEdge);
 			case 0x45: {
-				auto rt = GetRailTypeInfoIndex(this->rti);
+				RailType rt = this->rti->Index();
 				uint8_t local = GetReverseRailTypeTranslation(rt, this->ro.grffile);
 				if (local == 0xFF) local = 0xFE;
 				return 0xFFFF | local << 16;
@@ -57,7 +57,7 @@
 			} else if (IsLevelCrossingTile(this->tile)) {
 				t = ClosestTownFromTile(this->tile, UINT_MAX);
 			}
-			return t != nullptr ? GetTownRadiusGroup(t, this->tile) : HZB_TOWN_EDGE;
+			return to_underlying(t != nullptr ? GetTownRadiusGroup(t, this->tile) : HouseZone::TownEdge);
 		}
 		case 0x45:
 			return GetTrackTypes(this->tile, ro.grffile);
@@ -110,12 +110,12 @@ SpriteID GetCustomRailSprite(const RailTypeInfo *rti, TileIndex tile, RailTypeSp
 	if (rti->group[rtsg] == nullptr) return 0;
 
 	RailTypeResolverObject object(rti, tile, context, rtsg);
-	const SpriteGroup *group = object.Resolve();
-	if (group == nullptr || group->GetNumResults() == 0) return 0;
+	const auto *group = object.Resolve<ResultSpriteGroup>();
+	if (group == nullptr || group->num_sprites == 0) return 0;
 
-	if (num_results) *num_results = group->GetNumResults();
+	if (num_results) *num_results = group->num_sprites;
 
-	return group->GetResult();
+	return group->sprite;
 }
 
 /**
@@ -136,10 +136,10 @@ SpriteID GetCustomSignalSprite(const RailTypeInfo *rti, TileIndex tile, SignalTy
 	uint32_t param2 = (type << 16) | (var << 8) | state;
 	RailTypeResolverObject object(rti, tile, TCX_NORMAL, RTSG_SIGNALS, param1, param2);
 
-	const SpriteGroup *group = object.Resolve();
-	if (group == nullptr || group->GetNumResults() == 0) return 0;
+	const auto *group = object.Resolve<ResultSpriteGroup>();
+	if (group == nullptr || group->num_sprites == 0) return 0;
 
-	return group->GetResult();
+	return group->sprite;
 }
 
 /**

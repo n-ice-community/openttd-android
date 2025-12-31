@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file rail.h Rail specific functions. */
@@ -13,8 +13,8 @@
 #include "rail_type.h"
 #include "track_type.h"
 #include "gfx_type.h"
-#include "core/bitmath_func.hpp"
 #include "core/enum_type.hpp"
+#include "core/flatset_type.hpp"
 #include "economy_func.h"
 #include "slope_type.h"
 #include "strings_type.h"
@@ -109,9 +109,6 @@ enum RailFenceOffset : uint8_t {
 	RFO_SLOPE_NW_SW,   //!< Slope NW,   Track Y,     Fence SW
 };
 
-/** List of rail type labels. */
-typedef std::vector<RailTypeLabel> RailTypeLabelList;
-
 /**
  * This struct contains all the info that is needed to draw and construct tracks.
  */
@@ -134,6 +131,7 @@ public:
 		SpriteID single_sloped;///< single piece of rail for slopes
 		SpriteID crossing;     ///< level crossing, rail in X direction
 		SpriteID tunnel;       ///< tunnel sprites base
+		SpriteID bridge_deck;  ///< bridge deck sprites base
 	} base_sprites;
 
 	/**
@@ -184,7 +182,7 @@ public:
 	/**
 	 * Bridge offset
 	 */
-	SpriteID bridge_offset;
+	uint8_t bridge_offset;
 
 	/**
 	 * Original railtype number to use when drawing non-newgrf railtypes, or when drawing stations.
@@ -214,7 +212,7 @@ public:
 	/**
 	 * Acceleration type of this rail type
 	 */
-	uint8_t acceleration_type;
+	VehicleAccelerationModel acceleration_type;
 
 	/**
 	 * Maximum speed for vehicles travelling on this rail type
@@ -229,12 +227,12 @@ public:
 	/**
 	 * Rail type labels this type provides in addition to the main label.
 	 */
-	RailTypeLabelList alternate_labels;
+	FlatSet<RailTypeLabel> alternate_labels;
 
 	/**
 	 * Colour on mini-map
 	 */
-	uint8_t map_colour;
+	PixelColour map_colour;
 
 	/**
 	 * Introduction date.
@@ -289,6 +287,8 @@ public:
 	{
 		return 82 * this->fallback_railtype;
 	}
+
+	RailType Index() const;
 };
 
 
@@ -305,16 +305,39 @@ inline const RailTypeInfo *GetRailTypeInfo(RailType railtype)
 }
 
 /**
- * Returns the railtype for a Railtype information.
- * @param rti Pointer to static RailTypeInfo
- * @return Railtype in static railtype definitions
+ * Returns all compatible railtypes for a set of railtypes.
+ * @param railtypes Set of railtypes to get the compatible railtypes from.
+ * @return Union of all compatible railtypes.
  */
-inline RailType GetRailTypeInfoIndex(const RailTypeInfo *rti)
+inline RailTypes GetAllCompatibleRailTypes(RailTypes railtypes)
 {
-	extern RailTypeInfo _railtypes[RAILTYPE_END];
-	size_t index = rti - _railtypes;
-	assert(index < RAILTYPE_END && rti == _railtypes + index);
-	return static_cast<RailType>(index);
+	RailTypes compatible{};
+	for (RailType rt : railtypes) compatible.Set(GetRailTypeInfo(rt)->compatible_railtypes);
+	return compatible;
+}
+
+/**
+ * Returns all powered railtypes for a set of railtypes.
+ * @param railtypes Set of railtypes to get the powered railtypes from.
+ * @return Union of all powered railtypes.
+ */
+inline RailTypes GetAllPoweredRailTypes(RailTypes railtypes)
+{
+	RailTypes powered{};
+	for (RailType rt : railtypes) powered.Set(GetRailTypeInfo(rt)->powered_railtypes);
+	return powered;
+}
+
+/**
+ * Returns all introduced railtypes for a set of railtypes.
+ * @param railtypes Set of railtypes to get the introduced railtypes from.
+ * @return Union of all introduced railtypes.
+ */
+inline RailTypes GetAllIntroducesRailTypes(RailTypes railtypes)
+{
+	RailTypes introduces{};
+	for (RailType rt : railtypes) introduces.Set(GetRailTypeInfo(rt)->introduces_railtypes);
+	return introduces;
 }
 
 /**
@@ -331,6 +354,18 @@ inline bool IsCompatibleRail(RailType enginetype, RailType tiletype)
 }
 
 /**
+ * Checks if an engine of the given RailTypes can drive on a tile with a given
+ * RailType.
+ * @param  enginetype The RailTypes of the engine we are considering.
+ * @param  tiletype   The RailType of the tile we are considering.
+ * @return Whether the engine can drive on this tile.
+ */
+inline bool IsCompatibleRail(RailTypes enginetype, RailType tiletype)
+{
+	return GetAllCompatibleRailTypes(enginetype).Test(tiletype);
+}
+
+/**
  * Checks if an engine of the given RailType got power on a tile with a given
  * RailType. This would normally just be an equality check, but for electric
  * rails (which also support non-electric engines).
@@ -341,6 +376,18 @@ inline bool IsCompatibleRail(RailType enginetype, RailType tiletype)
 inline bool HasPowerOnRail(RailType enginetype, RailType tiletype)
 {
 	return GetRailTypeInfo(enginetype)->powered_railtypes.Test(tiletype);
+}
+
+/**
+ * Checks if an engine of the given RailTypes got power on a tile with a given
+ * RailType.
+ * @param  enginetype The RailTypes of the engine we are considering.
+ * @param  tiletype   The RailType of the tile we are considering.
+ * @return Whether the engine got power on this tile.
+ */
+inline bool HasPowerOnRail(RailTypes enginetype, RailType tiletype)
+{
+	return GetAllPoweredRailTypes(enginetype).Test(tiletype);
 }
 
 /**

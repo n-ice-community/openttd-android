@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file host.cpp Functions related to getting host specific data (IPs). */
@@ -48,7 +48,7 @@ static void NetworkFindBroadcastIPsInternal(NetworkAddressList *broadcast) // Wi
 
 		sockaddr_storage address{};
 		/* iiBroadcast is unusable, because it always seems to be set to 255.255.255.255. */
-		memcpy(&address, &ifo.iiAddress.Address, sizeof(sockaddr));
+		std::copy_n(reinterpret_cast<const std::byte *>(&ifo.iiAddress.Address), sizeof(sockaddr), reinterpret_cast<std::byte *>(&address));
 		reinterpret_cast<sockaddr_in*>(&address)->sin_addr.s_addr = ifo.iiAddress.AddressIn.sin_addr.s_addr | ~ifo.iiNetmask.AddressIn.sin_addr.s_addr;
 		NetworkAddress addr(address, sizeof(sockaddr));
 		if (std::none_of(broadcast->begin(), broadcast->end(), [&addr](NetworkAddress const &elem) -> bool { return elem == addr; })) broadcast->push_back(addr);

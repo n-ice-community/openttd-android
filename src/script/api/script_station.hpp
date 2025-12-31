@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_station.hpp Everything to query and build stations. */
@@ -58,15 +58,6 @@ public:
 	 * @return True if and only if the station is valid.
 	 */
 	static bool IsValidStation(StationID station_id);
-
-	/**
-	 * Get the owner of a station.
-	 * @param station_id The station to get the owner of.
-	 * @pre IsValidStation(station_id).
-	 * @return The owner the station has.
-	 * @api -ai
-	 */
-	static ScriptCompany::CompanyID GetOwner(StationID station_id);
 
 	/**
 	 * Get the StationID of a tile, if there is a station.

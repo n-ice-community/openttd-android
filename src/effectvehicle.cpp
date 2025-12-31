@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file effectvehicle.cpp Implementation of everything generic to vehicles. */
@@ -540,7 +540,7 @@ struct EffectProcs {
 };
 
 /** Per-EffectVehicleType handling. */
-static std::array<EffectProcs, EV_END> _effect_procs = {{
+static const std::array<EffectProcs, EV_END> _effect_procs = {{
 	{ ChimneySmokeInit,   ChimneySmokeTick,   TO_INDUSTRIES }, // EV_CHIMNEY_SMOKE
 	{ SteamSmokeInit,     SteamSmokeTick,     TO_INVALID    }, // EV_STEAM_SMOKE
 	{ DieselSmokeInit,    DieselSmokeTick,    TO_INVALID    }, // EV_DIESEL_SMOKE
@@ -619,11 +619,7 @@ bool EffectVehicle::Tick()
 
 void EffectVehicle::UpdateDeltaXY()
 {
-	this->x_offs        = 0;
-	this->y_offs        = 0;
-	this->x_extent      = 1;
-	this->y_extent      = 1;
-	this->z_extent      = 1;
+	this->bounds = {{}, {1, 1, 1}, {}};
 }
 
 /**

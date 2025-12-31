@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file order_func.h Functions related to orders. */
@@ -22,9 +22,9 @@ void DeleteVehicleOrders(Vehicle *v, bool keep_orderlist = false, bool reset_ord
 bool ProcessOrders(Vehicle *v);
 bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth = 0, bool pbs_look_ahead = false);
 VehicleOrderID ProcessConditionalOrder(const Order *order, const Vehicle *v);
-uint GetOrderDistance(const Order *prev, const Order *cur, const Vehicle *v, int conditional_depth = 0);
+uint GetOrderDistance(VehicleOrderID prev, VehicleOrderID cur, const Vehicle *v, int conditional_depth = 0);
 
-void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int y, bool selected, bool timetable, int left, int middle, int right);
+void DrawOrderString(const Vehicle *v, const Order *order, VehicleOrderID order_index, int y, bool selected, bool timetable, int left, int middle, int right);
 
 static const uint DEF_SERVINT_DAYS_TRAINS   = 150;
 static const uint DEF_SERVINT_DAYS_ROADVEH  = 150;

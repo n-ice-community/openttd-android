@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file currency.cpp Support for different currencies. */
@@ -73,6 +73,7 @@ static const std::array<CurrencySpec, CURRENCY_END> origin_currency_specs = {{
 	{    1, "", TimerGameCalendar::Year{2014}, "",         NBSP "Ls",      "LVL", 1, STR_GAME_OPTIONS_CURRENCY_LVL    }, ///< latvian lats
 	{  400, "", TimerGameCalendar::Year{2002}, "",         "$00",          "PTE", 1, STR_GAME_OPTIONS_CURRENCY_PTE    }, ///< portuguese escudo
 	{   50, "", CF_NOEURO,                     "",         NBSP "\u20B4",  "UAH", 1, STR_GAME_OPTIONS_CURRENCY_UAH    }, ///< ukrainian hryvnia
+	{35000, "", CF_NOEURO,                     "",         NBSP "\u20AB",  "VND", 1, STR_GAME_OPTIONS_CURRENCY_VND    }, ///< Vietnamese Dong
 }};
 
 /** Array of currencies used by the system */
@@ -143,7 +144,7 @@ uint64_t GetMaskOfAllowedCurrencies()
 /**
  * Verify if the currency chosen by the user is about to be converted to Euro
  */
-static IntervalTimer<TimerGameCalendar> _check_switch_to_euro({TimerGameCalendar::YEAR, TimerGameCalendar::Priority::NONE}, [](auto)
+static const IntervalTimer<TimerGameCalendar> _check_switch_to_euro({TimerGameCalendar::YEAR, TimerGameCalendar::Priority::NONE}, [](auto)
 {
 	if (_currency_specs[_settings_game.locale.currency].to_euro != CF_NOEURO &&
 			_currency_specs[_settings_game.locale.currency].to_euro != CF_ISEURO &&

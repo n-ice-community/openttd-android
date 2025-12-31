@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file story_gui.cpp GUI for stories. */
@@ -712,7 +712,7 @@ public:
 
 			switch (ce.pe->type) {
 				case SPET_TEXT:
-					y_offset = DrawStringMultiLine(ce.bounds.left, ce.bounds.right, ce.bounds.top - scrollpos, ce.bounds.bottom - scrollpos,
+					DrawStringMultiLineWithClipping(ce.bounds.left, ce.bounds.right, ce.bounds.top - scrollpos, ce.bounds.bottom - scrollpos,
 						ce.pe->text.GetDecodedString(), TC_BLACK, SA_TOP | SA_LEFT);
 					break;
 
@@ -832,7 +832,7 @@ public:
 		}
 	}
 
-	void OnDropdownSelect(WidgetID widget, int index) override
+	void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
 		if (widget != WID_SB_SEL_PAGE) return;
 
@@ -937,7 +937,7 @@ const std::initializer_list<GUIStoryPageElementList::SortFunction * const> Story
 	&PageElementOrderSorter,
 };
 
-static constexpr NWidgetPart _nested_story_book_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_story_book_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
 		NWidget(WWT_CAPTION, COLOUR_BROWN, WID_SB_CAPTION),

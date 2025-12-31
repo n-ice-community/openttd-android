@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file video_driver.cpp Common code between video driver implementations. */
@@ -21,6 +21,8 @@
 #include "../thread.h"
 #include "../window_func.h"
 #include "video_driver.hpp"
+
+#include "../safeguards.h"
 
 bool _video_hw_accel; ///< Whether to consider hardware accelerated video drivers on startup.
 bool _video_vsync; ///< Whether we should use vsync (only if active video driver supports HW acceleration).

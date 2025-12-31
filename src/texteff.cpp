@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file texteff.cpp Handling of text effects. */
@@ -89,8 +89,8 @@ void RemoveTextEffect(TextEffectID te_id)
 }
 
 /** Slowly move text effects upwards. */
-IntervalTimer<TimerWindow> move_all_text_effects_interval = {std::chrono::milliseconds(30), [](uint count) {
-	if (_pause_mode.Any() && _game_mode != GM_EDITOR && _settings_game.construction.command_pause_level <= CMDPL_NO_CONSTRUCTION) return;
+const IntervalTimer<TimerWindow> move_all_text_effects_interval = {std::chrono::milliseconds(30), [](uint count) {
+	if (_pause_mode.Any() && _game_mode != GM_EDITOR && _settings_game.construction.command_pause_level <= CommandPauseLevel::NoConstruction) return;
 
 	for (TextEffect &te : _text_effects) {
 		if (!te.IsValid()) continue;
@@ -101,10 +101,10 @@ IntervalTimer<TimerWindow> move_all_text_effects_interval = {std::chrono::millis
 			continue;
 		}
 
-		te.MarkDirty(ZOOM_LVL_TEXT_EFFECT);
+		te.MarkDirty(ZoomLevel::TextEffect);
 		te.duration -= count;
 		te.top -= count * ZOOM_BASE;
-		te.MarkDirty(ZOOM_LVL_TEXT_EFFECT);
+		te.MarkDirty(ZoomLevel::TextEffect);
 	}
 }};
 
@@ -117,11 +117,11 @@ void InitTextEffects()
 void DrawTextEffects(DrawPixelInfo *dpi)
 {
 	/* Don't draw the text effects when zoomed out a lot */
-	if (dpi->zoom > ZOOM_LVL_TEXT_EFFECT) return;
+	if (dpi->zoom > ZoomLevel::TextEffect) return;
 	if (IsTransparencySet(TO_TEXT)) return;
 
 	ViewportStringFlags flags{};
-	if (dpi->zoom >= ZOOM_LVL_TEXT_EFFECT) flags.Set(ViewportStringFlag::Small);
+	if (dpi->zoom >= ZoomLevel::TextEffect) flags.Set(ViewportStringFlag::Small);
 
 	for (const TextEffect &te : _text_effects) {
 		if (!te.IsValid()) continue;

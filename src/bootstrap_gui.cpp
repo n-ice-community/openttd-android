@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file bootstrap_gui.cpp Barely used user interface for bootstrapping OpenTTD, i.e. downloading the required content. */
@@ -33,7 +33,7 @@
 #include "safeguards.h"
 
 /** Widgets for the background window to prevent smearing. */
-static constexpr NWidgetPart _background_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _background_widgets = {
 	NWidget(WWT_PANEL, COLOUR_DARK_BLUE, WID_BB_BACKGROUND), SetResize(1, 1),
 	EndContainer(),
 };
@@ -42,7 +42,7 @@ static constexpr NWidgetPart _background_widgets[] = {
  * Window description for the background window to prevent smearing.
  */
 static WindowDesc _background_desc(
-	WDP_MANUAL, nullptr, 0, 0,
+	WDP_MANUAL, {}, 0, 0,
 	WC_BOOTSTRAP, WC_NONE,
 	WindowDefaultFlag::NoClose,
 	_background_widgets
@@ -60,13 +60,13 @@ public:
 
 	void DrawWidget(const Rect &r, WidgetID) const override
 	{
-		GfxFillRect(r.left, r.top, r.right, r.bottom, 4, FILLRECT_OPAQUE);
-		GfxFillRect(r.left, r.top, r.right, r.bottom, 0, FILLRECT_CHECKER);
+		GfxFillRect(r, PixelColour{4}, FILLRECT_OPAQUE);
+		GfxFillRect(r, PixelColour{0}, FILLRECT_CHECKER);
 	}
 };
 
 /** Nested widgets for the error window. */
-static constexpr NWidgetPart _nested_bootstrap_errmsg_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_bootstrap_errmsg_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CAPTION, COLOUR_GREY, WID_BEM_CAPTION), SetStringTip(STR_MISSING_GRAPHICS_ERROR_TITLE),
 	EndContainer(),
@@ -78,7 +78,7 @@ static constexpr NWidgetPart _nested_bootstrap_errmsg_widgets[] = {
 
 /** Window description for the error window. */
 static WindowDesc _bootstrap_errmsg_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_BOOTSTRAP, WC_NONE,
 	{WindowDefaultFlag::Modal, WindowDefaultFlag::NoClose},
 	_nested_bootstrap_errmsg_widgets
@@ -123,7 +123,7 @@ public:
 };
 
 /** Nested widgets for the download window. */
-static constexpr NWidgetPart _nested_bootstrap_download_status_window_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_bootstrap_download_status_window_widgets = {
 	NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_CONTENT_DOWNLOAD_TITLE, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 	NWidget(WWT_PANEL, COLOUR_GREY),
 		NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0), SetPadding(WidgetDimensions::unscaled.modalpopup),
@@ -135,7 +135,7 @@ static constexpr NWidgetPart _nested_bootstrap_download_status_window_widgets[] 
 
 /** Window description for the download window */
 static WindowDesc _bootstrap_download_status_window_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_NETWORK_STATUS_WINDOW, WC_NONE,
 	{WindowDefaultFlag::Modal, WindowDefaultFlag::NoClose},
 	_nested_bootstrap_download_status_window_widgets
@@ -174,7 +174,7 @@ public:
 };
 
 /** The widgets for the query. It has no close box as that sprite does not exist yet. */
-static constexpr NWidgetPart _bootstrap_query_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _bootstrap_query_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_MISSING_GRAPHICS_SET_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 	EndContainer(),
@@ -187,7 +187,7 @@ static constexpr NWidgetPart _bootstrap_query_widgets[] = {
 
 /** The window description for the query. */
 static WindowDesc _bootstrap_query_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_CONFIRM_POPUP_QUERY, WC_NONE,
 	WindowDefaultFlag::NoClose,
 	_bootstrap_query_widgets
@@ -380,15 +380,15 @@ bool HandleBootstrap()
 	/* Initialise the font cache. */
 	InitializeUnicodeGlyphMap();
 	/* Next "force" finding a suitable non-sprite font as the local font is missing. */
-	CheckForMissingGlyphs(false);
+	CheckForMissingGlyphs();
 
 	/* Initialise the palette. The biggest step is 'faking' some recolour sprites.
 	 * This way the mauve and gray colours work and we can show the user interface. */
 	GfxInitPalettes();
-	static const int offsets[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0x04, 0x08 };
+	static const uint8_t offsets[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0x04, 0x08 };
 	for (Colours i = COLOUR_BEGIN; i != COLOUR_END; i++) {
 		for (ColourShade j = SHADE_BEGIN; j < SHADE_END; j++) {
-			SetColourGradient(i, j, offsets[i] + j);
+			SetColourGradient(i, j, PixelColour(offsets[i] + j));
 		}
 	}
 

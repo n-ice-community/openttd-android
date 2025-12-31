@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file fios.h Declarations for savegames operations */
@@ -78,7 +78,7 @@ extern LoadCheckData _load_check_data;
 struct FiosItem {
 	FiosType type;
 	int64_t mtime;
-	std::string title;
+	EncodedString title;
 	std::string name;
 	bool operator< (const FiosItem &other) const;
 };
@@ -87,7 +87,7 @@ struct FiosItem {
 class FileList : public std::vector<FiosItem> {
 public:
 	void BuildFileList(AbstractFileType abstract_filetype, SaveLoadOperation fop, bool show_dirs);
-	const FiosItem *FindItem(const std::string_view file);
+	const FiosItem *FindItem(std::string_view file);
 };
 
 enum SortingBits : uint8_t {
@@ -112,16 +112,15 @@ bool FiosBrowseTo(const FiosItem *item);
 
 std::string FiosGetCurrentPath();
 std::optional<uint64_t> FiosGetDiskFreeSpace(const std::string &path);
-bool FiosDelete(const char *name);
-std::string FiosMakeHeightmapName(const char *name);
-std::string FiosMakeSavegameName(const char *name);
+std::string FiosMakeHeightmapName(std::string_view name);
+std::string FiosMakeSavegameName(std::string_view name);
 
-std::tuple<FiosType, std::string> FiosGetSavegameListCallback(SaveLoadOperation fop, const std::string &file, const std::string_view ext);
-std::tuple<FiosType, std::string> FiosGetScenarioListCallback(SaveLoadOperation fop, const std::string &file, const std::string_view ext);
-std::tuple<FiosType, std::string> FiosGetHeightmapListCallback(SaveLoadOperation fop, const std::string &file, const std::string_view ext);
+std::tuple<FiosType, std::string> FiosGetSavegameListCallback(SaveLoadOperation fop, std::string_view file, std::string_view ext);
+std::tuple<FiosType, std::string> FiosGetScenarioListCallback(SaveLoadOperation fop, std::string_view file, std::string_view ext);
+std::tuple<FiosType, std::string> FiosGetHeightmapListCallback(SaveLoadOperation fop, std::string_view file, std::string_view ext);
 
 void ScanScenarios();
-const char *FindScenario(const ContentInfo &ci, bool md5sum);
+std::optional<std::string_view> FindScenario(const ContentInfo &ci, bool md5sum);
 
 /**
  * A savegame name automatically numbered.

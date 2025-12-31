@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file goal_gui.cpp GUI for goals. */
@@ -172,7 +172,7 @@ struct GoalListWindow : public Window {
 		Dimension d = GetStringBoundingBox(STR_GOALS_NONE);
 
 		resize.width = 1;
-		resize.height = d.height;
+		fill.height = resize.height = d.height;
 
 		d.height *= 5;
 		d.width += WidgetDimensions::scaled.framerect.Horizontal();
@@ -275,7 +275,7 @@ struct GoalListWindow : public Window {
 };
 
 /** Widgets of the #GoalListWindow. */
-static constexpr NWidgetPart _nested_goals_list_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_goals_list_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
 		NWidget(WWT_CAPTION, COLOUR_BROWN, WID_GOAL_CAPTION),
@@ -409,7 +409,7 @@ struct NestedGoalWidgets {
 	static constexpr auto widgetparts = {
 		NWidget(NWID_HORIZONTAL),
 			NWidget(WWT_CLOSEBOX, bg_colour),
-			NWidget(WWT_CAPTION, bg_colour, WID_GQ_CAPTION), SetStringTip(STR_GOAL_QUESTION_CAPTION_QUESTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+			NWidget(WWT_CAPTION, bg_colour, WID_GQ_CAPTION), SetStringTip(caption, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 		EndContainer(),
 		NWidget(WWT_PANEL, bg_colour),
 			NWidget(NWID_VERTICAL), SetPadding(WidgetDimensions::unscaled.modalpopup), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
@@ -440,25 +440,25 @@ static constexpr auto _nested_goal_question_widgets_error    = NestedGoalWidgets
 
 static WindowDesc _goal_question_list_desc[] = {
 	{
-		WDP_CENTER, nullptr, 0, 0,
+		WDP_CENTER, {}, 0, 0,
 		WC_GOAL_QUESTION, WC_NONE,
 		WindowDefaultFlag::Construction,
 		_nested_goal_question_widgets_question,
 	},
 	{
-		WDP_CENTER, nullptr, 0, 0,
+		WDP_CENTER, {}, 0, 0,
 		WC_GOAL_QUESTION, WC_NONE,
 		WindowDefaultFlag::Construction,
 		_nested_goal_question_widgets_info,
 	},
 	{
-		WDP_CENTER, nullptr, 0, 0,
+		WDP_CENTER, {}, 0, 0,
 		WC_GOAL_QUESTION, WC_NONE,
 		WindowDefaultFlag::Construction,
 		_nested_goal_question_widgets_warning,
 	},
 	{
-		WDP_CENTER, nullptr, 0, 0,
+		WDP_CENTER, {}, 0, 0,
 		WC_GOAL_QUESTION, WC_NONE,
 		WindowDefaultFlag::Construction,
 		_nested_goal_question_widgets_error,

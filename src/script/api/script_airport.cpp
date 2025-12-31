@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_airport.cpp Implementation of ScriptAirport. */
@@ -139,7 +139,7 @@
 	if (_settings_game.economy.station_noise_level) {
 		uint dist;
 		const auto &layout = as->layouts[0];
-		AirportGetNearestTown(as, layout.rotation, tile, AirportTileTableIterator(layout.tiles.data(), tile), dist);
+		AirportGetNearestTown(as, layout.rotation, tile, AirportTileTableIterator(layout.tiles, tile), dist);
 		return GetAirportNoiseLevelForDistance(as, dist);
 	}
 
@@ -156,7 +156,7 @@
 
 	uint dist;
 	const auto &layout = as->layouts[0];
-	return AirportGetNearestTown(as, layout.rotation, tile, AirportTileTableIterator(layout.tiles.data(), tile), dist)->index;
+	return AirportGetNearestTown(as, layout.rotation, tile, AirportTileTableIterator(layout.tiles, tile), dist)->index;
 }
 
 /* static */ SQInteger ScriptAirport::GetMaintenanceCostFactor(AirportType type)

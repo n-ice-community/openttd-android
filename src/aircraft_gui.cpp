@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file aircraft_gui.cpp The GUI of aircraft. */
@@ -14,7 +14,6 @@
 #include "strings_func.h"
 #include "vehicle_func.h"
 #include "window_gui.h"
-#include "spritecache.h"
 #include "zoom_func.h"
 
 #include "table/strings.h"
@@ -82,7 +81,7 @@ void DrawAircraftImage(const Vehicle *v, const Rect &r, VehicleID selection, Eng
 	int x_offs = UnScaleGUI(rect.left);
 	int x = rtl ? r.right - width - x_offs : r.left - x_offs;
 	/* This magic -1 offset is related to the sprite_y_offsets in build_vehicle_gui.cpp */
-	int y = ScaleSpriteTrad(-1) + CenterBounds(r.top, r.bottom, 0);
+	int y = ScaleSpriteTrad(-1) + CentreBounds(r.top, r.bottom, 0);
 	bool helicopter = v->subtype == AIR_HELICOPTER;
 
 	int heli_offs = 0;

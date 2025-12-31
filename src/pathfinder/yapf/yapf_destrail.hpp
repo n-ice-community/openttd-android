@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_destrail.hpp Determining the destination for rail vehicles. */
@@ -22,7 +22,7 @@ public:
 	void SetDestination(const Train *v, bool override_rail_type = false)
 	{
 		this->compatible_railtypes = v->compatible_railtypes;
-		if (override_rail_type) this->compatible_railtypes.Set(GetRailTypeInfo(v->railtype)->compatible_railtypes);
+		if (override_rail_type) this->compatible_railtypes.Set(GetAllCompatibleRailTypes(v->railtypes));
 	}
 
 	bool IsCompatibleRailType(RailType rt)
@@ -152,7 +152,7 @@ public:
 				break;
 
 			case OT_GOTO_DEPOT:
-				if (v->current_order.GetDepotActionType() & ODATFB_NEAREST_DEPOT) {
+				if (v->current_order.GetDepotActionType().Test(OrderDepotActionFlag::NearestDepot)) {
 					this->any_depot = true;
 				}
 				[[fallthrough]];
@@ -194,25 +194,12 @@ public:
 	 */
 	inline bool PfCalcEstimate(Node &n)
 	{
-		static const int dg_dir_to_x_offs[] = {-1, 0, 1, 0};
-		static const int dg_dir_to_y_offs[] = {0, 1, 0, -1};
 		if (this->PfDetectDestination(n)) {
 			n.estimate = n.cost;
 			return true;
 		}
 
-		TileIndex tile = n.GetLastTile();
-		DiagDirection exitdir = TrackdirToExitdir(n.GetLastTrackdir());
-		int x1 = 2 * TileX(tile) + dg_dir_to_x_offs[(int)exitdir];
-		int y1 = 2 * TileY(tile) + dg_dir_to_y_offs[(int)exitdir];
-		int x2 = 2 * TileX(this->dest_tile);
-		int y2 = 2 * TileY(this->dest_tile);
-		int dx = abs(x1 - x2);
-		int dy = abs(y1 - y2);
-		int dmin = std::min(dx, dy);
-		int dxy = abs(dx - dy);
-		int d = dmin * YAPF_TILE_CORNER_LENGTH + (dxy - 1) * (YAPF_TILE_LENGTH / 2);
-		n.estimate = n.cost + d;
+		n.estimate = n.cost + OctileDistanceCost(n.GetLastTile(), n.GetLastTrackdir(), this->dest_tile);
 		assert(n.estimate >= n.parent->estimate);
 		return true;
 	}

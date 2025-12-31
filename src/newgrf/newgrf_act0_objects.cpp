@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_objects.cpp NewGRF Action 0x00 handler for objects. */
@@ -151,7 +151,7 @@ static ChangeInfoResult ObjectChangeInfo(uint first, uint last, int prop, ByteRe
 
 			case 0x11: // Animation info
 				spec->animation.frames = buf.ReadByte();
-				spec->animation.status = buf.ReadByte();
+				spec->animation.status = static_cast<AnimationStatus>(buf.ReadByte());
 				break;
 
 			case 0x12: // Animation speed
@@ -159,7 +159,7 @@ static ChangeInfoResult ObjectChangeInfo(uint first, uint last, int prop, ByteRe
 				break;
 
 			case 0x13: // Animation triggers
-				spec->animation.triggers = buf.ReadWord();
+				spec->animation.triggers = static_cast<ObjectAnimationTriggers>(buf.ReadWord());
 				break;
 
 			case 0x14: // Removal cost multiplier

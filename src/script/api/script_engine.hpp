@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_engine.hpp Everything to query and build engines. */
@@ -10,6 +10,7 @@
 #ifndef SCRIPT_ENGINE_HPP
 #define SCRIPT_ENGINE_HPP
 
+#include "script_list.hpp"
 #include "script_vehicle.hpp"
 #include "script_rail.hpp"
 #include "script_airport.hpp"
@@ -248,13 +249,23 @@ public:
 	static ScriptRoad::RoadType GetRoadType(EngineID engine_id);
 
 	/**
-	 * Get the RailType of the engine.
+	 * Get the first RailType of the engine.
+	 * @note This will only return the first RailType of a multi-system engine. Use GetAllRailTypes to get all rail types of the engine.
 	 * @param engine_id The engine to get the RailType of.
 	 * @pre IsValidEngine(engine_id).
 	 * @pre GetVehicleType(engine_id) == ScriptVehicle::VT_RAIL.
-	 * @return The RailType the engine has.
+	 * @return The first RailType the engine has.
 	 */
 	static ScriptRail::RailType GetRailType(EngineID engine_id);
+
+	/**
+	 * Get a list of all RailTypes of the engine.
+	 * @param engine_id The engine to get all RailTypes of.
+	 * @pre IsValidEngine(engine_id).
+	 * @pre GetVehicleType(engine_id) == ScriptVehicle::VT_RAIL.
+	 * @return All rail types of the engine.
+	 */
+	static ScriptList *GetAllRailTypes(EngineID engine_id);
 
 	/**
 	 * Check if the engine is articulated.

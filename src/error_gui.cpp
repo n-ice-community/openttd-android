@@ -2,14 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file error_gui.cpp GUI related to errors. */
 
 #include "stdafx.h"
 #include "core/geometry_func.hpp"
-#include "core/mem_func.hpp"
 #include "landscape.h"
 #include "newgrf_text.h"
 #include "error.h"
@@ -29,11 +28,12 @@
 
 #include "widgets/error_widget.h"
 
+#include "table/sprites.h"
 #include "table/strings.h"
 
 #include "safeguards.h"
 
-static constexpr NWidgetPart _nested_errmsg_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_errmsg_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_RED),
 		NWidget(WWT_CAPTION, COLOUR_RED, WID_EM_CAPTION), SetStringTip(STR_ERROR_MESSAGE_CAPTION),
@@ -44,13 +44,13 @@ static constexpr NWidgetPart _nested_errmsg_widgets[] = {
 };
 
 static WindowDesc _errmsg_desc(
-	WDP_MANUAL, nullptr, 0, 0,
+	WDP_MANUAL, {}, 0, 0,
 	WC_ERRMSG, WC_NONE,
 	{},
 	_nested_errmsg_widgets
 );
 
-static constexpr NWidgetPart _nested_errmsg_face_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_errmsg_face_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_RED),
 		NWidget(WWT_CAPTION, COLOUR_RED, WID_EM_CAPTION),
@@ -64,7 +64,7 @@ static constexpr NWidgetPart _nested_errmsg_face_widgets[] = {
 };
 
 static WindowDesc _errmsg_face_desc(
-	WDP_MANUAL, nullptr, 0, 0,
+	WDP_MANUAL, {}, 0, 0,
 	WC_ERRMSG, WC_NONE,
 	{},
 	_nested_errmsg_face_widgets
@@ -194,14 +194,14 @@ public:
 
 			case WID_EM_MESSAGE:
 				if (this->detailed_msg.empty()) {
-					DrawStringMultiLine(r, this->summary_msg.GetDecodedString(), TC_FROMSTRING, SA_CENTER);
+					DrawStringMultiLineWithClipping(r, this->summary_msg.GetDecodedString(), TC_FROMSTRING, SA_CENTER);
 				} else if (this->extra_msg.empty()) {
 					/* Extra space when message is shorter than company face window */
 					int extra = (r.Height() - this->height_summary - this->height_detailed - WidgetDimensions::scaled.vsep_wide) / 2;
 
 					/* Note: NewGRF supplied error message often do not start with a colour code, so default to white. */
-					DrawStringMultiLine(r.WithHeight(this->height_summary + extra, false), this->summary_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
-					DrawStringMultiLine(r.WithHeight(this->height_detailed + extra, true), this->detailed_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
+					DrawStringMultiLineWithClipping(r.WithHeight(this->height_summary + extra, false), this->summary_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
+					DrawStringMultiLineWithClipping(r.WithHeight(this->height_detailed + extra, true), this->detailed_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
 				} else {
 					/* Extra space when message is shorter than company face window */
 					int extra = (r.Height() - this->height_summary - this->height_detailed - this->height_extra - (WidgetDimensions::scaled.vsep_wide * 2)) / 3;
@@ -209,10 +209,10 @@ public:
 					/* Note: NewGRF supplied error message often do not start with a colour code, so default to white. */
 					Rect top_section = r.WithHeight(this->height_summary + extra, false);
 					Rect bottom_section = r.WithHeight(this->height_extra + extra, true);
-					Rect middle_section = { top_section.left, top_section.bottom, top_section.right, bottom_section.top };
-					DrawStringMultiLine(top_section, this->summary_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
-					DrawStringMultiLine(middle_section, this->detailed_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
-					DrawStringMultiLine(bottom_section, this->extra_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
+					Rect middle_section = top_section.WithY(top_section.bottom, bottom_section.top);
+					DrawStringMultiLineWithClipping(top_section, this->summary_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
+					DrawStringMultiLineWithClipping(middle_section, this->detailed_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
+					DrawStringMultiLineWithClipping(bottom_section, this->extra_msg.GetDecodedString(), TC_WHITE, SA_CENTER);
 				}
 
 				break;

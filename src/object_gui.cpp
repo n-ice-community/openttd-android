@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file object_gui.cpp The GUI for objects. */
@@ -12,7 +12,7 @@
 #include "company_func.h"
 #include "hotkeys.h"
 #include "newgrf.h"
-#include "newgrf_badge.h"
+#include "newgrf_badge_gui.h"
 #include "newgrf_object.h"
 #include "newgrf_text.h"
 #include "object.h"
@@ -187,6 +187,8 @@ public:
 
 			case WID_BO_INFO:
 				size.height = this->info_height;
+				fill.height = this->has_class_picker ? 0 : 1;
+				resize.height = this->has_class_picker ? 0 : 1;
 				break;
 
 			default:
@@ -237,15 +239,19 @@ public:
 
 				/* Get the extra message for the GUI */
 				if (spec->callback_mask.Test(ObjectCallbackMask::FundMoreText)) {
-					uint16_t callback_res = GetObjectCallback(CBID_OBJECT_FUND_MORE_TEXT, 0, 0, spec, nullptr, INVALID_TILE, _object_gui.sel_view);
+					std::array<int32_t, 16> regs100;
+					uint16_t callback_res = GetObjectCallback(CBID_OBJECT_FUND_MORE_TEXT, 0, 0, spec, nullptr, INVALID_TILE, regs100, _object_gui.sel_view);
 					if (callback_res != CALLBACK_FAILED && callback_res != 0x400) {
-						if (callback_res > 0x400) {
+						std::string str;
+						if (callback_res == 0x40F) {
+							str = GetGRFStringWithTextStack(spec->grf_prop.grffile, static_cast<GRFStringID>(regs100[0]), std::span{regs100}.subspan(1));
+						} else if (callback_res > 0x400) {
 							ErrorUnknownCallbackResult(spec->grf_prop.grfid, CBID_OBJECT_FUND_MORE_TEXT, callback_res);
 						} else {
-							std::string str = GetGRFStringWithTextStack(spec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback_res, 6);
-							if (!str.empty()) {
-								tr.top = DrawStringMultiLine(tr, str, TC_ORANGE);
-							}
+							str = GetGRFStringWithTextStack(spec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback_res, regs100);
+						}
+						if (!str.empty()) {
+							tr.top = DrawStringMultiLine(tr, str, TC_ORANGE);
 						}
 					}
 				}
@@ -313,7 +319,7 @@ public:
 				if (_object_gui.sel_type != std::numeric_limits<uint16_t>::max()) {
 					_object_gui.sel_view = this->GetWidget<NWidgetBase>(widget)->GetParentWidget<NWidgetMatrix>()->GetCurrentElement();
 					this->InvalidateData(PickerInvalidation::Position);
-					if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+					SndClickBeep();
 				}
 				break;
 
@@ -379,7 +385,7 @@ public:
 	}, BuildObjectGlobalHotkeys};
 };
 
-static constexpr NWidgetPart _nested_build_object_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_object_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_OBJECT_BUILD_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),

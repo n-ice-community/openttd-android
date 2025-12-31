@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_text.hpp Everything to handle text which can be translated. */
@@ -75,8 +75,6 @@ private:
  */
 class ScriptText : public Text {
 public:
-	static const int SCRIPT_TEXT_MAX_PARAMETERS = 20; ///< The maximum amount of parameters you can give to one object.
-
 #ifndef DOXYGEN_API
 	/**
 	 * The constructor wrapper from Squirrel.
@@ -128,10 +126,15 @@ public:
 	 */
 	EncodedString GetEncodedText() override;
 
+	/**
+	 * @api -all
+	 */
+	static void SetPadParameterCount(HSQUIRRELVM vm);
+
 private:
 	using ScriptTextRef = ScriptObjectRef<ScriptText>;
 	using ScriptTextList = std::vector<ScriptText *>;
-	using Param = std::variant<SQInteger, std::string, ScriptTextRef>;
+	using Param = std::variant<std::monostate, SQInteger, std::string, ScriptTextRef>;
 
 	struct ParamCheck {
 		StringIndexInTab owner;
@@ -149,8 +152,9 @@ private:
 	using ParamSpan = std::span<ParamCheck>;
 
 	StringIndexInTab string;
-	std::array<Param, SCRIPT_TEXT_MAX_PARAMETERS> param = {};
-	int paramc = 0;
+	std::vector<Param> param{};
+
+	static inline int pad_parameter_count = 0; ///< Pad parameters for relaxed string validation.
 
 	/**
 	 * Internal function to recursively fill a list of parameters.

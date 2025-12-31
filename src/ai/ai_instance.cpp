@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ai_instance.cpp Implementation of AIInstance. */
@@ -27,7 +27,7 @@
 #include "table/strings.h"
 
 /* Manually include the Text glue. */
-#include "../script/api/template/template_text.hpp.sq"
+#include "../script/api/template/template_text.sq.hpp"
 
 /* Convert all AI related classes to Squirrel data. */
 #include "../script/api/ai/ai_includes.hpp"
@@ -43,7 +43,7 @@ void AIInstance::Initialize(AIInfo *info)
 	this->api_version = info->GetAPIVersion();
 
 	/* Register the AIController (including the "import" command) */
-	SQAIController_Register(this->engine);
+	SQAIController_Register(*this->engine);
 
 	ScriptInstance::Initialize(info->GetMainScript(), info->GetInstanceName(), _current_company);
 }
@@ -53,7 +53,7 @@ void AIInstance::RegisterAPI()
 	ScriptInstance::RegisterAPI();
 
 	/* Register all classes */
-	SQAI_RegisterAll(this->engine);
+	SQAI_RegisterAll(*this->engine);
 
 	if (!this->LoadCompatibilityScripts(AI_DIR, AIInfo::ApiVersions)) this->Died();
 }
@@ -83,7 +83,7 @@ void AIInstance::Died()
 
 void AIInstance::LoadDummyScript()
 {
-	ScriptAllocatorScope alloc_scope(this->engine);
+	ScriptAllocatorScope alloc_scope(this->engine.get());
 	Script_CreateDummy(this->engine->GetVM(), STR_ERROR_AI_NO_AI_FOUND, "AI");
 }
 

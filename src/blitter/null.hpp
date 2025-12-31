@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file null.hpp The blitter that doesn't blit. */
@@ -18,11 +18,11 @@ public:
 	uint8_t GetScreenDepth() override { return 0; }
 	void Draw(Blitter::BlitterParams *, BlitterMode, ZoomLevel) override {};
 	void DrawColourMappingRect(void *, int, int, PaletteID) override {};
-	Sprite *Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override;
+	Sprite *Encode(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override;
 	void *MoveTo(void *, int, int) override { return nullptr; };
-	void SetPixel(void *, int, int, uint8_t) override {};
-	void DrawRect(void *, int, int, uint8_t) override {};
-	void DrawLine(void *, int, int, int, int, int, int, uint8_t, int, int) override {};
+	void SetPixel(void *, int, int, PixelColour) override {};
+	void DrawRect(void *, int, int, PixelColour) override {};
+	void DrawLine(void *, int, int, int, int, int, int, PixelColour, int, int) override {};
 	void CopyFromBuffer(void *, const void *, int, int) override {};
 	void CopyToBuffer(const void *, void *, int, int) override {};
 	void CopyImageToBuffer(const void *, void *, int, int, int) override {};

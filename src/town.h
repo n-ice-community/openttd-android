@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file town.h Base of the town class. */
@@ -10,6 +10,7 @@
 #ifndef TOWN_H
 #define TOWN_H
 
+#include "misc/history_type.hpp"
 #include "viewport_type.h"
 #include "timer/timer_game_tick.h"
 #include "town_map.h"
@@ -36,13 +37,23 @@ static const uint16_t MAX_TOWN_GROWTH_TICKS = 930; ///< Max amount of original t
 typedef Pool<Town, TownID, 64> TownPool;
 extern TownPool _town_pool;
 
+/** Flags controlling various town behaviours. */
+enum class TownFlag : uint8_t {
+	IsGrowing = 0, ///< Conditions for town growth are met. Grow according to Town::growth_rate.
+	HasChurch = 1, ///< There can be only one church by town.
+	HasStadium = 2, ///< There can be only one stadium by town.
+	CustomGrowth = 3, ///< Growth rate is controlled by GS.
+};
+
+using TownFlags = EnumBitSet<TownFlag, uint8_t>;
+
 /** Data structure with cached data of towns. */
 struct TownCache {
 	uint32_t num_houses = 0; ///< Amount of houses
 	uint32_t population = 0; ///< Current population of people
 	TrackedViewportSign sign{}; ///< Location of name sign, UpdateVirtCoord updates this
 	PartsOfSubsidy part_of_subsidy{}; ///< Is this town a source/destination of a subsidy?
-	std::array<uint32_t, HZB_END> squared_town_zone_radius{}; ///< UpdateTownRadius updates this given the house count
+	std::array<uint32_t, NUM_HOUSE_ZONES> squared_town_zone_radius{}; ///< UpdateTownRadius updates this given the house count
 	BuildingCounts<uint16_t> building_counts{}; ///< The number of each type of building in the town
 
 	auto operator<=>(const TownCache &) const = default;
@@ -61,7 +72,7 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 	std::string name{}; ///< Custom town name. If empty, the town was not renamed and uses the generated name.
 	mutable std::string cached_name{}; ///< NOSAVE: Cache of the resolved name of the town, if not using a custom town name
 
-	uint8_t flags = 0; ///< See #TownFlags.
+	TownFlags flags{}; ///< See #TownFlags.
 
 	uint16_t noise_reached = 0; ///< level of noise that all the airports are generating
 
@@ -69,21 +80,61 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 
 	/* Company ratings. */
 	CompanyMask have_ratings{}; ///< which companies have a rating
-	ReferenceThroughBaseContainer<std::array<uint8_t, MAX_COMPANIES>> unwanted{}; ///< how many months companies aren't wanted by towns (bribe)
+	TypedIndexContainer<std::array<uint8_t, MAX_COMPANIES>, CompanyID> unwanted{}; ///< how many months companies aren't wanted by towns (bribe)
 	CompanyID exclusivity = CompanyID::Invalid(); ///< which company has exclusivity
 	uint8_t exclusive_counter = 0; ///< months till the exclusivity expires
-	ReferenceThroughBaseContainer<std::array<int16_t, MAX_COMPANIES>> ratings{};  ///< ratings of each company for this town
+	TypedIndexContainer<std::array<int16_t, MAX_COMPANIES>, CompanyID> ratings{};  ///< ratings of each company for this town
 
-	std::array<TransportedCargoStat<uint32_t>, NUM_CARGO> supplied{}; ///< Cargo statistics about supplied cargo.
+	struct SuppliedHistory {
+		uint32_t production = 0; ///< Total produced
+		uint32_t transported = 0; ///< Total transported
+
+		uint8_t PctTransported() const
+		{
+			if (this->production == 0) return 0;
+			return ClampTo<uint8_t>(this->transported * 256 / this->production);
+		}
+	};
+
+	struct SuppliedCargo {
+		CargoType cargo = INVALID_CARGO;
+		HistoryData<SuppliedHistory> history{};
+
+		SuppliedCargo() = default;
+		SuppliedCargo(CargoType cargo) : cargo(cargo) {}
+	};
+
+	using SuppliedCargoes = std::vector<SuppliedCargo>;
+
+	SuppliedCargoes supplied{}; ///< Cargo statistics about supplied cargo.
 	std::array<TransportedCargoStat<uint16_t>, NUM_TAE> received{}; ///< Cargo statistics about received cargotypes.
 	std::array<uint32_t, NUM_TAE> goal{}; ///< Amount of cargo required for the town to grow.
+	ValidHistoryMask valid_history = 0; ///< Mask of valid history records.
 
 	EncodedString text{}; ///< General text with additional information.
 
+	inline SuppliedCargo &GetOrCreateCargoSupplied(CargoType cargo)
+	{
+		assert(IsValidCargoType(cargo));
+		auto it = std::ranges::lower_bound(this->supplied, cargo, std::less{}, &SuppliedCargo::cargo);
+		if (it == std::end(this->supplied) || it->cargo != cargo) it = this->supplied.emplace(it, cargo);
+		return *it;
+	}
+
+	inline SuppliedCargoes::const_iterator GetCargoSupplied(CargoType cargo) const
+	{
+		if (!IsValidCargoType(cargo)) return std::end(this->supplied);
+		auto it = std::ranges::lower_bound(this->supplied, cargo, std::less{}, &SuppliedCargo::cargo);
+		if (it == std::end(this->supplied) || it->cargo != cargo) return std::end(supplied);
+		return it;
+	}
+
 	inline uint8_t GetPercentTransported(CargoType cargo_type) const
 	{
-		if (!IsValidCargoType(cargo_type)) return 0;
-		return this->supplied[cargo_type].old_act * 256 / (this->supplied[cargo_type].old_max + 1);
+		auto it = this->GetCargoSupplied(cargo_type);
+		if (it == std::end(this->supplied)) return 0;
+
+		return it->history[LAST_MONTH].PctTransported();
 	}
 
 	StationList stations_near{}; ///< NOSAVE: List of nearby stations.
@@ -170,10 +221,10 @@ enum TownCouncilAttitudes {
  * Action types that a company must ask permission for to a town authority.
  * @see CheckforTownRating
  */
-enum TownRatingCheckType {
-	ROAD_REMOVE         = 0,      ///< Removal of a road owned by the town.
-	TUNNELBRIDGE_REMOVE = 1,      ///< Removal of a tunnel or bridge owned by the towb.
-	TOWN_RATING_CHECK_TYPE_COUNT, ///< Number of town checking action types.
+enum class TownRatingCheckType : uint8_t {
+	RoadRemove, ///< Removal of a road owned by the town.
+	TunnelBridgeRemove, ///< Removal of a tunnel or bridge owned by the town.
+	End,
 };
 
 /** Special values for town list window for the data parameter of #InvalidateWindowData. */
@@ -181,20 +232,6 @@ enum TownDirectoryInvalidateWindowData {
 	TDIWD_FORCE_REBUILD,
 	TDIWD_POPULATION_CHANGE,
 	TDIWD_FORCE_RESORT,
-};
-
-/**
- * This enum is used in conjunction with town->flags.
- * IT simply states what bit is used for.
- * It is pretty unrealistic (IMHO) to only have one church/stadium
- * per town, NO MATTER the population of it.
- * And there are 5 more bits available on flags...
- */
-enum TownFlags {
-	TOWN_IS_GROWING     = 0,   ///< Conditions for town growth are met. Grow according to Town::growth_rate.
-	TOWN_HAS_CHURCH     = 1,   ///< There can be only one church by town.
-	TOWN_HAS_STADIUM    = 2,   ///< There can be only one stadium by town.
-	TOWN_CUSTOM_GROWTH  = 3,   ///< Growth rate is controlled by GS.
 };
 
 CommandCost CheckforTownRating(DoCommandFlags flags, Town *t, TownRatingCheckType type);
@@ -228,10 +265,11 @@ void UpdateTownRadius(Town *t);
 CommandCost CheckIfAuthorityAllowsNewStation(TileIndex tile, DoCommandFlags flags);
 Town *ClosestTownFromTile(TileIndex tile, uint threshold);
 void ChangeTownRating(Town *t, int add, int max, DoCommandFlags flags);
-HouseZonesBits GetTownRadiusGroup(const Town *t, TileIndex tile);
+HouseZone GetTownRadiusGroup(const Town *t, TileIndex tile);
 void SetTownRatingTestMode(bool mode);
 TownActions GetMaskOfTownActions(CompanyID cid, const Town *t);
-bool GenerateTowns(TownLayout layout);
+uint GetDefaultTownsForMapSize();
+bool GenerateTowns(TownLayout layout, std::optional<uint> number = std::nullopt);
 const CargoSpec *FindFirstCargoWithTownAcceptanceEffect(TownAcceptanceEffect effect);
 CargoArray GetAcceptedCargoOfHouse(const HouseSpec *hs);
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -27,11 +27,19 @@
  * \li GSCargo::CC_NON_POURABLE
  * \li GSCargo::CC_POTABLE
  * \li GSCargo::CC_NON_POTABLE
+ * \li GSVehicleList_Waypoint
+ * \li GSBaseStation::GetOwner
+ * \li GSError::ERR_BRIDGE_TOO_LOW
+ * \li GSEngine::GetAllRailTypes
+ * \li GSTile::IsHouseTile
  *
  * Other changes:
  * \li GSBridge::GetBridgeID renamed to GSBridge::GetBridgeType
  * \li GSWaypoint::GetWaypointID now returns the StationID of any type of waypoint
  * \li GSList instances can now be saved
+ * \li GSVehicleList_Station accepts an optional GSVehicle::VehicleType parameter
+ * \li GSList instances can now be cloned
+ * \li GSEngine::GetRailType will only return the first RailType of an engine, use GSEngine::GetAllRailTypes instead
  *
  * \b 14.0
  *

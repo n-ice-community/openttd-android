@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file stdafx.h Definition of base types and functions in a cross-platform compatible way. */
@@ -73,6 +73,8 @@
 #include <variant>
 #include <vector>
 
+using namespace std::literals::string_view_literals;
+
 #if defined(UNIX) || defined(__MINGW32__)
 #	include <sys/types.h>
 #endif
@@ -87,7 +89,7 @@
 #endif
 
 #if defined(_MSC_VER)
-	// See https://learn.microsoft.com/en-us/cpp/cpp/empty-bases?view=msvc-170
+	/* See https://learn.microsoft.com/en-us/cpp/cpp/empty-bases?view=msvc-170 */
 #	define EMPTY_BASES __declspec(empty_bases)
 #else
 #	define EMPTY_BASES
@@ -155,16 +157,14 @@
 
 #if !defined(STRGEN) && !defined(SETTINGSGEN)
 #	if defined(_WIN32)
-		char *getcwd(char *buf, size_t size);
-
-		std::string FS2OTTD(const std::wstring &name);
-		std::wstring OTTD2FS(const std::string &name);
+		std::string FS2OTTD(std::wstring_view name);
+		std::wstring OTTD2FS(std::string_view name);
 #	elif defined(WITH_ICONV)
-		std::string FS2OTTD(const std::string &name);
-		std::string OTTD2FS(const std::string &name);
+		std::string FS2OTTD(std::string_view name);
+		std::string OTTD2FS(std::string_view name);
 #	else
-		template <typename T> std::string FS2OTTD(T name) { return name; }
-		template <typename T> std::string OTTD2FS(T name) { return name; }
+		static inline std::string FS2OTTD(std::string_view name) { return std::string{name}; }
+		static inline std::string OTTD2FS(std::string_view name) { return std::string{name}; }
 #	endif /* _WIN32 or WITH_ICONV */
 #endif /* STRGEN || SETTINGSGEN */
 
@@ -203,7 +203,7 @@
  * inlining. However, the performance benefit can be enormous; when forcing
  * inlining for the previously mentioned top 5, the debug build ran about 15%
  * quicker.
- * The following debug_inline annotation may be added to functions comply
+ * The following debug_inline attribute may be added to functions comply
  * with the following preconditions:
  *  1: the function takes more than 0.5% of a profiled debug runtime
  *  2: the function does not modify the game state
@@ -211,7 +211,7 @@
  *     i.e. no if, switch, for, do, while, etcetera.
  *  4: the function is one line of code, excluding assertions.
  *  5: the function is defined in a header file.
- * The debug_inline annotation must be placed in front of the function, i.e.
+ * The debug_inline attribute must be placed in front of the function, i.e.
  * before the optional static or constexpr modifier.
  */
 #if !defined(_DEBUG) || defined(NO_DEBUG_INLINE)
@@ -219,16 +219,16 @@
  * Do not force inlining when not in debug. This way we do not work against
  * any carefully designed compiler optimizations.
  */
-#define debug_inline inline
+#define debug_inline
 #elif defined(__clang__) || defined(__GNUC__)
-#define debug_inline [[gnu::always_inline]] inline
+#define debug_inline gnu::always_inline
 #else
 /*
  * MSVC explicitly disables inlining, even forced inlining, in debug builds
  * so __forceinline makes no difference compared to inline. Other unknown
  * compilers can also just fallback to a normal inline.
  */
-#define debug_inline inline
+#define debug_inline
 #endif
 
 /* This is already defined in unix, but not in QNX Neutrino (6.x) or Cygwin. */
@@ -270,14 +270,6 @@ char (&ArraySizeHelper(T (&array)[N]))[N];
  */
 #define lengthof(array) (sizeof(ArraySizeHelper(array)))
 
-/**
- * Gets the size of a variable within a class.
- * @param base     The class the variable is in.
- * @param variable The variable to get the size of.
- * @return the size of the variable
- */
-#define cpp_sizeof(base, variable) (sizeof(std::declval<base>().variable))
-
 
 /* take care of some name clashes on MacOS */
 #if defined(__APPLE__)
@@ -293,7 +285,7 @@ char (&ArraySizeHelper(T (&array)[N]))[N];
 #endif /* __GNUC__ || __clang__ */
 
 [[noreturn]] void NOT_REACHED(const std::source_location location = std::source_location::current());
-[[noreturn]] void AssertFailedError(const char *expression, const std::source_location location = std::source_location::current());
+[[noreturn]] void AssertFailedError(std::string_view expression, const std::source_location location = std::source_location::current());
 
 /* For non-debug builds with assertions enabled use the special assertion handler. */
 #if defined(NDEBUG) && defined(WITH_ASSERT)

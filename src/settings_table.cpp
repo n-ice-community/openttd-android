@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -17,7 +17,6 @@
 #include "network/network_func.h"
 #include "network/core/config.h"
 #include "pathfinder/pathfinder_type.h"
-#include "pathfinder/aystar.h"
 #include "linkgraph/linkgraphschedule.h"
 #include "genworld.h"
 #include "train.h"
@@ -454,11 +453,11 @@ static bool CheckRoadSide(int32_t &)
  * @param value that was read from config file
  * @return the "hopefully" converted value
  */
-static size_t ConvertLandscape(const char *value)
+static std::optional<uint32_t> ConvertLandscape(std::string_view value)
 {
 	/* try with the old values */
-	static std::vector<std::string> _old_landscape_values{"normal", "hilly", "desert", "candy"};
-	return OneOfManySettingDesc::ParseSingleValue(value, strlen(value), _old_landscape_values);
+	static constexpr std::initializer_list<std::string_view> _old_landscape_values{"normal"sv, "hilly"sv, "desert"sv, "candy"sv};
+	return OneOfManySettingDesc::ParseSingleValue(value, _old_landscape_values);
 }
 
 static bool CheckFreeformEdges(int32_t &new_value)
@@ -582,7 +581,7 @@ static void MaxVehiclesChanged(int32_t)
  */
 static bool ReplaceAsteriskWithEmptyPassword(std::string &newval)
 {
-	if (newval.compare("*") == 0) newval.clear();
+	if (newval == "*") newval.clear();
 	return true;
 }
 
@@ -674,6 +673,15 @@ static void ChangeMinutesPerYear(int32_t new_value)
 			ChangeTimekeepingUnits(TKU_WALLCLOCK);
 		}
 	}
+}
+
+/* Get the valid range of the "minutes per calendar year" setting. */
+static std::tuple<int32_t, uint32_t> GetMinutesPerYearRange(const IntSettingDesc &)
+{
+	/* Allow a non-default value only if using Wallclock timekeeping units. */
+	if (_settings_newgame.economy.timekeeping_units == TKU_WALLCLOCK) return { CalendarTime::FROZEN_MINUTES_PER_YEAR, CalendarTime::MAX_MINUTES_PER_YEAR };
+
+	return { CalendarTime::DEF_MINUTES_PER_YEAR, CalendarTime::DEF_MINUTES_PER_YEAR };
 }
 
 /**

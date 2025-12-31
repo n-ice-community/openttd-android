@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file pathfinder_func.h General functions related to pathfinders. */
@@ -25,8 +25,7 @@
 inline TileIndex CalcClosestStationTile(StationID station, TileIndex tile, StationType station_type)
 {
 	const BaseStation *st = BaseStation::Get(station);
-	TileArea ta;
-	st->GetTileArea(&ta, station_type);
+	TileArea ta = st->GetTileArea(station_type);
 
 	/* If the rail station is (temporarily) not present, use the station sign to drive near the station */
 	if (ta.tile == INVALID_TILE) return st->xy;

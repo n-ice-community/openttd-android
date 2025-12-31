@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -120,7 +120,7 @@ private:
 
 public:
 	TCPConnecter() {};
-	TCPConnecter(const std::string &connection_string, uint16_t default_port, const NetworkAddress &bind_address = {}, int family = AF_UNSPEC);
+	TCPConnecter(std::string_view connection_string, uint16_t default_port, const NetworkAddress &bind_address = {}, int family = AF_UNSPEC);
 	virtual ~TCPConnecter();
 
 	/**
@@ -161,7 +161,7 @@ private:
 public:
 	ServerAddress server_address; ///< Address we are connecting to.
 
-	TCPServerConnecter(const std::string &connection_string, uint16_t default_port);
+	TCPServerConnecter(std::string_view connection_string, uint16_t default_port);
 
 	void SetConnected(SOCKET sock);
 	void SetFailure();

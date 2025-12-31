@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file string_builder.cpp Implementation of string composing. */
@@ -113,13 +113,13 @@ void BaseStringBuilder::PutChar(char c)
 void BaseStringBuilder::PutUtf8(char32_t c)
 {
 	auto [buf, len] = EncodeUtf8(c);
-	this->PutBuffer(buf, len);
+	this->PutBuffer({buf, len});
 }
 
 /**
  * Append buffer.
  */
-void StringBuilder::PutBuffer(const char *str, size_type len)
+void StringBuilder::PutBuffer(std::span<const char> str)
 {
-	this->dest->append(str, len);
+	this->dest->append(str.data(), str.size());
 }

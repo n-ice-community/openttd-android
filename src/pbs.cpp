@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file pbs.cpp PBS support routines */
@@ -113,7 +113,11 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 		case MP_STATION:
 			if (HasStationRail(tile) && !HasStationReservation(tile)) {
 				SetRailStationReservation(tile, true);
-				if (trigger_stations && IsRailStation(tile)) TriggerStationRandomisation(nullptr, tile, SRT_PATH_RESERVATION);
+				if (trigger_stations) {
+					auto *st = BaseStation::GetByTile(tile);
+					TriggerStationRandomisation(st, tile, StationRandomTrigger::PathReservation);
+					TriggerStationAnimation(st, tile, StationAnimationTrigger::PathReservation);
+				}
 				MarkTileDirtyByTile(tile); // some GRFs need redraw after reserving track
 				return true;
 			}
@@ -259,23 +263,20 @@ struct FindTrainOnTrackInfo {
 	FindTrainOnTrackInfo() : best(nullptr) {}
 };
 
-/** Callback for Has/FindVehicleOnPos to find a train on a specific track. */
-static Vehicle *FindTrainOnTrackEnum(Vehicle *v, void *data)
+/** Find the best matching vehicle on a tile. */
+static void CheckTrainsOnTrack(FindTrainOnTrackInfo &info, TileIndex tile)
 {
-	FindTrainOnTrackInfo *info = (FindTrainOnTrackInfo *)data;
+	for (Vehicle *v : VehiclesOnTile(tile)) {
+		if (v->type != VEH_TRAIN || v->vehstatus.Test(VehState::Crashed)) continue;
 
-	if (v->type != VEH_TRAIN || v->vehstatus.Test(VehState::Crashed)) return nullptr;
+		Train *t = Train::From(v);
+		if (t->track == TRACK_BIT_WORMHOLE || HasBit(static_cast<TrackBits>(t->track), TrackdirToTrack(info.res.trackdir))) {
+			t = t->First();
 
-	Train *t = Train::From(v);
-	if (t->track == TRACK_BIT_WORMHOLE || HasBit((TrackBits)t->track, TrackdirToTrack(info->res.trackdir))) {
-		t = t->First();
-
-		/* ALWAYS return the lowest ID (anti-desync!) */
-		if (info->best == nullptr || t->index < info->best->index) info->best = t;
-		return t;
+			/* ALWAYS return the lowest ID (anti-desync!) */
+			if (info.best == nullptr || t->index < info.best->index) info.best = t;
+		}
 	}
-
-	return nullptr;
 }
 
 /**
@@ -295,10 +296,10 @@ PBSTileInfo FollowTrainReservation(const Train *v, Vehicle **train_on_res)
 	if (IsRailDepotTile(tile) && !GetDepotReservationTrackBits(tile)) return PBSTileInfo(tile, trackdir, false);
 
 	FindTrainOnTrackInfo ftoti;
-	ftoti.res = FollowReservation(v->owner, GetRailTypeInfo(v->railtype)->compatible_railtypes, tile, trackdir);
+	ftoti.res = FollowReservation(v->owner, GetAllCompatibleRailTypes(v->railtypes), tile, trackdir);
 	ftoti.res.okay = IsSafeWaitingPosition(v, ftoti.res.tile, ftoti.res.trackdir, true, _settings_game.pf.forbid_90_deg);
 	if (train_on_res != nullptr) {
-		FindVehicleOnPos(ftoti.res.tile, &ftoti, FindTrainOnTrackEnum);
+		CheckTrainsOnTrack(ftoti, ftoti.res.tile);
 		if (ftoti.best != nullptr) *train_on_res = ftoti.best->First();
 		if (*train_on_res == nullptr && IsRailStationTile(ftoti.res.tile)) {
 			/* The target tile is a rail station. The track follower
@@ -307,13 +308,13 @@ PBSTileInfo FollowTrainReservation(const Train *v, Vehicle **train_on_res)
 			 * for a possible train. */
 			TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(ftoti.res.trackdir)));
 			for (TileIndex st_tile = ftoti.res.tile + diff; *train_on_res == nullptr && IsCompatibleTrainStationTile(st_tile, ftoti.res.tile); st_tile += diff) {
-				FindVehicleOnPos(st_tile, &ftoti, FindTrainOnTrackEnum);
+				CheckTrainsOnTrack(ftoti, st_tile);
 				if (ftoti.best != nullptr) *train_on_res = ftoti.best->First();
 			}
 		}
 		if (*train_on_res == nullptr && IsTileType(ftoti.res.tile, MP_TUNNELBRIDGE)) {
 			/* The target tile is a bridge/tunnel, also check the other end tile. */
-			FindVehicleOnPos(GetOtherTunnelBridgeEnd(ftoti.res.tile), &ftoti, FindTrainOnTrackEnum);
+			CheckTrainsOnTrack(ftoti, GetOtherTunnelBridgeEnd(ftoti.res.tile));
 			if (ftoti.best != nullptr) *train_on_res = ftoti.best->First();
 		}
 	}
@@ -345,21 +346,21 @@ Train *GetTrainForReservation(TileIndex tile, Track track)
 		FindTrainOnTrackInfo ftoti;
 		ftoti.res = FollowReservation(GetTileOwner(tile), rts, tile, trackdir, true);
 
-		FindVehicleOnPos(ftoti.res.tile, &ftoti, FindTrainOnTrackEnum);
+		CheckTrainsOnTrack(ftoti, ftoti.res.tile);
 		if (ftoti.best != nullptr) return ftoti.best;
 
 		/* Special case for stations: check the whole platform for a vehicle. */
 		if (IsRailStationTile(ftoti.res.tile)) {
 			TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(ftoti.res.trackdir)));
 			for (TileIndex st_tile = ftoti.res.tile + diff; IsCompatibleTrainStationTile(st_tile, ftoti.res.tile); st_tile += diff) {
-				FindVehicleOnPos(st_tile, &ftoti, FindTrainOnTrackEnum);
+				CheckTrainsOnTrack(ftoti, st_tile);
 				if (ftoti.best != nullptr) return ftoti.best;
 			}
 		}
 
 		/* Special case for bridges/tunnels: check the other end as well. */
 		if (IsTileType(ftoti.res.tile, MP_TUNNELBRIDGE)) {
-			FindVehicleOnPos(GetOtherTunnelBridgeEnd(ftoti.res.tile), &ftoti, FindTrainOnTrackEnum);
+			CheckTrainsOnTrack(ftoti, GetOtherTunnelBridgeEnd(ftoti.res.tile));
 			if (ftoti.best != nullptr) return ftoti.best;
 		}
 	}
@@ -387,7 +388,7 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 	}
 
 	/* Check next tile. For performance reasons, we check for 90 degree turns ourself. */
-	CFollowTrackRail ft(v, GetRailTypeInfo(v->railtype)->compatible_railtypes);
+	CFollowTrackRail ft(v, GetAllCompatibleRailTypes(v->railtypes));
 
 	/* End of track? */
 	if (!ft.Follow(tile, trackdir)) {
@@ -435,8 +436,9 @@ bool IsWaitingPositionFree(const Train *v, TileIndex tile, Trackdir trackdir, bo
 	if (IsRailDepotTile(tile)) return true;
 	if (IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, trackdir) && !IsPbsSignal(GetSignalType(tile, track))) return true;
 
-	/* Check the next tile, if it's a PBS signal, it has to be free as well. */
-	CFollowTrackRail ft(v, GetRailTypeInfo(v->railtype)->compatible_railtypes);
+	/* Check the next tile, it has to be free as well. Do not filter for compatible railtypes
+	 * to make sure we never accidentally join up reservations. */
+	CFollowTrackRail ft(v, RailTypes{});
 
 	if (!ft.Follow(tile, trackdir)) return true;
 

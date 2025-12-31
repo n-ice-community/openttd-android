@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file news_type.h Types related to news. */
@@ -11,6 +11,7 @@
 #define NEWS_TYPE_H
 
 #include "core/enum_type.hpp"
+#include "company_type.h"
 #include "engine_type.h"
 #include "industry_type.h"
 #include "gfx_type.h"
@@ -106,7 +107,7 @@ enum class NewsDisplay : uint8_t {
  * Per-NewsType data
  */
 struct NewsTypeData {
-	const char * const name;    ///< Name
+	const std::string_view name; ///< Name
 	const uint8_t age;             ///< Maximum age of news items (in days)
 	const SoundFx sound;        ///< Sound
 
@@ -116,7 +117,7 @@ struct NewsTypeData {
 	 * @param age The maximum age for these messages.
 	 * @param sound The sound to play.
 	 */
-	NewsTypeData(const char *name, uint8_t age, SoundFx sound) :
+	NewsTypeData(std::string_view name, uint8_t age, SoundFx sound) :
 		name(name),
 		age(age),
 		sound(sound)
@@ -164,7 +165,7 @@ struct CompanyNewsInformation : NewsAllocatedData {
 	std::string other_company_name; ///< The name of the company taking over this one
 
 	StringID title;
-	uint32_t face; ///< The face of the president
+	CompanyManagerFace face; ///< The face of the president
 	Colours colour; ///< The colour related to the company
 
 	CompanyNewsInformation(StringID title, const struct Company *c, const struct Company *other = nullptr);

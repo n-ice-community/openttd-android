@@ -13,7 +13,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -323,6 +323,9 @@ STR_GRAPH_Y_LABEL_NUMBER                                        :{TINY_FONT}{COM
 
 
 
+
+
+
 # Graph key window
 
 # Company league window
@@ -400,7 +403,8 @@ STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE
 
 
 
-###length 45
+
+###length 46
 
 
 # Autosave dropdown
@@ -409,6 +413,7 @@ STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE
 
 
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :oħrajn
+
 
 
 
@@ -455,7 +460,7 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :oħrajn
 ###length 4
 
 
-# Settings tree window
+# Settings tree in the Game Options window
 
 
 
@@ -476,6 +481,7 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :oħrajn
 
 
 STR_CONFIG_SETTING_RUNNING_COSTS_HELPTEXT                       :Stabbilixxi l-kosti għal manutenzjoni u servizzi fuq vetturi u infrastruttura
+###length 3
 
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED                           :Veloċita' tal-kostruzzjoni: {STRING}
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED_HELPTEXT                  :Illimita l-ammont massimu ta' kostruzzjonijiet għall-AI
@@ -492,6 +498,7 @@ STR_CONFIG_SETTING_SUBSIDY_MULTIPLIER_HELPTEXT                  :Stabbilixxi kem
 
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS                           :Kosti tal-kostruzzjoni: {STRING}
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :Stabbilixxi l-livell ta' kostruzzjoni u l-prezz tax-xiri
+###length 3
 
 STR_CONFIG_SETTING_RECESSIONS                                   :Riċessjonijiet: {STRING}
 STR_CONFIG_SETTING_RECESSIONS_HELPTEXT                          :Jekk mixgħula kull ftit snin tista' sseħħ riċessjoni. Waqt riċessjoni, il-produzzjoni ta' kollox tonqos (tirritorna għal kemm kienet qabel kif tgħaddi r-riċessjoni)
@@ -609,6 +616,7 @@ STR_CONFIG_SETTING_WARN_LOST_VEHICLE                            :Avza jekk jinti
 ###length 4
 
 ###length 4
+
 
 
 
@@ -747,7 +755,7 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 
 ###length 3
 
-###length 3
+###length 4
 
 
 
@@ -757,7 +765,6 @@ STR_CONFIG_SETTING_ADVANCED_VEHICLE_LISTS_HELPTEXT              :Ippermetti l-uz
 # Video initalization errors
 
 # Intro window
-STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
 
 
 
@@ -885,6 +892,7 @@ STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 
 
+
 # Signal window
 
 # Bridge selection window
@@ -921,6 +929,7 @@ STR_NETWORK_SERVER_MESSAGE                                      :*** {STRING}
 
 
 # Town generation window (SE)
+
 
 
 
@@ -965,6 +974,8 @@ STR_MAPGEN_BY                                                   :{BLACK}*
 ###length 21
 
 # Strings for map borders at game generation
+
+###length 3
 
 
 
@@ -1319,7 +1330,6 @@ STR_ORDER_IMPLICIT                                              :(Awtomatiku)
 
 STR_TIMETABLE_TOOLTIP                                           :{BLACK}Skeda - agħfas fuq ordni biex tagħzilha.
 
-STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Патуваат со најмногу {2:VELOCITY} (не е време-Увезени)
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :патуваат за {STRING} со најмногу {VELOCITY}
 
 STR_TIMETABLE_TOTAL_TIME                                        :{BLACK}Din l-iskeda ser iddum {STRING} biex titlesta

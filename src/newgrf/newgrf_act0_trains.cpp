@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_trains.cpp NewGRF Action 0x00 handler for trains. */
@@ -35,21 +35,22 @@ ChangeInfoResult RailVehicleChangeInfo(uint first, uint last, int prop, ByteRead
 		if (e == nullptr) return CIR_INVALID_ID; // No engine could be allocated, so neither can any next vehicles
 
 		EngineInfo *ei = &e->info;
-		RailVehicleInfo *rvi = &e->u.rail;
+		RailVehicleInfo *rvi = &e->VehInfo<RailVehicleInfo>();
 
 		switch (prop) {
 			case 0x05: { // Track type
 				uint8_t tracktype = buf.ReadByte();
 
+				_gted[e->index].railtypelabels.clear();
 				if (tracktype < _cur_gps.grffile->railtype_list.size()) {
-					_gted[e->index].railtypelabel = _cur_gps.grffile->railtype_list[tracktype];
+					_gted[e->index].railtypelabels.push_back(_cur_gps.grffile->railtype_list[tracktype]);
 					break;
 				}
 
 				switch (tracktype) {
-					case 0: _gted[e->index].railtypelabel = rvi->engclass >= 2 ? RAILTYPE_LABEL_ELECTRIC : RAILTYPE_LABEL_RAIL; break;
-					case 1: _gted[e->index].railtypelabel = RAILTYPE_LABEL_MONO; break;
-					case 2: _gted[e->index].railtypelabel = RAILTYPE_LABEL_MAGLEV; break;
+					case 0: _gted[e->index].railtypelabels.push_back(rvi->engclass >= 2 ? RAILTYPE_LABEL_ELECTRIC : RAILTYPE_LABEL_RAIL); break;
+					case 1: _gted[e->index].railtypelabels.push_back(RAILTYPE_LABEL_MONO); break;
+					case 2: _gted[e->index].railtypelabels.push_back(RAILTYPE_LABEL_MAGLEV); break;
 					default:
 						GrfMsg(1, "RailVehicleChangeInfo: Invalid track type {} specified, ignoring", tracktype);
 						break;
@@ -98,7 +99,7 @@ ChangeInfoResult RailVehicleChangeInfo(uint first, uint last, int prop, ByteRead
 
 				/* TTD sprite IDs point to a location in a 16bit array, but we use it
 				 * as an array index, so we need it to be half the original value. */
-				if (spriteid < 0xFD) spriteid >>= 1;
+				if (spriteid < CUSTOM_VEHICLE_SPRITENUM) spriteid >>= 1;
 
 				if (IsValidNewGRFImageIndex<VEH_TRAIN>(spriteid)) {
 					rvi->image_index = spriteid;
@@ -179,11 +180,11 @@ ChangeInfoResult RailVehicleChangeInfo(uint first, uint last, int prop, ByteRead
 					break;
 				}
 
-				if (_cur_gps.grffile->railtype_list.empty()) {
+				if (_cur_gps.grffile->railtype_list.empty() && !_gted[e->index].railtypelabels.empty()) {
 					/* Use traction type to select between normal and electrified
 					 * rail only when no translation list is in place. */
-					if (_gted[e->index].railtypelabel == RAILTYPE_LABEL_RAIL     && engclass >= EC_ELECTRIC) _gted[e->index].railtypelabel = RAILTYPE_LABEL_ELECTRIC;
-					if (_gted[e->index].railtypelabel == RAILTYPE_LABEL_ELECTRIC && engclass  < EC_ELECTRIC) _gted[e->index].railtypelabel = RAILTYPE_LABEL_RAIL;
+					if (_gted[e->index].railtypelabels[0] == RAILTYPE_LABEL_RAIL && engclass >= EC_ELECTRIC) _gted[e->index].railtypelabels[0] = RAILTYPE_LABEL_ELECTRIC;
+					if (_gted[e->index].railtypelabels[0] == RAILTYPE_LABEL_ELECTRIC && engclass < EC_ELECTRIC) _gted[e->index].railtypelabels[0] = RAILTYPE_LABEL_RAIL;
 				}
 
 				rvi->engclass = engclass;
@@ -326,6 +327,22 @@ ChangeInfoResult RailVehicleChangeInfo(uint first, uint last, int prop, ByteRead
 			case 0x33: // Badge list
 				e->badges = ReadBadgeList(buf, GSF_TRAINS);
 				break;
+
+			case 0x34: { // List of track types
+				uint8_t count = buf.ReadByte();
+
+				_gted[e->index].railtypelabels.clear();
+				while (count--) {
+					uint8_t tracktype = buf.ReadByte();
+
+					if (tracktype < _cur_gps.grffile->railtype_list.size()) {
+						_gted[e->index].railtypelabels.push_back(_cur_gps.grffile->railtype_list[tracktype]);
+					} else {
+						GrfMsg(1, "RailVehicleChangeInfo: Invalid track type {} specified, ignoring", tracktype);
+					}
+				}
+				break;
+			}
 
 			default:
 				ret = CommonVehicleChangeInfo(ei, prop, buf);

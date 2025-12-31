@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file vehicle_type.h Types related to vehicles. */
@@ -79,5 +79,15 @@ enum EngineImageType : uint8_t {
 	EIT_PURCHASE   = 0x20,  ///< Vehicle drawn in purchase list, autoreplace gui, ...
 	EIT_PREVIEW    = 0x21,  ///< Vehicle drawn in preview window, news, ...
 };
+
+/** Randomisation triggers for vehicles */
+enum class VehicleRandomTrigger : uint8_t {
+	NewCargo, ///< Affected vehicle only: Vehicle is loaded with cargo, after it was empty.
+	Depot, ///< Front vehicle only: Consist arrived in depot.
+	Empty, ///< Front vehicle only: Entire consist is empty.
+	AnyNewCargo, ///< All vehicles in consist: Any vehicle in the consist received new cargo.
+	Callback32, ///< All vehicles in consist: 32 day callback requested rerandomisation
+};
+using VehicleRandomTriggers = EnumBitSet<VehicleRandomTrigger, uint8_t>;
 
 #endif /* VEHICLE_TYPE_H */

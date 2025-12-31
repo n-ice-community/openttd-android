@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file autoreplace_cmd.cpp Deals with autoreplace execution but not the setup */
@@ -71,16 +71,16 @@ bool CheckAutoreplaceValidity(EngineID from, EngineID to, CompanyID company)
 	switch (type) {
 		case VEH_TRAIN: {
 			/* make sure the railtypes are compatible */
-			if (!GetRailTypeInfo(e_from->u.rail.railtype)->compatible_railtypes.Any(GetRailTypeInfo(e_to->u.rail.railtype)->compatible_railtypes)) return false;
+			if (!GetAllCompatibleRailTypes(e_from->VehInfo<RailVehicleInfo>().railtypes).Any(GetAllCompatibleRailTypes(e_to->VehInfo<RailVehicleInfo>().railtypes))) return false;
 
 			/* make sure we do not replace wagons with engines or vice versa */
-			if ((e_from->u.rail.railveh_type == RAILVEH_WAGON) != (e_to->u.rail.railveh_type == RAILVEH_WAGON)) return false;
+			if ((e_from->VehInfo<RailVehicleInfo>().railveh_type == RAILVEH_WAGON) != (e_to->VehInfo<RailVehicleInfo>().railveh_type == RAILVEH_WAGON)) return false;
 			break;
 		}
 
 		case VEH_ROAD:
 			/* make sure the roadtypes are compatible */
-			if (!GetRoadTypeInfo(e_from->u.road.roadtype)->powered_roadtypes.Any(GetRoadTypeInfo(e_to->u.road.roadtype)->powered_roadtypes)) return false;
+			if (!GetRoadTypeInfo(e_from->VehInfo<RoadVehicleInfo>().roadtype)->powered_roadtypes.Any(GetRoadTypeInfo(e_to->VehInfo<RoadVehicleInfo>().roadtype)->powered_roadtypes)) return false;
 
 			/* make sure that we do not replace a tram with a normal road vehicles or vice versa */
 			if (e_from->info.misc_flags.Test(EngineMiscFlag::RoadIsTram) != e_to->info.misc_flags.Test(EngineMiscFlag::RoadIsTram)) return false;
@@ -88,7 +88,7 @@ bool CheckAutoreplaceValidity(EngineID from, EngineID to, CompanyID company)
 
 		case VEH_AIRCRAFT:
 			/* make sure that we do not replace a plane with a helicopter or vice versa */
-			if ((e_from->u.air.subtype & AIR_CTOL) != (e_to->u.air.subtype & AIR_CTOL)) return false;
+			if ((e_from->VehInfo<AircraftVehicleInfo>().subtype & AIR_CTOL) != (e_to->VehInfo<AircraftVehicleInfo>().subtype & AIR_CTOL)) return false;
 			break;
 
 		default: break;
@@ -185,9 +185,9 @@ static bool VerifyAutoreplaceRefitForOrders(const Vehicle *v, EngineID engine_ty
 	CargoTypes union_refit_mask_b = GetUnionOfArticulatedRefitMasks(engine_type, false);
 
 	const Vehicle *u = (v->type == VEH_TRAIN) ? v->First() : v;
-	for (const Order *o : u->Orders()) {
-		if (!o->IsRefit() || o->IsAutoRefit()) continue;
-		CargoType cargo_type = o->GetRefitCargo();
+	for (const Order &o : u->Orders()) {
+		if (!o.IsRefit() || o.IsAutoRefit()) continue;
+		CargoType cargo_type = o.GetRefitCargo();
 
 		if (!HasBit(union_refit_mask_a, cargo_type)) continue;
 		if (!HasBit(union_refit_mask_b, cargo_type)) return false;
@@ -206,13 +206,12 @@ static int GetIncompatibleRefitOrderIdForAutoreplace(const Vehicle *v, EngineID 
 {
 	CargoTypes union_refit_mask = GetUnionOfArticulatedRefitMasks(engine_type, false);
 
-	const Order *o;
 	const Vehicle *u = (v->type == VEH_TRAIN) ? v->First() : v;
 
 	const OrderList *orders = u->orders;
 	if (orders == nullptr) return -1;
 	for (VehicleOrderID i = 0; i < orders->GetNumOrders(); i++) {
-		o = orders->GetOrderAt(i);
+		const Order *o = orders->GetOrderAt(i);
 		if (!o->IsRefit()) continue;
 		if (!HasBit(union_refit_mask, o->GetRefitCargo())) return i;
 	}
@@ -373,8 +372,12 @@ static CommandCost BuildReplacementVehicle(Vehicle *old_veh, Vehicle **new_vehic
 	}
 
 	/* Try to reverse the vehicle, but do not care if it fails as the new type might not be reversible */
-	if (new_veh->type == VEH_TRAIN && HasBit(Train::From(old_veh)->flags, VRF_REVERSE_DIRECTION)) {
-		Command<CMD_REVERSE_TRAIN_DIRECTION>::Do(DoCommandFlag::Execute, new_veh->index, true);
+	if (new_veh->type == VEH_TRAIN && Train::From(old_veh)->flags.Test(VehicleRailFlag::Flipped)) {
+		/* Only copy the reverse state if neither old or new vehicle implements reverse-on-build probability callback. */
+		if (!TestVehicleBuildProbability(old_veh, old_veh->engine_type, BuildProbabilityType::Reversed).has_value() &&
+			!TestVehicleBuildProbability(new_veh, new_veh->engine_type, BuildProbabilityType::Reversed).has_value()) {
+			Command<CMD_REVERSE_TRAIN_DIRECTION>::Do(DoCommandFlag::Execute, new_veh->index, true);
+		}
 	}
 
 	return cost;
@@ -432,7 +435,7 @@ static CommandCost CopyHeadSpecificThings(Vehicle *old_head, Vehicle *new_head, 
 
 	/* Last do those things which do never fail (resp. we do not care about), but which are not undo-able */
 	if (cost.Succeeded() && old_head != new_head && flags.Test(DoCommandFlag::Execute)) {
-		/* Copy other things which cannot be copied by a command and which shall not stay resetted from the build vehicle command */
+		/* Copy other things which cannot be copied by a command and which shall not stay reset from the build vehicle command */
 		new_head->CopyVehicleConfigAndStatistics(old_head);
 		GroupStatistics::AddProfitLastYear(new_head);
 

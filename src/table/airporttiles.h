@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file airporttiles.h Tables with airporttile defaults. */
@@ -10,10 +10,12 @@
 #ifndef AIRPORTTILES_H
 #define AIRPORTTILES_H
 
+#include "table/strings.h"
+
 /** Writes all airport tile properties in the AirportTile struct */
-#define AT(num_frames, anim_speed) {{num_frames, ANIM_STATUS_LOOPING, anim_speed, 0}, STR_NULL, AirportTileCallbackMasks{}, 0, true, GRFFileProps(INVALID_AIRPORTTILE), {}}
+#define AT(num_frames, anim_speed) {{num_frames, AnimationStatus::Looping, anim_speed, {}}, STR_NULL, AirportTileCallbackMasks{}, 0, true, SubstituteGRFFileProps(INVALID_AIRPORTTILE), {}}
 /** Writes an airport tile without animation in the AirportTile struct */
-#define AT_NOANIM {{0, ANIM_STATUS_NO_ANIMATION, 2, 0}, STR_NULL, AirportTileCallbackMasks{}, 0, true, GRFFileProps(INVALID_AIRPORTTILE), {}}
+#define AT_NOANIM {AnimationInfo<AirportAnimationTriggers>{}, STR_NULL, AirportTileCallbackMasks{}, 0, true, SubstituteGRFFileProps(INVALID_AIRPORTTILE), {}}
 
 /**
  * All default airport tiles.

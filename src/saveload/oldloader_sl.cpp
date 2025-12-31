@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file oldloader_sl.cpp Chunks and fix-ups for TTO/TTD/TTDP savegames. TTO loader code is based on SVXConverter by Roman Vetter. */
@@ -67,7 +67,7 @@ static void FixTTDMapArray()
 
 			case MP_RAILWAY:
 				/* We save presignals different from TTDPatch, convert them */
-				if (GB(tile.m5(), 6, 2) == 1) { // RAIL_TILE_SIGNALS
+				if (GB(tile.m5(), 6, 2) == 1) { // RailTileType::Signals
 					/* This byte is always zero in TTD for this type of tile */
 					if (tile.m4()) { // Convert the presignals to our own format
 						tile.m4() = (tile.m4() >> 1) & 7;
@@ -84,7 +84,7 @@ static void FixTTDMapArray()
 					SetTileType(tile, MP_WATER);
 					SetTileOwner(tile, OWNER_WATER);
 					tile.m2() = 0;
-					tile.m3() = 2; // WATER_CLASS_RIVER
+					tile.m3() = 2; // WaterClass::River
 					tile.m4() = Random();
 					tile.m5() = 0;
 				}
@@ -108,10 +108,12 @@ static void FixTTDDepots()
 	}
 }
 
-#define FIXNUM(x, y, z) (((((x) << 16) / (y)) + 1) << z)
-
 static uint32_t RemapOldTownName(uint32_t townnameparts, uint8_t old_town_name_type)
 {
+	auto fix_num = [](uint32_t i, uint32_t n, uint8_t s) -> uint32_t {
+		return ((i << 16) / n + 1) << s;
+	};
+
 	switch (old_town_name_type) {
 		case 0: case 3: // English, American
 			/* Already OK */
@@ -120,7 +122,7 @@ static uint32_t RemapOldTownName(uint32_t townnameparts, uint8_t old_town_name_t
 		case 1: // French
 			/* For some reason 86 needs to be subtracted from townnameparts
 			 * 0000 0000 0000 0000 0000 0000 1111 1111 */
-			return FIXNUM(townnameparts - 86, lengthof(_name_french_real), 0);
+			return fix_num(townnameparts - 86, lengthof(_name_french_real), 0);
 
 		case 2: // German
 			Debug(misc, 0, "German Townnames are buggy ({})", townnameparts);
@@ -128,18 +130,16 @@ static uint32_t RemapOldTownName(uint32_t townnameparts, uint8_t old_town_name_t
 
 		case 4: // Latin-American
 			/* 0000 0000 0000 0000 0000 0000 1111 1111 */
-			return FIXNUM(townnameparts, lengthof(_name_spanish_real), 0);
+			return fix_num(townnameparts, lengthof(_name_spanish_real), 0);
 
 		case 5: // Silly
 			/* NUM_SILLY_1 - lower 16 bits
 			 * NUM_SILLY_2 - upper 16 bits without leading 1 (first 8 bytes)
 			 * 1000 0000 2222 2222 0000 0000 1111 1111 */
-			return FIXNUM(townnameparts, lengthof(_name_silly_1), 0) | FIXNUM(GB(townnameparts, 16, 8), lengthof(_name_silly_2), 16);
+			return fix_num(townnameparts, lengthof(_name_silly_1), 0) | fix_num(GB(townnameparts, 16, 8), lengthof(_name_silly_2), 16);
 	}
 	return 0;
 }
-
-#undef FIXNUM
 
 static void FixOldTowns()
 {
@@ -216,7 +216,7 @@ static bool FixTTOMapArray()
 			 * Instead of using bits in m3 it uses a different tile type. */
 			tile.m3() = 1; // rail type = monorail (in TTD)
 			SetTileType(tile, MP_RAILWAY);
-			tile.m2() = 1; // set monorail ground to RAIL_GROUND_GRASS
+			tile.m2() = 1; // set monorail ground to RailGroundType::Grass
 			tt = MP_RAILWAY;
 		}
 
@@ -226,16 +226,16 @@ static bool FixTTOMapArray()
 
 			case MP_RAILWAY:
 				switch (GB(tile.m5(), 6, 2)) {
-					case 0: // RAIL_TILE_NORMAL
+					case 0: // RailTileType::Normal
 						break;
-					case 1: // RAIL_TILE_SIGNALS
+					case 1: // RailTileType::Signals
 						tile.m4() = (~tile.m5() & 1) << 2;        // signal variant (present only in OTTD)
 						SB(tile.m2(), 6, 2, GB(tile.m5(), 3, 2)); // signal status
 						tile.m3() |= 0xC0;                       // both signals are present
 						tile.m5() = HasBit(tile.m5(), 5) ? 2 : 1; // track direction (only X or Y)
-						tile.m5() |= 0x40;                       // RAIL_TILE_SIGNALS
+						tile.m5() |= 0x40;                       // RailTileType::Signals
 						break;
-					case 3: // RAIL_TILE_DEPOT
+					case 3: // RailTileType::Depot
 						tile.m2() = 0;
 						break;
 					default:
@@ -245,13 +245,13 @@ static bool FixTTOMapArray()
 
 			case MP_ROAD: // road (depot) or level crossing
 				switch (GB(tile.m5(), 4, 4)) {
-					case 0: // ROAD_TILE_NORMAL
-						if (tile.m2() == 4) tile.m2() = 5; // 'small trees' -> ROADSIDE_TREES
+					case 0: // RoadTileType::Normal
+						if (tile.m2() == 4) tile.m2() = 5; // 'small trees' -> Roadside::Trees
 						break;
-					case 1: // ROAD_TILE_CROSSING (there aren't monorail crossings in TTO)
+					case 1: // RoadTileType::Crossing (there aren't monorail crossings in TTO)
 						tile.m3() = tile.m1(); // set owner of road = owner of rail
 						break;
-					case 2: // ROAD_TILE_DEPOT
+					case 2: // RoadTileType::Depot
 						break;
 					default:
 						return false;
@@ -564,6 +564,9 @@ static void ReadTTDPatchFlags(LoadgameState &ls)
 	Debug(oldloader, 3, "Vehicle-multiplier is set to {} ({} vehicles)", ls.vehicle_multiplier, ls.vehicle_multiplier * 850);
 }
 
+static std::array<Town::SuppliedHistory, 2> _old_pass_supplied{};
+static std::array<Town::SuppliedHistory, 2> _old_mail_supplied{};
+
 static const OldChunks town_chunk[] = {
 	OCL_SVAR(   OC_TILE, Town, xy ),
 	OCL_NULL( 2 ),         ///< population,        no longer in use
@@ -592,14 +595,14 @@ static const OldChunks town_chunk[] = {
 	OCL_SVAR(  OC_FILE_U8 | OC_VAR_U16, Town, growth_rate ),
 
 	/* Slots 0 and 2 are passengers and mail respectively for old saves. */
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[0].new_max ),
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[2].new_max ),
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[0].new_act ),
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[2].new_act ),
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[0].old_max ),
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[2].old_max ),
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[0].old_act ),
-	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Town, supplied[2].old_act ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_pass_supplied[THIS_MONTH].production ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_mail_supplied[THIS_MONTH].production ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_pass_supplied[THIS_MONTH].transported ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_mail_supplied[THIS_MONTH].transported ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_pass_supplied[LAST_MONTH].production ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_mail_supplied[LAST_MONTH].production ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_pass_supplied[LAST_MONTH].transported ),
+	OCL_VAR( OC_FILE_U16 | OC_VAR_U32, 1, &_old_mail_supplied[LAST_MONTH].transported ),
 
 	OCL_NULL( 2 ),         ///< pct_pass_transported / pct_mail_transported, now computed on the fly
 
@@ -626,6 +629,13 @@ static bool LoadOldTown(LoadgameState &ls, int num)
 			/* 0x10B6 is auto-generated name, others are custom names */
 			t->townnametype = t->townnametype == 0x10B6 ? 0x20C1 : t->townnametype + 0x2A00;
 		}
+		/* Passengers and mail were always treated as slots 0 and 2 in older saves. */
+		auto &pass = t->supplied.emplace_back(0);
+		pass.history[LAST_MONTH] = _old_pass_supplied[LAST_MONTH];
+		pass.history[THIS_MONTH] = _old_pass_supplied[THIS_MONTH];
+		auto &mail = t->supplied.emplace_back(2);
+		mail.history[LAST_MONTH] = _old_mail_supplied[LAST_MONTH];
+		mail.history[THIS_MONTH] = _old_mail_supplied[THIS_MONTH];
 	} else {
 		delete t;
 	}
@@ -643,16 +653,14 @@ static bool LoadOldOrder(LoadgameState &ls, int num)
 {
 	if (!LoadChunk(ls, nullptr, order_chunk)) return false;
 
-	Order *o = new (OrderID(num)) Order();
-	o->AssignOrder(UnpackOldOrder(_old_order));
+	OldOrderSaveLoadItem &o = AllocateOldOrder(num);
+	o.order.AssignOrder(UnpackOldOrder(_old_order));
 
-	if (o->IsType(OT_NOTHING)) {
-		delete o;
-	} else {
+	if (!o.order.IsType(OT_NOTHING) && num > 0) {
 		/* Relink the orders to each other (in the orders for one vehicle are behind each other,
 		 * with an invalid order (OT_NOTHING) as indication that it is the last order */
-		Order *prev = Order::GetIfValid(num - 1);
-		if (prev != nullptr) prev->next = o;
+		OldOrderSaveLoadItem *prev = GetOldOrder(num + 1 - 1);
+		if (prev != nullptr) prev->next = num + 1; // next is 1-based.
 	}
 
 	return true;
@@ -860,7 +868,7 @@ static bool LoadOldIndustry(LoadgameState &ls, int num)
 
 	if (i->location.tile != 0) {
 		/* Copy data from old fixed arrays to industry. */
-		std::copy(std::begin(_old_accepted), std::end(_old_accepted), std::back_inserter(i->accepted));
+		std::move(std::begin(_old_accepted), std::end(_old_accepted), std::back_inserter(i->accepted));
 		std::copy(std::begin(_old_produced), std::end(_old_produced), std::back_inserter(i->produced));
 
 		i->town = RemapTown(i->location.tile);
@@ -875,7 +883,7 @@ static bool LoadOldIndustry(LoadgameState &ls, int num)
 			i->random_colour = RemapTTOColour(i->random_colour);
 		}
 
-		Industry::industries[i->type].push_back(i->index); // Assume savegame indices are sorted.
+		Industry::industries[i->type].insert(i->index);
 	} else {
 		delete i;
 	}
@@ -924,7 +932,7 @@ static bool LoadOldCompanyEconomy(LoadgameState &ls, int)
 
 	if (!LoadChunk(ls, &c->cur_economy, _company_economy_chunk)) return false;
 
-	/* Don't ask, but the number in TTD(Patch) are inversed to OpenTTD */
+	/* Don't ask, but the number in TTD(Patch) are inverted to OpenTTD */
 	c->cur_economy.income   = -c->cur_economy.income;
 	c->cur_economy.expenses = -c->cur_economy.expenses;
 
@@ -941,7 +949,7 @@ static bool LoadOldCompanyEconomy(LoadgameState &ls, int)
 static const OldChunks _company_chunk[] = {
 	OCL_VAR ( OC_UINT16,   1, &_old_string_id ),
 	OCL_SVAR( OC_UINT32, Company, name_2 ),
-	OCL_SVAR( OC_UINT32, Company, face ),
+	OCL_SVAR( OC_UINT32, Company, face.bits ),
 	OCL_VAR ( OC_UINT16,   1, &_old_string_id_2 ),
 	OCL_SVAR( OC_UINT32, Company, president_name_2 ),
 
@@ -994,9 +1002,9 @@ static bool LoadOldCompany(LoadgameState &ls, int num)
 
 	if (_savegame_type == SGT_TTO) {
 		/* adjust manager's face */
-		if (HasBit(c->face, 27) && GB(c->face, 26, 1) == GB(c->face, 19, 1)) {
+		if (HasBit(c->face.bits, 27) && GB(c->face.bits, 26, 1) == GB(c->face.bits, 19, 1)) {
 			/* if face would be black in TTD, adjust tie colour and thereby face colour */
-			ClrBit(c->face, 27);
+			ClrBit(c->face.bits, 27);
 		}
 
 		/* Company name */
@@ -1057,7 +1065,7 @@ static const OldChunks vehicle_train_chunk[] = {
 	OCL_SVAR(  OC_UINT8, Train, track ),
 	OCL_SVAR(  OC_UINT8, Train, force_proceed ),
 	OCL_SVAR( OC_UINT16, Train, crash_anim_pos ),
-	OCL_SVAR(  OC_UINT8, Train, railtype ),
+	OCL_NULL( 1 ), // railtype
 
 	OCL_NULL( 5 ), ///< Junk
 
@@ -1297,8 +1305,6 @@ bool LoadOldVehicle(LoadgameState &ls, int num)
 					};
 					if (v->spritenum / 2 >= lengthof(spriteset_rail)) return false;
 					v->spritenum = spriteset_rail[v->spritenum / 2]; // adjust railway sprite set offset
-					/* Should be the original values for monorail / rail, can't use RailType constants */
-					Train::From(v)->railtype = static_cast<RailType>(type == 0x25 ? 1 : 0);
 					break;
 				}
 
@@ -1364,7 +1370,7 @@ bool LoadOldVehicle(LoadgameState &ls, int num)
 		if (_old_order_ptr != 0 && _old_order_ptr != 0xFFFFFFFF) {
 			uint max = _savegame_type == SGT_TTO ? 3000 : 5000;
 			uint old_id = RemapOrderIndex(_old_order_ptr);
-			if (old_id < max) v->old_orders = Order::Get(old_id); // don't accept orders > max number of orders
+			if (old_id < max) v->old_orders = old_id + 1;
 		}
 		v->current_order.AssignOrder(UnpackOldOrder(_old_order));
 

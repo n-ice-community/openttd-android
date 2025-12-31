@@ -15,7 +15,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -445,7 +445,6 @@ STR_SCENEDIT_TOWN_MENU_PACE_HOUSE                               :Mette case
 
 # Settings menu
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :Opzioni gioco
-STR_SETTINGS_MENU_CONFIG_SETTINGS_TREE                          :Impostazioni
 STR_SETTINGS_MENU_AI_SETTINGS                                   :Impostazioni IA
 STR_SETTINGS_MENU_GAMESCRIPT_SETTINGS                           :Impostazioni script di gioco
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :Impostazioni NewGRF
@@ -453,6 +452,9 @@ STR_SETTINGS_MENU_SANDBOX_OPTIONS                               :Opzioni sandbox
 STR_SETTINGS_MENU_TRANSPARENCY_OPTIONS                          :Opzioni trasparenza
 STR_SETTINGS_MENU_TOWN_NAMES_DISPLAYED                          :Mostra nomi città
 STR_SETTINGS_MENU_STATION_NAMES_DISPLAYED                       :Mostra nomi stazioni
+STR_SETTINGS_MENU_STATION_NAMES_LORRY                           :Stazione dei camion
+STR_SETTINGS_MENU_STATION_NAMES_BUS                             :Fermate del bus
+STR_SETTINGS_MENU_STATION_NAMES_PLANE                           :Aeroporti
 STR_SETTINGS_MENU_WAYPOINTS_DISPLAYED                           :Mostra nomi waypoint
 STR_SETTINGS_MENU_SIGNS_DISPLAYED                               :Mostra cartelli
 STR_SETTINGS_MENU_SHOW_COMPETITOR_SIGNS                         :Mostra nomi e cartelli degli avversari
@@ -615,7 +617,10 @@ STR_GRAPH_CARGO_DELIVERED_CAPTION                               :{WHITE}Unità d
 STR_GRAPH_COMPANY_PERFORMANCE_RATINGS_CAPTION                   :{WHITE}Valutazione prestazioni compagnie (massima valutazione=1000)
 STR_GRAPH_COMPANY_VALUES_CAPTION                                :{WHITE}Grafico del valore aziendale
 
+STR_GRAPH_LAST_24_MINUTES_TIME_LABEL                            :{TINY_FONT}{BLACK}Ultimi 24 minuti
 STR_GRAPH_LAST_72_MINUTES_TIME_LABEL                            :{TINY_FONT}{BLACK}Ultimi 72 minuti
+
+
 
 STR_GRAPH_CARGO_PAYMENT_RATES_CAPTION                           :{WHITE}Tariffe di pagamento carichi
 STR_GRAPH_CARGO_PAYMENT_RATES_DAYS                              :{TINY_FONT}{BLACK}Giorni in transito
@@ -628,6 +633,13 @@ STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL                             :{BLACK}Non most
 STR_GRAPH_CARGO_PAYMENT_TOGGLE_CARGO                            :{BLACK}Attiva/disattiva il grafico per il tipo di carico
 STR_GRAPH_CARGO_PAYMENT_CARGO                                   :{TINY_FONT}{BLACK}{STRING}
 
+STR_GRAPH_INDUSTRY_CAPTION                                      :{WHITE}{INDUSTRY} - Storico delle merci
+STR_GRAPH_INDUSTRY_RANGE_PRODUCED                               :Prodotto
+STR_GRAPH_INDUSTRY_RANGE_TRANSPORTED                            :Trasportato
+STR_GRAPH_INDUSTRY_RANGE_DELIVERED                              :Consegnato
+STR_GRAPH_INDUSTRY_RANGE_WAITING                                :In attesa
+
+STR_GRAPH_TOWN_RANGE_TRANSPORTED                                :Trasportato
 
 STR_GRAPH_PERFORMANCE_DETAIL_TOOLTIP                            :{BLACK}Mostra valutazione dettagliata prestazioni
 
@@ -950,25 +962,29 @@ STR_EXTRA_VIEW_MOVE_MAIN_TO_VIEW_TOOLTIP                        :{BLACK}Copia la
 STR_GAME_OPTIONS_CAPTION                                        :{WHITE}Opzioni di gioco
 
 STR_GAME_OPTIONS_TAB_GENERAL                                    :Generale
-STR_GAME_OPTIONS_TAB_GENERAL_TOOLTIP                            :{BLACK}Scegliere le impostazioni generali
+STR_GAME_OPTIONS_TAB_GENERAL_TOOLTIP                            :Scegliere le impostazioni generali
 STR_GAME_OPTIONS_TAB_GRAPHICS                                   :Grafica
-STR_GAME_OPTIONS_TAB_GRAPHICS_TOOLTIP                           :{BLACK}Scegliere le impostazioni grafiche
+STR_GAME_OPTIONS_TAB_GRAPHICS_TOOLTIP                           :Scegliere le impostazioni grafiche
 STR_GAME_OPTIONS_TAB_SOUND                                      :Suono
-STR_GAME_OPTIONS_TAB_SOUND_TOOLTIP                              :{BLACK}Scegliere le impostazioni audio e musicali
+STR_GAME_OPTIONS_TAB_SOUND_TOOLTIP                              :Scegliere le impostazioni audio e musicali
 STR_GAME_OPTIONS_TAB_SOCIAL                                     :Social
-STR_GAME_OPTIONS_TAB_SOCIAL_TOOLTIP                             :{BLACK}Scegli le impostazioni di integrazione social
+STR_GAME_OPTIONS_TAB_SOCIAL_TOOLTIP                             :Scegli le impostazioni di integrazione social
+STR_GAME_OPTIONS_TAB_ADVANCED                                   :Avanzate
+STR_GAME_OPTIONS_TAB_ADVANCED_TOOLTIP                           :Cambia impostazioni avanzate
 
 STR_GAME_OPTIONS_VOLUME                                         :Volume
 STR_GAME_OPTIONS_SFX_VOLUME                                     :Effetti sonori
 STR_GAME_OPTIONS_MUSIC_VOLUME                                   :Musica
 
+STR_GAME_OPTIONS_SETTING                                        :{STRING}: {ORANGE}{STRING}
 
-STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Valuta
-STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Selezione della valuta
+
+STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :Valuta
+STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :Selezione della valuta
 
 STR_GAME_OPTIONS_CURRENCY_CODE                                  :{STRING} ({STRING})
 
-###length 45
+###length 46
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :Sterlina britannica
 STR_GAME_OPTIONS_CURRENCY_USD                                   :Dollaro americano
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -1013,9 +1029,11 @@ STR_GAME_OPTIONS_CURRENCY_IDR                                   :Rupia indonesia
 STR_GAME_OPTIONS_CURRENCY_MYR                                   :Ringgit malaysiano
 STR_GAME_OPTIONS_CURRENCY_LVL                                   :Lats lettoni
 STR_GAME_OPTIONS_CURRENCY_PTE                                   :Escudo portoghese
+STR_GAME_OPTIONS_CURRENCY_UAH                                   :Grivna Ucraina
+STR_GAME_OPTIONS_CURRENCY_VND                                   :Dong Vietnamita
 
-STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :{BLACK}Salvataggi automatici
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :{BLACK}Seleziona l'intervallo fra i salvataggi automatici della partita
+STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :Salvataggi automatici
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :Seleziona l'intervallo fra i salvataggi automatici della partita
 
 # Autosave dropdown
 ###length 5
@@ -1025,77 +1043,79 @@ STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_30_MINUTES             :Ogni 30 minuti
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_60_MINUTES             :Ogni 60 minuti
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_120_MINUTES            :Ogni 120 minuti
 
-STR_GAME_OPTIONS_LANGUAGE                                       :{BLACK}Lingua
-STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :{BLACK}Seleziona la lingua da utilizzare per l'interfaccia
+STR_GAME_OPTIONS_LANGUAGE                                       :Lingua
+STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :Seleziona la lingua da utilizzare per l'interfaccia
 STR_GAME_OPTIONS_LANGUAGE_PERCENTAGE                            :{STRING} ({NUM}% completato)
 
-STR_GAME_OPTIONS_FULLSCREEN                                     :{BLACK}Schermo intero
-STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :{BLACK}Attiva questa casella per giocate a OpenTTD in modalità schermo intero
+STR_GAME_OPTIONS_FULLSCREEN                                     :Schermo intero
+STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :Attiva questa casella per giocate a OpenTTD in modalità schermo intero
 
-STR_GAME_OPTIONS_RESOLUTION                                     :{BLACK}Risoluzione schermo
-STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :{BLACK}Seleziona la risoluzione dello schermo da utilizzare
+STR_GAME_OPTIONS_RESOLUTION                                     :Risoluzione schermo
+STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :Seleziona la risoluzione dello schermo da utilizzare
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :Altra
 STR_GAME_OPTIONS_RESOLUTION_ITEM                                :{NUM}x{NUM}
 
-STR_GAME_OPTIONS_VIDEO_ACCELERATION                             :{BLACK}Accelerazione hardware
-STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :{BLACK}Seleziona questa opzione per consentire a OpenTTD di utilizzare l'accelerazione hardware. Eventuali cambiamenti avranno effetto solo dopo un riavvio del gioco
+STR_GAME_OPTIONS_VIDEO_ACCELERATION                             :Accelerazione hardware
+STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :Seleziona questa opzione per consentire a OpenTTD di utilizzare l'accelerazione hardware. Eventuali cambiamenti avranno effetto solo dopo un riavvio del gioco
 STR_GAME_OPTIONS_VIDEO_ACCELERATION_RESTART                     :{WHITE}Le nuove impostazioni avranno effetto solo dopo un riavvio del gioco
 
-STR_GAME_OPTIONS_VIDEO_VSYNC                                    :{BLACK}VSync
-STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :{BLACK}Seleziona questa casella per abilitare la sincronizzazione verticale dello schermo. Un'impostazione modificata verrà applicata solo al riavvio del gioco. Funziona solo con l'accelerazione hardware abilitata
+STR_GAME_OPTIONS_VIDEO_VSYNC                                    :VSync
+STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :Seleziona questa casella per abilitare la sincronizzazione verticale dello schermo. Un'impostazione modificata verrà applicata solo al riavvio del gioco. Funziona solo con l'accelerazione hardware abilitata
 
-STR_GAME_OPTIONS_VIDEO_DRIVER_INFO                              :{BLACK}Driver attuale: {STRING}
+STR_GAME_OPTIONS_VIDEO_DRIVER_INFO                              :Driver attuale: {STRING}
 
-STR_GAME_OPTIONS_GUI_SCALE_FRAME                                :{BLACK}Dimensione dell'interfaccia
-STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP                              :{BLACK}Trascinare il cursore per impostare le dimensioni dell'interfaccia. Ctrl+trascina per una regolazione continua
-STR_GAME_OPTIONS_GUI_SCALE_AUTO                                 :{BLACK}Rileva automaticamente le dimensioni
-STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :{BLACK}Seleziona questa casella per rilevare automaticamente le dimensioni dell'interfaccia
+STR_GAME_OPTIONS_INTERFACE                                      :Interfaccia
 
-STR_GAME_OPTIONS_GUI_SCALE_BEVELS                               :{BLACK}Scala smussature
-STR_GAME_OPTIONS_GUI_SCALE_BEVELS_TOOLTIP                       :{BLACK}Seleziona questa casella per ridimensionare le smussature in base alle dimensioni dell'interfaccia
+STR_GAME_OPTIONS_GUI_SCALE_FRAME                                :Dimensione dell'interfaccia
+STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP                              :Trascinare il cursore per impostare le dimensioni dell'interfaccia. Ctrl+trascina per una regolazione continua
+STR_GAME_OPTIONS_GUI_SCALE_AUTO                                 :Rileva automaticamente le dimensioni
+STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :Seleziona questa casella per rilevare automaticamente le dimensioni dell'interfaccia
 
-STR_GAME_OPTIONS_GUI_FONT_SPRITE                                :{BLACK}Usa il carattere sprite tradizionale
-STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP                        :{BLACK}Seleziona questa casella se preferisci utilizzare il tradizionale carattere sprite di dimensioni fisse
-STR_GAME_OPTIONS_GUI_FONT_AA                                    :{BLACK}Font anti-aliasing
-STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP                            :{BLACK}Seleziona questa casella per applicare l'anti-aliasing ai caratteri ridimensionabili
+STR_GAME_OPTIONS_GUI_SCALE_BEVELS                               :Scala smussature
+STR_GAME_OPTIONS_GUI_SCALE_BEVELS_TOOLTIP                       :Seleziona questa casella per ridimensionare le smussature in base alle dimensioni dell'interfaccia
+
+STR_GAME_OPTIONS_GUI_FONT_SPRITE                                :Usa il carattere sprite tradizionale
+STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP                        :Seleziona questa casella se preferisci utilizzare il tradizionale carattere sprite di dimensioni fisse
+STR_GAME_OPTIONS_GUI_FONT_AA                                    :Font anti-aliasing
+STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP                            :Seleziona questa casella per applicare l'anti-aliasing ai caratteri ridimensionabili
 
 STR_GAME_OPTIONS_GUI_SCALE_MARK                                 :{DECIMAL}x
 
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_FRAME                       :{BLACK}Sondaggio automatizzato
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY                             :{BLACK}Partecipare al sondaggio automatico
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_TOOLTIP                     :{BLACK}Se abilitato, OpenTTD trasmette un sondaggio quando si lascia una partita.
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK                        :{BLACK}Informazioni sul sondaggio e sulla privacy
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK_TOOLTIP                :{BLACK}Apre un browser con ulteriori informazioni sul sondaggio automatico.
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW                     :{BLACK}Anteprima del risultato del sondaggio
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW_TOOLTIP             :{BLACK}Mostra il risultato del sondaggio della partita in corso
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_FRAME                       :Sondaggio automatizzato
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY                             :Partecipare al sondaggio automatico
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_TOOLTIP                     :Se abilitato, OpenTTD trasmette un sondaggio quando si lascia una partita.
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK                        :Informazioni sul sondaggio e sulla privacy
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK_TOOLTIP                :Apre un browser con ulteriori informazioni sul sondaggio automatico.
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW                     :Anteprima del risultato del sondaggio
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW_TOOLTIP             :Mostra il risultato del sondaggio della partita in corso
 
-STR_GAME_OPTIONS_GRAPHICS                                       :{BLACK}Grafica
+STR_GAME_OPTIONS_DISPLAY                                        :Mostra
 
-STR_GAME_OPTIONS_REFRESH_RATE                                   :{BLACK}Frequenza di aggiornameno dello schermo
-STR_GAME_OPTIONS_REFRESH_RATE_TOOLTIP                           :{BLACK}Seleziona la frequenza di aggiornamento dello schermo da utilizzare
+STR_GAME_OPTIONS_REFRESH_RATE                                   :Frequenza di aggiornameno dello schermo
+STR_GAME_OPTIONS_REFRESH_RATE_TOOLTIP                           :Seleziona la frequenza di aggiornamento dello schermo da utilizzare
 STR_GAME_OPTIONS_REFRESH_RATE_ITEM                              :{NUM}Hz
 STR_GAME_OPTIONS_REFRESH_RATE_WARNING                           :{WHITE}Frequenze di aggiornamento maggiori di 60Hz potrebbero impattare le prestazioni.
 
-STR_GAME_OPTIONS_BASE_GRF                                       :{BLACK}Pacchetto grafico di base
-STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :{BLACK}Selezionare il pacchetto grafico di base da utilizzare (non può essere modificato in gioco, solo dal menu principale).
-STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :{BLACK}Informazioni aggiuntive sul pacchetto grafico di base
+STR_GAME_OPTIONS_BASE_GRF                                       :Pacchetto grafico di base
+STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :Selezionare il pacchetto grafico di base da utilizzare (non può essere modificato in gioco, solo dal menu principale).
+STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :Informazioni aggiuntive sul pacchetto grafico di base
 
-STR_GAME_OPTIONS_BASE_SFX                                       :{BLACK}Pacchetto sonoro di base
-STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :{BLACK}Selezionare il pacchetto di suoni di base da utilizzare (non può essere modificato in gioco, solo dal menu principale).
-STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :{BLACK}Informazioni aggiuntive sul pacchetto sonoro di base
+STR_GAME_OPTIONS_BASE_SFX                                       :Pacchetto sonoro di base
+STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :Selezionare il pacchetto di suoni di base da utilizzare (non può essere modificato in gioco, solo dal menu principale).
+STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :Informazioni aggiuntive sul pacchetto sonoro di base
 
-STR_GAME_OPTIONS_BASE_MUSIC                                     :{BLACK}Pacchetto musicale di base
-STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :{BLACK}Seleziona il pacchetto musicale di base da utilizzare
-STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :{BLACK}Informazioni aggiuntive sul pacchetto musicale di base
+STR_GAME_OPTIONS_BASE_MUSIC                                     :Pacchetto musicale di base
+STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :Seleziona il pacchetto musicale di base da utilizzare
+STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :Informazioni aggiuntive sul pacchetto musicale di base
 
 STR_GAME_OPTIONS_ONLINE_CONTENT                                 :Ottieni contenuto
 STR_GAME_OPTIONS_ONLINE_CONTENT_TOOLTIP                         :Cerca contenuti nuovi e aggiornati da scaricare
 
 STR_GAME_OPTIONS_SOCIAL_PLUGINS_NONE                            :{LTBLUE}(nessun plugin installato per integrarsi con le piattaforme social)
 
-STR_GAME_OPTIONS_SOCIAL_PLUGIN_TITLE                            :{BLACK}{STRING} ({STRING})
-STR_GAME_OPTIONS_SOCIAL_PLUGIN_PLATFORM                         :{BLACK}Piattaforma:
-STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE                            :{BLACK}Stato del plugin:
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_TITLE                            :{STRING} ({STRING})
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_PLATFORM                         :Piattaforma:
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE                            :Stato del plugin:
 
 STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_RUNNING                    :{GREEN}In esecuzione
 STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_FAILED                     :{RED}Inizializzazione fallita
@@ -1220,12 +1240,11 @@ STR_CITY_APPROVAL_PERMISSIVE                                    :Permissivo (nes
 
 STR_WARNING_NO_SUITABLE_AI                                      :{WHITE}Nessuna IA adatta disponibile...{}È possibile scaricare numerose IA tramite il sistema 'Contenuti online'
 
-# Settings tree window
-STR_CONFIG_SETTING_TREE_CAPTION                                 :{WHITE}Impostazioni
-STR_CONFIG_SETTING_FILTER_TITLE                                 :{BLACK}Filtro:
-STR_CONFIG_SETTING_EXPAND_ALL                                   :{BLACK}Espandi tutti
-STR_CONFIG_SETTING_COLLAPSE_ALL                                 :{BLACK}Comprimi tutti
-STR_CONFIG_SETTING_RESET_ALL                                    :{BLACK}Resetta tutti i valori
+# Settings tree in the Game Options window
+STR_CONFIG_SETTING_FILTER_TITLE                                 :Filtro:
+STR_CONFIG_SETTING_EXPAND_ALL                                   :Espandi tutti
+STR_CONFIG_SETTING_COLLAPSE_ALL                                 :Comprimi tutti
+STR_CONFIG_SETTING_RESET_ALL                                    :Resetta tutti i valori
 STR_CONFIG_SETTING_NO_EXPLANATION_AVAILABLE_HELPTEXT            :(descrizione non disponibile)
 STR_CONFIG_SETTING_VALUE                                        :{PUSH_COLOUR}{ORANGE}{STRING}{POP_COLOUR}
 STR_CONFIG_SETTING_DEFAULT_VALUE                                :{LTBLUE}Valore predefinito: {ORANGE}{STRING}
@@ -1238,9 +1257,9 @@ STR_CONFIG_SETTING_TYPE_COMPANY_INGAME                          :Impostazione de
 STR_CONFIG_SETTING_RESET_ALL_CONFIRMATION_DIALOG_CAPTION        :{WHITE}Attenzione!
 STR_CONFIG_SETTING_RESET_ALL_CONFIRMATION_DIALOG_TEXT           :{WHITE}Questa azione resetterà tutti i settaggi ai loro valori predefiniti.{}Sei sicuro di voler procedere?
 
-STR_CONFIG_SETTING_RESTRICT_CATEGORY                            :{BLACK}Categoria:
-STR_CONFIG_SETTING_RESTRICT_TYPE                                :{BLACK}Tipo:
-STR_CONFIG_SETTING_RESTRICT_DROPDOWN_HELPTEXT                   :{BLACK}Limita la lista sottostante usando i filtri predefiniti
+STR_CONFIG_SETTING_RESTRICT_CATEGORY                            :Categoria:
+STR_CONFIG_SETTING_RESTRICT_TYPE                                :Tipo:
+STR_CONFIG_SETTING_RESTRICT_DROPDOWN_HELPTEXT                   :Limita la lista sottostante usando i filtri predefiniti
 STR_CONFIG_SETTING_RESTRICT_BASIC                               :Di base (solo le impostazioni principali)
 STR_CONFIG_SETTING_RESTRICT_ADVANCED                            :Avanzate (la maggior parte delle impostazioni)
 STR_CONFIG_SETTING_RESTRICT_ALL                                 :Per esperti (tutte le impostazioni, incluse quelle speciali)
@@ -1257,9 +1276,9 @@ STR_CONFIG_SETTING_TYPE_DROPDOWN_COMPANY_INGAME                 :Impostazioni de
 
 STR_CONFIG_SETTINGS_NONE                                        :{WHITE}- Nessuna -
 ###length 3
-STR_CONFIG_SETTING_CATEGORY_HIDES                               :{BLACK}Per mostrare tutti i risultati impostare la{}{SILVER}Categoria {BLACK}su {WHITE}{STRING}
-STR_CONFIG_SETTING_TYPE_HIDES                                   :{BLACK}Per mostrare tutti i risultati impostare il{}{SILVER}Tipo {BLACK}su {WHITE}Tutti i tipi di impostazioni
-STR_CONFIG_SETTING_CATEGORY_AND_TYPE_HIDES                      :{BLACK}Per mostrare tutti i risultati impostare la{}{SILVER}Categoria {BLACK}su {WHITE}{STRING} {BLACK}e il {SILVER}Tipo {BLACK}su {WHITE}Tutti i tipi di impostazioni
+STR_CONFIG_SETTING_CATEGORY_HIDES                               :Per mostrare tutti i risultati impostare la{}{SILVER}Categoria {BLACK}su {WHITE}{STRING}
+STR_CONFIG_SETTING_TYPE_HIDES                                   :Per mostrare tutti i risultati impostare il{}{SILVER}Tipo {BLACK}su {WHITE}Tutti i tipi di impostazioni
+STR_CONFIG_SETTING_CATEGORY_AND_TYPE_HIDES                      :Per mostrare tutti i risultati impostare la{}{SILVER}Categoria {BLACK}su {WHITE}{STRING} {BLACK}e il {SILVER}Tipo {BLACK}su {WHITE}Tutti i tipi di impostazioni
 
 ###length 3
 STR_CONFIG_SETTING_OFF                                          :No
@@ -1318,6 +1337,7 @@ STR_CONFIG_SETTING_INTEREST_RATE_HELPTEXT                       :Tasso d'interes
 
 STR_CONFIG_SETTING_RUNNING_COSTS                                :Costi di esercizio: {STRING.mp}
 STR_CONFIG_SETTING_RUNNING_COSTS_HELPTEXT                       :Imposta il livello dei costi di manutenzione ed esercizio di veicoli e infrastrutture.
+###length 3
 
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED                           :Velocità di costruzione: {STRING.fs}
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED_HELPTEXT                  :Limita la frequenza delle azioni di costruzione delle IA.
@@ -1339,6 +1359,7 @@ STR_CONFIG_SETTING_SUBSIDY_DURATION_DISABLED                    :Niente sussidi
 
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS                           :Costi di costruzione: {STRING.mp}
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :Imposta il livello dei costi di costruzione e acquisto.
+###length 3
 
 STR_CONFIG_SETTING_RECESSIONS                                   :Recessioni: {STRING}
 STR_CONFIG_SETTING_RECESSIONS_HELPTEXT                          :Se abilitata, le recessioni possono verificarsi periodicamente. Durante una recessione, tutta la produzione è significativamente più bassa (torna al livello precedente quando la recessione è terminata).
@@ -1684,6 +1705,9 @@ STR_CONFIG_SETTING_SCROLLMODE_LMB                               :Muovi mappa col
 STR_CONFIG_SETTING_SMOOTH_SCROLLING                             :Scorrimento morbido delle visuali: {STRING}
 STR_CONFIG_SETTING_SMOOTH_SCROLLING_HELPTEXT                    :Controlla il modo in cui la visuale principale scorre verso una specifica posizione quando si fa clic sulla minimappa o si ordina di visualizzare un oggetto specifico sulla mappa. Se abilitata, la visuale scorre in modo morbido. Se disabilitata, salta direttamente al punto prescelto
 
+STR_CONFIG_SETTING_TOOLBAR_DROPDOWN_AUTOSELECT                  :Comportamento tradizionale di selezione dei menu della barra degli strumenti: {STRING}
+STR_CONFIG_SETTING_TOOLBAR_DROPDOWN_AUTOSELECT_HELPTEXT         :Scegli il comportamento di selezione dei menu della barra degli strumenti. Se disattivato, l'elenco dei menu della barra degli strumenti rimarrà aperto finché non si effettua una selezione. Se attivato, si apre il menu su cui si trova il puntatore al rilascio del pulsante del mouse.
+
 STR_CONFIG_SETTING_MEASURE_TOOLTIP                              :Mostra un tooltip di misura durante la costruzione: {STRING}
 STR_CONFIG_SETTING_MEASURE_TOOLTIP_HELPTEXT                     :Mostra le distanze in caselle e le differenze di altezza quando si trascina durante le operazioni di costruzione
 
@@ -2007,7 +2031,12 @@ STR_CONFIG_SETTING_TOWN_FOUNDING_FORBIDDEN                      :Non permessa
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED                        :Permessa
 STR_CONFIG_SETTING_TOWN_FOUNDING_ALLOWED_CUSTOM_LAYOUT          :Permessa, disposizione strade personalizzata
 
+STR_CONFIG_SETTING_HOUSE_PLACER                                 :Posizionare le singole case nelle  città: {STRING}
+STR_CONFIG_SETTING_HOUSE_PLACER_HELPTEXT                        :Attivare questa impostazione permette ai giocatori di posizionare le case manualmente
 ###length 3
+STR_CONFIG_SETTING_HOUSE_PLACER_FORBIDDEN                       :Non consentito
+STR_CONFIG_SETTING_HOUSE_PLACER_ALLOWED                         :Consentito
+STR_CONFIG_SETTING_HOUSE_PLACER_FULLY_CONSTRUCTED               :Permesso, completamente costruito
 
 STR_CONFIG_SETTING_TOWN_CARGOGENMODE                            :Generazione passeggeri e posta: {STRING}
 STR_CONFIG_SETTING_TOWN_CARGOGENMODE_HELPTEXT                   :Quantità di carichi (passeggeri e posta) prodotta dalle case in relazione alla popolazione della città.{}Quadratica: Una città grande il doppio genera il quadruplo di passeggeri.{}Lineare: Una città grande il doppio genera il doppio di passeggeri
@@ -2143,7 +2172,7 @@ STR_CONFIG_SETTING_LOCALISATION_UNITS_FORCE_SI                  :SI (kN)
 
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT                    :Unità di altezza: {STRING}
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_HELPTEXT           :Seleziona le unità di misura da utilizzare per mostrare le altezze nell'interfaccia utente
-###length 3
+###length 4
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_IMPERIAL           :Imperiali (piedi)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_METRIC             :Metriche (m)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_SI                 :SI (m)
@@ -2198,8 +2227,6 @@ STR_CONFIG_ERROR_INVALID_SAVEGAME_COMPRESSION_ALGORITHM         :{WHITE}... form
 STR_CONFIG_ERROR_INVALID_BASE_GRAPHICS_NOT_FOUND                :{WHITE}... ignorato pacchetto grafico di base '{STRING}': non trovato
 STR_CONFIG_ERROR_INVALID_BASE_SOUNDS_NOT_FOUND                  :{WHITE}... ignorato pacchetto sonoro di base '{STRING}': non trovato
 STR_CONFIG_ERROR_INVALID_BASE_MUSIC_NOT_FOUND                   :{WHITE}... ignorato pachetto musicale di base '{STRING}': non trovato
-STR_CONFIG_ERROR_OUT_OF_MEMORY                                  :{WHITE}Memoria esaurita
-STR_CONFIG_ERROR_SPRITECACHE_TOO_BIG                            :{WHITE}Impossibile allocare {BYTES} della cache degli sprite. La cache degli sprite è stata limitata a {BYTES}; questo comporterà una riduzione delle prestazioni di OpenTTD. Per ridurre la quantità di memoria richiesta è possibile disabilitare la grafica a 32 bit e/o i livelli di zoom
 
 # Video initalization errors
 STR_VIDEO_DRIVER_ERROR                                          :{WHITE}Errore nelle impostazioni video...
@@ -2207,7 +2234,8 @@ STR_VIDEO_DRIVER_ERROR_NO_HARDWARE_ACCELERATION                 :{WHITE}... non 
 STR_VIDEO_DRIVER_ERROR_HARDWARE_ACCELERATION_CRASH              :{WHITE}... Il driver della GPU ha mandato in crash il gioco. Accelerazione hardware disattivata
 
 # Intro window
-STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
+STR_INTRO_CAPTION                                               :{WHITE}OpenTTD
+STR_INTRO_VERSION                                               :OpenTTD {REV}
 
 STR_INTRO_NEW_GAME                                              :{BLACK}Nuova partita
 STR_INTRO_LOAD_GAME                                             :{BLACK}Carica partita
@@ -2219,11 +2247,7 @@ STR_INTRO_MULTIPLAYER                                           :{BLACK}Multigio
 STR_INTRO_GAME_OPTIONS                                          :{BLACK}Opzioni di gioco
 STR_INTRO_HIGHSCORE                                             :{BLACK}Punteggi migliori
 STR_INTRO_HELP                                                  :{BLACK}Aiuto e manuali
-STR_INTRO_CONFIG_SETTINGS_TREE                                  :{BLACK}Impostazioni
-STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}Impostazioni NewGRF
 STR_INTRO_ONLINE_CONTENT                                        :{BLACK}Contenuti online
-STR_INTRO_AI_SETTINGS                                           :{BLACK}Impostazioni IA
-STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Impostazioni script di gioco
 STR_INTRO_QUIT                                                  :{BLACK}Esci
 
 STR_INTRO_TOOLTIP_NEW_GAME                                      :{BLACK}Inizia una nuova partita. Ctrl salta la configurazione della mappa.
@@ -2241,11 +2265,7 @@ STR_INTRO_TOOLTIP_TOYLAND_LANDSCAPE                             :{BLACK}Selezion
 STR_INTRO_TOOLTIP_GAME_OPTIONS                                  :{BLACK}Apre le opzioni di gioco
 STR_INTRO_TOOLTIP_HIGHSCORE                                     :{BLACK}Apre la tabella dei punteggi migliori
 STR_INTRO_TOOLTIP_HELP                                          :{BLACK}Ottieni l'accesso alla documentazione e alle risorse online
-STR_INTRO_TOOLTIP_CONFIG_SETTINGS_TREE                          :{BLACK}Apri le impostazioni
-STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Apre le impostazioni NewGRF
 STR_INTRO_TOOLTIP_ONLINE_CONTENT                                :{BLACK}Controlla la disponibilità di contenuti nuovi o aggiornati da scaricare
-STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Apri impostazioni IA
-STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Apre le impostazioni dello script di gioco
 STR_INTRO_TOOLTIP_QUIT                                          :{BLACK}Esci da OpenTTD
 
 STR_INTRO_BASESET                                               :{BLACK}Nel pacchetto grafico di base attualmente selezionato mancano {NUM} sprite. È consigliabile controllare gli aggiornamenti del pacchetto.
@@ -2338,12 +2358,7 @@ STR_LIVERY_FREIGHT_TRAM                                         :Tram merci
 STR_FACE_CAPTION                                                :{WHITE}Seleziona faccia
 STR_FACE_CANCEL_TOOLTIP                                         :{BLACK}Annulla la selezione della nuova faccia
 STR_FACE_OK_TOOLTIP                                             :{BLACK}Accetta la selezione della nuova faccia
-STR_FACE_RANDOM                                                 :{BLACK}Scegli a caso
 
-STR_FACE_MALE_BUTTON                                            :{BLACK}Maschio
-STR_FACE_MALE_TOOLTIP                                           :{BLACK}Seleziona fra volti maschili
-STR_FACE_FEMALE_BUTTON                                          :{BLACK}Femmina
-STR_FACE_FEMALE_TOOLTIP                                         :{BLACK}Seleziona fra volti femminili
 STR_FACE_NEW_FACE_BUTTON                                        :{BLACK}Nuova faccia
 STR_FACE_NEW_FACE_TOOLTIP                                       :{BLACK}Genera una nuova faccia a caso
 STR_FACE_ADVANCED                                               :{BLACK}Avanzata
@@ -2361,36 +2376,23 @@ STR_FACE_FACECODE_ERR                                           :{WHITE}Impossib
 STR_FACE_SAVE                                                   :{BLACK}Salva
 STR_FACE_SAVE_TOOLTIP                                           :{BLACK}Salva come faccia preferita
 STR_FACE_SAVE_DONE                                              :{WHITE}La faccia corrente è stata salvata come preferita nel file di configurazione di OpenTTD
-STR_FACE_EUROPEAN                                               :{BLACK}Europea
-STR_FACE_EUROPEAN_TOOLTIP                                       :{BLACK}Seleziona le facce europee
-STR_FACE_AFRICAN                                                :{BLACK}Africana
-STR_FACE_AFRICAN_TOOLTIP                                        :{BLACK}Seleziona le facce africane
+STR_FACE_SETTING_TOGGLE                                         :{STRING} {ORANGE}{STRING}
+STR_FACE_SETTING_NUMERIC                                        :{STRING} {ORANGE}{NUM} / {NUM}
 STR_FACE_YES                                                    :Sì
 STR_FACE_NO                                                     :No
-STR_FACE_MOUSTACHE_EARRING_TOOLTIP                              :{BLACK}Abilita i baffi o l'orecchino
+STR_FACE_STYLE                                                  :Stile:
 STR_FACE_HAIR                                                   :Capelli:
-STR_FACE_HAIR_TOOLTIP                                           :{BLACK}Cambia i capelli
 STR_FACE_EYEBROWS                                               :Sopracciglia:
-STR_FACE_EYEBROWS_TOOLTIP                                       :{BLACK}Cambia le sopracciglia
 STR_FACE_EYECOLOUR                                              :Colore occhi:
-STR_FACE_EYECOLOUR_TOOLTIP                                      :{BLACK}Cambia il colore degli occhi
 STR_FACE_GLASSES                                                :Occhiali:
-STR_FACE_GLASSES_TOOLTIP                                        :{BLACK}Abilita gli occhiali
-STR_FACE_GLASSES_TOOLTIP_2                                      :{BLACK}Cambia gli occhiali
 STR_FACE_NOSE                                                   :Naso:
-STR_FACE_NOSE_TOOLTIP                                           :{BLACK}Cambia il naso
 STR_FACE_LIPS                                                   :Labbra:
 STR_FACE_MOUSTACHE                                              :Baffi:
-STR_FACE_LIPS_MOUSTACHE_TOOLTIP                                 :{BLACK}Cambia le labbra o i baffi
 STR_FACE_CHIN                                                   :Mento:
-STR_FACE_CHIN_TOOLTIP                                           :{BLACK}Cambia il mento
 STR_FACE_JACKET                                                 :Giacca:
-STR_FACE_JACKET_TOOLTIP                                         :{BLACK}Cambia la giacca
 STR_FACE_COLLAR                                                 :Colletto:
-STR_FACE_COLLAR_TOOLTIP                                         :{BLACK}Cambia il colletto
 STR_FACE_TIE                                                    :Cravatta:
 STR_FACE_EARRING                                                :Orecchino:
-STR_FACE_TIE_EARRING_TOOLTIP                                    :{BLACK}Cambia la cravatta o l'orecchino
 
 # Matches ServerGameType
 ###length 3
@@ -2796,10 +2798,10 @@ STR_STATION_BUILD_INFRASTRUCTURE_COST_PERIOD                    :{BLACK}Costo di
 
 # Join station window
 STR_JOIN_STATION_CAPTION                                        :{WHITE}Unisci stazione
-STR_JOIN_STATION_CREATE_SPLITTED_STATION                        :{YELLOW}Costruisci stazione separata
+STR_JOIN_STATION_CREATE_SPLIT_STATION                           :{YELLOW}Costruisci stazione separata
 
 STR_JOIN_WAYPOINT_CAPTION                                       :{WHITE}Unisci waypoint
-STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT                      :{YELLOW}Costruisci waypoint separato
+STR_JOIN_WAYPOINT_CREATE_SPLIT_WAYPOINT                         :{YELLOW}Costruisci waypoint separato
 
 # Generic toolbar
 STR_TOOLBAR_DISABLED_NO_VEHICLE_AVAILABLE                       :{BLACK}Disabilitato perché non ci sono veicoli disponibili per questa infrastruttura
@@ -2855,15 +2857,27 @@ STR_PICKER_MODE_USED_TOOLTIP                                    :Attiva/disattiv
 STR_PICKER_MODE_SAVED                                           :Salvato
 STR_PICKER_MODE_SAVED_TOOLTIP                                   :Attiva/disattiva la visualizzazione solo degli elementi salvati
 
+STR_PICKER_PREVIEW_SHRINK                                       :-
+STR_PICKER_PREVIEW_SHRINK_TOOLTIP                               :Riduce l'altezza delle aneprime. Ctrl+Click per ridurre al minimo
+STR_PICKER_PREVIEW_EXPAND                                       :+
+STR_PICKER_PREVIEW_EXPAND_TOOLTIP                               :Aumenta l'altezza delle anteprime. Ctrl+Click per aumentare al massimo
+
 STR_PICKER_STATION_CLASS_TOOLTIP                                :Seleziona una classe di stazioni da visualizzare
 STR_PICKER_STATION_TYPE_TOOLTIP                                 :Seleziona un tipo di stazione da costruire. Ctrl+Click per aggiungere o rimuovere dagli oggetti salvati
+STR_PICKER_ROADSTOP_BUS_CLASS_TOOLTIP                           :Seleziona una classe di fermate dell'autobus da visualizzare
+STR_PICKER_ROADSTOP_BUS_TYPE_TOOLTIP                            :Seleziona un tipo di fermata dell'autobus da costrure. Ctrl+Click per aggiungere o rimuovere elementi salvati
 STR_PICKER_ROADSTOP_TRUCK_CLASS_TOOLTIP                         :Seleziona una classe di stazioni dei camion da visualizzare
 STR_PICKER_ROADSTOP_TRUCK_TYPE_TOOLTIP                          :Seleziona un tipo di stazione dei camion da costruire. Ctrl+Click per aggiungere o rimuovere dagli oggetti salvati
 STR_PICKER_OBJECT_CLASS_TOOLTIP                                 :Seleziona una classe di oggetti da visualizzare
 STR_PICKER_OBJECT_TYPE_TOOLTIP                                  :Seleziona un tipo d'oggetto da costruire. Ctrl+Clic per aggiungere o rimuovere in elementi salvati. Ctrl+Clic+trascinamento per selezionare l'area in diagonale. Premere anche Shift per mostrare solo la stima dei costi.
+STR_PICKER_HOUSE_CLASS_TOOLTIP                                  :Seleziona una zona cittadina da mostrare
 STR_PICKER_HOUSE_TYPE_TOOLTIP                                   :Seleziona un tipo di casa da costruire. Ctrl+Click per aggiungere o rimuovere dagli oggetti salvati
 
 STR_HOUSE_PICKER_CAPTION                                        :Selezione casa
+STR_HOUSE_PICKER_NAME                                           :{BLACK}Nome: {ORANGE}{STRING}
+STR_HOUSE_PICKER_POPULATION                                     :{BLACK}Popolazione: {ORANGE}{NUM}
+STR_HOUSE_PICKER_CARGO_ACCEPTED                                 :{BLACK}Carichi accettati: {ORANGE}
+STR_HOUSE_PICKER_CARGO_PRODUCED                                 :{BLACK}Carichi prodotti: {ORANGE}{CARGO_LIST}
 
 STR_HOUSE_PICKER_CLASS_ZONE1                                    :Bordo
 STR_HOUSE_PICKER_CLASS_ZONE2                                    :Periferie
@@ -2880,7 +2894,6 @@ STR_STATION_CLASS_WAYP_WAYPOINT                                 :Waypoint predef
 
 # Signal window
 STR_BUILD_SIGNAL_CAPTION                                        :{WHITE}Selezione segnale
-STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Attiva/disattiva la visualizzazione dei tipi di segnale avanzati
 STR_BUILD_SIGNAL_SEMAPHORE_NORM_TOOLTIP                         :{BLACK}Segnale di blocco (semaforico){}I segnali sono necessari per impedire ai convogli di scontrarsi su reti ferroviarie dove viaggia più di un treno
 STR_BUILD_SIGNAL_SEMAPHORE_ENTRY_TOOLTIP                        :{BLACK}Segnale di entrata (semaforico){}Questo pre-segnale permette l'accesso a un blocco solo se è presente almeno un segnale di uscita verde al termine della sezione del blocco, altrimenti è rosso.
 STR_BUILD_SIGNAL_SEMAPHORE_EXIT_TOOLTIP                         :{BLACK}Segnale di uscita (semaforico){}Questo pre-segnale interagisce con i segnali di entrata, comunicandogli se vi sono uscite disponibili dal blocco, a cui entrambi appartengono. Se non è in combinazione con un segnale di entrata, si comporta come un comune segnale di blocco.
@@ -2924,6 +2937,7 @@ STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOROAD                         :{BLACK}Costruis
 STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOTRAM                         :{BLACK}Costruisce sezioni di tranvia usando la modalità automatica. Ctrl+Clic per rimuovere la sezione tranviaria. Premere anche Shift per visualizzare solo la stima dei costi
 STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_VEHICLE_DEPOT               :{BLACK}Costruisce un deposito automezzi (per comprare e manutenere i veicoli). Premere anche Shift per visualizzare solo la stima dei costi
 STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAM_VEHICLE_DEPOT               :{BLACK}Costruisce un deposito tranviario (per comprare e manutenere i veicoli). Premere anche Shift per mostrare solo la stima dei costi
+STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_ROAD_TO_WAYPOINT               :{BLACK}Costruisce un waypoint sulla strada. Ctrl+Clic per selezionare un altro waypoint da unire. Premere anche Shift per mostrare solo la stima dei costi
 STR_ROAD_TOOLBAR_TOOLTIP_BUILD_BUS_STATION                      :{BLACK}Costruisce una stazione degli autobus. Ctrl+Clic per selezionare un'altra stazione da unire. Premere anche Shift per visualizzare solo la stima dei costi
 STR_ROAD_TOOLBAR_TOOLTIP_BUILD_PASSENGER_TRAM_STATION           :{BLACK}Costruisce la stazione del tram passeggeri. Ctrl+Clic per selezionare un'altra stazione da unire. Premere anche Shift per visualizzare solo la stima dei costi
 STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRUCK_LOADING_BAY                :{BLACK}Costruisce una stazione dei camion. Ctrl+Clic per selezionare un'altra stazione da unire. Premere anche Shift per visualizzare solo la stima dei costi
@@ -3074,6 +3088,12 @@ STR_FOUND_TOWN_INITIAL_SIZE_TOOLTIP                             :{BLACK}Selezion
 STR_FOUND_TOWN_CITY                                             :{BLACK}Metropoli
 STR_FOUND_TOWN_CITY_TOOLTIP                                     :{BLACK}Le metropoli crescono più rapidamente delle normali città.{}A seconda delle impostazioni, sono più grandi quando vengono fondate.
 
+STR_FOUND_TOWN_EXPAND_MODE                                      :{YELLOW}Espansione cittadina:
+STR_FOUND_TOWN_EXPAND_BUILDINGS                                 :Edifici
+STR_FOUND_TOWN_EXPAND_BUILDINGS_TOOLTIP                         :Aumenta gli edifici delle città
+STR_FOUND_TOWN_EXPAND_ROADS                                     :Strade
+STR_FOUND_TOWN_EXPAND_ROADS_TOOLTIP                             :Aumenta le strade delle città
+
 STR_FOUND_TOWN_ROAD_LAYOUT                                      :{YELLOW}Disposizione strade:
 STR_FOUND_TOWN_SELECT_LAYOUT_TOOLTIP                            :{BLACK}Seleziona la disposizione delle strade per questa città
 STR_FOUND_TOWN_SELECT_LAYOUT_ORIGINAL                           :{BLACK}Originale
@@ -3153,6 +3173,9 @@ STR_LAI_CLEAR_DESCRIPTION_BARE_LAND                             :Terreno spoglio
 STR_LAI_CLEAR_DESCRIPTION_GRASS                                 :Erba
 STR_LAI_CLEAR_DESCRIPTION_FIELDS                                :Campi
 STR_LAI_CLEAR_DESCRIPTION_DESERT                                :Deserto
+STR_LAI_CLEAR_DESCRIPTION_SNOWY_ROCKS                           :Rocce ricoperte di neve
+STR_LAI_CLEAR_DESCRIPTION_SNOWY_ROUGH_LAND                      :Terreno accidentato ricoperto di neve
+STR_LAI_CLEAR_DESCRIPTION_SNOWY_GRASS                           :Erba ricoperta di neve
 
 STR_LAI_RAIL_DESCRIPTION_TRACK                                  :Ferrovia
 STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_SIGNALS              :Ferrovia con segnali di blocco
@@ -3307,6 +3330,7 @@ STR_SAVELOAD_SAVE_SCENARIO                                      :{WHITE}Salva sc
 STR_SAVELOAD_LOAD_SCENARIO                                      :{WHITE}Carica scenario
 STR_SAVELOAD_LOAD_HEIGHTMAP                                     :{WHITE}Carica heightmap
 STR_SAVELOAD_SAVE_HEIGHTMAP                                     :{WHITE}Salva Heightmap
+STR_SAVELOAD_LOAD_TOWN_DATA                                     :{WHITE}Carica i dati relativi alle città
 STR_SAVELOAD_HOME_BUTTON_TOOLTIP                                :{BLACK}Fare clic qui per spostarsi nella cartella di salvataggio predefinita
 STR_SAVELOAD_BYTES_FREE                                         :{BLACK}{BYTES} liber{P o i}
 STR_SAVELOAD_LIST_TOOLTIP                                       :{BLACK}Elenco delle unità, delle cartelle e dei file delle partite salvate
@@ -3318,6 +3342,7 @@ STR_SAVELOAD_SAVE_TOOLTIP                                       :{BLACK}Salva la
 STR_SAVELOAD_LOAD_BUTTON                                        :{BLACK}Carica
 STR_SAVELOAD_LOAD_TOOLTIP                                       :{BLACK}Carica la partita selezionata
 STR_SAVELOAD_LOAD_HEIGHTMAP_TOOLTIP                             :{BLACK}Carica l'heightmap selezionata
+STR_SAVELOAD_LOAD_TOWN_DATA_TOOLTIP                             :{BLACK}Carica i dati relativi alle città selezionati
 STR_SAVELOAD_DETAIL_CAPTION                                     :{BLACK}Dettagli partita
 STR_SAVELOAD_DETAIL_NOT_AVAILABLE                               :{BLACK}Informazioni non disponibili
 STR_SAVELOAD_DETAIL_COMPANY_INDEX                               :{SILVER}{COMMA}: {WHITE}{STRING}
@@ -3403,6 +3428,8 @@ STR_MAPGEN_SOUTHWEST                                            :{BLACK}Sud-oves
 STR_MAPGEN_BORDER_FREEFORM                                      :{BLACK}Variabile
 STR_MAPGEN_BORDER_WATER                                         :{BLACK}Acqua
 STR_MAPGEN_BORDER_RANDOM                                        :{BLACK}Casuale
+
+###length 3
 STR_MAPGEN_BORDER_RANDOMIZE                                     :{BLACK}Casuale
 STR_MAPGEN_BORDER_MANUAL                                        :{BLACK}Manuale
 
@@ -3442,7 +3469,6 @@ STR_GENERATION_WORLD_GENERATION                                 :{BLACK}Generazi
 STR_GENERATION_LANDSCAPE_GENERATION                             :{BLACK}Generazione paesaggio
 STR_GENERATION_RIVER_GENERATION                                 :{BLACK}Generazione fiumi
 STR_GENERATION_CLEARING_TILES                                   :{BLACK}Generazione aree brulle e rocciose
-STR_GENERATION_INDUSTRY_GENERATION                              :{BLACK}Generazione industrie
 STR_GENERATION_OBJECT_GENERATION                                :{BLACK}Generazione oggetti inamovibili
 STR_GENERATION_TREE_GENERATION                                  :{BLACK}Generazione alberi
 STR_GENERATION_SETTINGUP_GAME                                   :{BLACK}Impostazione partita
@@ -3513,15 +3539,12 @@ STR_SAVE_PRESET_CAPTION                                         :{WHITE}Salva pr
 STR_SAVE_PRESET_LIST_TOOLTIP                                    :{BLACK}Lista dei profili disponibili, selezionarne uno per copiarlo nella casella del nome del salvataggio
 STR_SAVE_PRESET_TITLE                                           :{BLACK}Inserire il nome del profilo
 STR_SAVE_PRESET_EDITBOX_TOOLTIP                                 :{BLACK}Nome scelto per il profilo da salvare
-STR_SAVE_PRESET_CANCEL                                          :{BLACK}Annulla
-STR_SAVE_PRESET_CANCEL_TOOLTIP                                  :{BLACK}Non modifica il profilo
 STR_SAVE_PRESET_SAVE                                            :{BLACK}Salva
 STR_SAVE_PRESET_SAVE_TOOLTIP                                    :{BLACK}Salva il profilo utilizzando il nome inserito
 
 # NewGRF parameters window
 STR_BASEGRF_PARAMETERS_CAPTION                                  :{WHITE}Modifica dei parametri grafici di base
 STR_NEWGRF_PARAMETERS_CAPTION                                   :{WHITE}Cambia parametri NewGRF
-STR_NEWGRF_PARAMETERS_CLOSE                                     :{BLACK}Chiudi
 STR_NEWGRF_PARAMETERS_RESET                                     :{BLACK}Reimposta
 STR_NEWGRF_PARAMETERS_RESET_TOOLTIP                             :{BLACK}Imposta tutti i parametri al loro valore predefinito
 STR_NEWGRF_PARAMETERS_DEFAULT_NAME                              :Parametro {NUM}
@@ -3658,7 +3681,6 @@ STR_EDIT_SIGN_SIGN_OSKTITLE                                     :{BLACK}Inserire
 # Town directory window
 STR_TOWN_DIRECTORY_NONE                                         :{ORANGE}- Nessuna -
 STR_TOWN_DIRECTORY_TOWN                                         :{ORANGE}{TOWN}{BLACK} ({COMMA})
-STR_TOWN_DIRECTORY_CITY                                         :{ORANGE}{TOWN}{YELLOW} (Metropoli){BLACK} ({COMMA})
 STR_TOWN_DIRECTORY_LIST_TOOLTIP                                 :{BLACK}Nomi delle città - fare clic su un nome per centrare la visuale principale sulla città. Ctrl+Clic per aprire una nuova finestra di visualizzazione sulla posizione della città
 STR_TOWN_POPULATION                                             :{BLACK}Popolazione mondiale: {COMMA}
 
@@ -3682,9 +3704,14 @@ STR_TOWN_VIEW_CENTER_TOOLTIP                                    :{BLACK}Centra l
 STR_TOWN_VIEW_LOCAL_AUTHORITY_BUTTON                            :{BLACK}Autorità locale
 STR_TOWN_VIEW_LOCAL_AUTHORITY_TOOLTIP                           :{BLACK}Mostra informazioni sull'autorità locale
 STR_TOWN_VIEW_RENAME_TOOLTIP                                    :{BLACK}Cambia il nome della città
+STR_TOWN_VIEW_CARGO_GRAPH                                       :Grafo delle merci
 
 STR_TOWN_VIEW_EXPAND_BUTTON                                     :{BLACK}Espandi
 STR_TOWN_VIEW_EXPAND_TOOLTIP                                    :{BLACK}Aumenta la dimensione della città
+STR_TOWN_VIEW_EXPAND_BUILDINGS_BUTTON                           :{BLACK}Espandi gli edifici
+STR_TOWN_VIEW_EXPAND_BUILDINGS_TOOLTIP                          :{BLACK}Aumenta gli edifici della città
+STR_TOWN_VIEW_EXPAND_ROADS_BUTTON                               :{BLACK}Espandi le strade
+STR_TOWN_VIEW_EXPAND_ROADS_TOOLTIP                              :{BLACK}Aumenta le strade della città
 STR_TOWN_VIEW_DELETE_BUTTON                                     :{BLACK}Elimina
 STR_TOWN_VIEW_DELETE_TOOLTIP                                    :{BLACK}Elimina completamente questa città
 
@@ -3858,14 +3885,12 @@ STR_CARGO_RATING_EXCELLENT                                      :Eccellente
 STR_CARGO_RATING_OUTSTANDING                                    :Eccezionale
 
 STR_STATION_VIEW_CENTER_TOOLTIP                                 :{BLACK}Centra la vista principale sulla posizione della stazione. Ctrl+Clic per aprire una nuova finestra sulla posizione della stazione
-STR_STATION_VIEW_RENAME_TOOLTIP                                 :{BLACK}Cambia il nome della stazione
 
 STR_STATION_VIEW_SCHEDULED_TRAINS_TOOLTIP                       :{BLACK}Mostra tutti i treni che hanno questa stazione pianificata
 STR_STATION_VIEW_SCHEDULED_ROAD_VEHICLES_TOOLTIP                :{BLACK}Mostra tutti gli automezzi che hanno questa stazione pianificata
 STR_STATION_VIEW_SCHEDULED_AIRCRAFT_TOOLTIP                     :{BLACK}Mostra tutti gli aeromobili che hanno questa stazione pianificata
 STR_STATION_VIEW_SCHEDULED_SHIPS_TOOLTIP                        :{BLACK}Mostra tutte le navi che hanno questa stazione pianificata
 
-STR_STATION_VIEW_RENAME_STATION_CAPTION                         :Rinomina stazione/area di carico
 
 STR_STATION_VIEW_CLOSE_AIRPORT                                  :{BLACK}Chiudi aeroporto
 STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Impedisce agli aeromobili di atterrare in questo aeroporto
@@ -3873,11 +3898,9 @@ STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Impedisc
 # Waypoint/buoy view window
 STR_WAYPOINT_VIEW_CAPTION                                       :{WHITE}{WAYPOINT}
 STR_WAYPOINT_VIEW_CENTER_TOOLTIP                                :{BLACK}Centra la vista principale sulla posizione del waypoint. Ctrl+Clic per aprire una nuova finestra sulla posizione del waypoint.
-STR_WAYPOINT_VIEW_CHANGE_WAYPOINT_NAME                          :{BLACK}Cambia il nome del waypoint
 STR_BUOY_VIEW_CENTER_TOOLTIP                                    :{BLACK}Centra la visuale principale sulla posizione della boa. Ctrl+Clic per aprire una nuova finestra di visualizzazione sulla posizione della boa
 STR_BUOY_VIEW_RENAME_TOOLTIP                                    :{BLACK}Cambia il nome della boa
 
-STR_EDIT_WAYPOINT_NAME                                          :{WHITE}Rinomina il waypoint
 
 # Finances window
 STR_FINANCES_CAPTION                                            :{WHITE}Finanze della {COMPANY} {BLACK}{COMPANY_NUM}
@@ -3929,6 +3952,7 @@ STR_COMPANY_VIEW_CAPTION                                        :{WHITE}{COMPANY
 STR_COMPANY_VIEW_PRESIDENT_MANAGER_TITLE                        :{WHITE}{PRESIDENT_NAME}{}{GOLD}(Presidente)
 
 STR_COMPANY_VIEW_INAUGURATED_TITLE                              :{GOLD}Inaugurata nel: {WHITE}{NUM}
+STR_COMPANY_VIEW_INAUGURATED_TITLE_WALLCLOCK                    :{GOLD}Inaugurato: {WHITE}{NUM} (period {NUM})
 STR_COMPANY_VIEW_COLOUR_SCHEME_TITLE                            :{GOLD}Schema colori:
 STR_COMPANY_VIEW_VEHICLES_TITLE                                 :{GOLD}Veicoli:
 STR_COMPANY_VIEW_TRAINS                                         :{WHITE}{COMMA} tren{P o i}
@@ -4016,6 +4040,9 @@ STR_INDUSTRY_VIEW_PRODUCES_N_CARGO                              :{BLACK}Produce:
 STR_INDUSTRY_VIEW_CARGO_LIST_EXTENSION                          :, {STRING}{STRING}
 
 STR_INDUSTRY_VIEW_REQUIRES                                      :{BLACK}Richiede:
+STR_INDUSTRY_VIEW_ACCEPT_CARGO_SUFFIX                           :{YELLOW}{0:STRING}{BLACK}{3:STRING}
+STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT_SUFFIX                    :{YELLOW}{0:STRING}{BLACK}: {1:CARGO_SHORT} {3:STRING} in attesa
+STR_INDUSTRY_VIEW_ACCEPT_CARGO_NOSUFFIX                         :{YELLOW}{0:STRING}
 STR_INDUSTRY_VIEW_ACCEPT_CARGO_AMOUNT_NOSUFFIX                  :{YELLOW}{0:STRING}{BLACK}: {1:CARGO_SHORT} In attesa...
 
 STR_CONFIG_GAME_PRODUCTION                                      :{WHITE}Cambia produzione (multiplo di 8, fino a 2040)
@@ -4674,6 +4701,8 @@ STR_ORDER_ROAD_VEHICLE_DEPOT                                    :Deposito autome
 STR_ORDER_SHIP_DEPOT                                            :Deposito navale
 ###next-name-looks-similar
 
+STR_ORDER_GO_TO_NEAREST_HANGAR_FORMAT                           :{STRING} l'hangar più vicino
+STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT                            :{STRING} più vicino {STRING}
 STR_ORDER_GO_TO_DEPOT_FORMAT                                    :{STRING} {DEPOT}
 
 STR_ORDER_REFIT_ORDER                                           :(Riadatta per {STRING})
@@ -4741,7 +4770,6 @@ STR_TIMETABLE_TOOLTIP                                           :{BLACK}Tabella 
 STR_TIMETABLE_NO_TRAVEL                                         :Nessun viaggio
 STR_TIMETABLE_NOT_TIMETABLEABLE                                 :Viaggia (automatico; orario basato sul successivo ordine manuale)
 STR_TIMETABLE_TRAVEL_NOT_TIMETABLED                             :Viaggia (senza orario)
-STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Viaggia (senza orario) a non più di {2:VELOCITY}
 STR_TIMETABLE_TRAVEL_FOR                                        :Viaggia per {STRING}
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :Viaggia per {STRING} a non più di {VELOCITY}
 STR_TIMETABLE_TRAVEL_FOR_ESTIMATED                              :Viaggia (per {STRING}, senza orario)
@@ -4773,6 +4801,7 @@ STR_TIMETABLE_CLEAR_TIME_TOOLTIP                                :{BLACK}Elimina 
 
 STR_TIMETABLE_CHANGE_SPEED                                      :{BLACK}Cambia limite di velocità
 STR_TIMETABLE_CHANGE_SPEED_TOOLTIP                              :{BLACK}Cambia l'impostazione del limite di velocità per l'ordine selezionato. Ctrl+Clic lo imposta per tutti gli ordini
+STR_TIMETABLE_CHANGE_SPEED_QUERY                                :Cambia limite di velocità
 
 STR_TIMETABLE_CLEAR_SPEED                                       :{BLACK}Elimina limite di velocità
 STR_TIMETABLE_CLEAR_SPEED_TOOLTIP                               :{BLACK}Elimina l'impostazione del limite di velocità per l'ordine selezionato. Ctrl+Clic la rimuove da tutti gli ordini
@@ -4865,8 +4894,6 @@ STR_AI_LIST_URL                                                 :{LTBLUE}URL: {O
 
 STR_AI_LIST_ACCEPT                                              :{BLACK}Accetta
 STR_AI_LIST_ACCEPT_TOOLTIP                                      :{BLACK}Sceglie lo script selezionato
-STR_AI_LIST_CANCEL                                              :{BLACK}Annulla
-STR_AI_LIST_CANCEL_TOOLTIP                                      :{BLACK}Non modifica lo script utilizzato
 
 STR_SCREENSHOT_CAPTION                                          :{WHITE}Cattura uno screenshot
 STR_SCREENSHOT_SCREENSHOT                                       :{BLACK}Screenshot normale
@@ -4879,7 +4906,6 @@ STR_SCREENSHOT_MINIMAP_SCREENSHOT                               :{BLACK}Screensh
 # Script Parameters
 STR_AI_SETTINGS_CAPTION_AI                                      :IA
 STR_AI_SETTINGS_CAPTION_GAMESCRIPT                              :Script di gioco
-STR_AI_SETTINGS_CLOSE                                           :{BLACK}Chiudi
 STR_AI_SETTINGS_RESET                                           :{BLACK}Reimposta
 STR_AI_SETTINGS_SETTING                                         :{STRING}: {ORANGE}{STRING}
 
@@ -4977,6 +5003,7 @@ STR_ERROR_FLAT_LAND_REQUIRED                                    :{WHITE}Richiest
 STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION                        :{WHITE}Terreno inclinato nella direzione sbagliata
 STR_ERROR_CAN_T_DO_THIS                                         :{WHITE}Impossibile farlo...
 STR_ERROR_BUILDING_MUST_BE_DEMOLISHED                           :{WHITE}L'edificio deve essere demolito prima
+STR_ERROR_BUILDING_IS_PROTECTED                                 :{WHITE}...vl'edificio è protetto
 STR_ERROR_CAN_T_CLEAR_THIS_AREA                                 :{WHITE}Impossibile ripulire l'area...
 STR_ERROR_SITE_UNSUITABLE                                       :{WHITE}... sito inadatto
 STR_ERROR_ALREADY_BUILT                                         :{WHITE}... già costruito
@@ -5010,7 +5037,7 @@ STR_ERROR_CAN_T_CHANGE_PRESIDENT                                :{WHITE}Impossib
 
 STR_ERROR_MAXIMUM_PERMITTED_LOAN                                :{WHITE}... il prestito massimo concesso è di {CURRENCY_LONG}
 STR_ERROR_CAN_T_BORROW_ANY_MORE_MONEY                           :{WHITE}Impossibile chiedere in prestito altro denaro...
-STR_ERROR_LOAN_ALREADY_REPAYED                                  :{WHITE}... debito già estinto
+STR_ERROR_LOAN_ALREADY_REPAID                                   :{WHITE}... debito già estinto
 STR_ERROR_CURRENCY_REQUIRED                                     :{WHITE}... {CURRENCY_LONG} richiesti
 STR_ERROR_CAN_T_REPAY_LOAN                                      :{WHITE}Impossibile ripagare il prestito...
 STR_ERROR_INSUFFICIENT_FUNDS                                    :{WHITE}Impossibile trasferire denaro prestato dalla banca...
@@ -5104,12 +5131,12 @@ STR_ERROR_MUST_DEMOLISH_AIRPORT_FIRST                           :{WHITE}Bisogna 
 STR_ERROR_WAYPOINT_ADJOINS_MORE_THAN_ONE_EXISTING               :{WHITE}Farebbe parte di due o più waypoint
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_WAYPOINT                         :{WHITE}Troppo vicino a un altro waypoint
 
-STR_ERROR_CAN_T_BUILD_TRAIN_WAYPOINT                            :{WHITE}Impossibile costruire qui un waypoint ferroviario...
+STR_ERROR_CAN_T_BUILD_RAIL_WAYPOINT                             :{WHITE}Impossibile costruire qui un waypoint ferroviario...
 STR_ERROR_CAN_T_BUILD_ROAD_WAYPOINT                             :{WHITE}Impossibile costruire uno svincolo stradale qui...
 STR_ERROR_CAN_T_POSITION_BUOY_HERE                              :{WHITE}Impossibile posizionare una boa qui...
 STR_ERROR_CAN_T_CHANGE_WAYPOINT_NAME                            :{WHITE}Impossibile rinominare il waypoint...
 
-STR_ERROR_CAN_T_REMOVE_TRAIN_WAYPOINT                           :{WHITE}Impossibile rimuovere il waypoint ferroviario da qui...
+STR_ERROR_CAN_T_REMOVE_RAIL_WAYPOINT                            :{WHITE}Impossibile rimuovere il waypoint ferroviario da qui...
 STR_ERROR_CAN_T_REMOVE_ROAD_WAYPOINT                            :{WHITE}Impossibile rimuovere lo svincolo stradale qui...
 STR_ERROR_MUST_REMOVE_RAILWAYPOINT_FIRST                        :{WHITE}Bisogna rimuovere il waypoint ferroviario prima
 STR_ERROR_BUOY_IN_THE_WAY                                       :{WHITE}... boa di mezzo
@@ -5301,8 +5328,14 @@ STR_ERROR_CAN_T_SELL_SHIP                                       :{WHITE}Impossib
 STR_ERROR_CAN_T_SELL_AIRCRAFT                                   :{WHITE}Impossibile vendere l'aeromobile...
 
 ###length VEHICLE_TYPES
+STR_ERROR_CAN_T_SELL_ALL_TRAIN                                  :{WHITE}Impossibile vendere tutti i veicoli ferroviari...
+STR_ERROR_CAN_T_SELL_ALL_ROAD_VEHICLE                           :{WHITE}Impossibile vendere tutti gli automezzi...
+STR_ERROR_CAN_T_SELL_ALL_SHIP                                   :{WHITE}Impossibile vendere tutte le navi...
+STR_ERROR_CAN_T_SELL_ALL_AIRCRAFT                               :{WHITE}Impossibile vendere tutti gli aeromobili...
 
 ###length VEHICLE_TYPES
+STR_ERROR_CAN_T_AUTOREPLACE_ROAD_VEHICLE                        :{WHITE}Non puoi rimpiazzare automaticamente gli autoveicoli...
+STR_ERROR_CAN_T_AUTOREPLACE_AIRCRAFT                            :{WHITE}Non puoi rimpiazzare automaticamente l'aeromobile...
 
 STR_ERROR_TOO_MANY_VEHICLES_IN_GAME                             :{WHITE}Troppi veicoli nel gioco
 STR_ERROR_CAN_T_CHANGE_SERVICING                                :{WHITE}Impossibile cambiare l'intervallo di manutenzione...
@@ -5821,7 +5854,9 @@ STR_SAVEGAME_NAME_DEFAULT                                       :{COMPANY}, {STR
 STR_SAVEGAME_NAME_SPECTATOR                                     :Spettatore, {1:STRING}
 
 # Viewport strings
-STR_VIEWPORT_TOWN_POP                                           :{WHITE}{TOWN} ({COMMA})
+STR_VIEWPORT_TOWN_POP                                           :{TOWN} ({COMMA})
+STR_VIEWPORT_TOWN_CITY                                          :{TOWN} {CITY_ICON}
+STR_VIEWPORT_TOWN_CITY_POP                                      :{TOWN} ({COMMA}) {CITY_ICON}
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
 
 # Simple strings to get specific types of data
@@ -5883,3 +5918,5 @@ STR_SHIP                                                        :{BLACK}{SHIP}
 
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :{STRING} ({VELOCITY})
 
+STR_BADGE_FILTER_ANY_LABEL                                      :Qualunque {STRING}
+STR_BADGE_FILTER_IS_LABEL                                       :{STRING} è {STRING}

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -29,7 +29,7 @@
  * @param error The error code.
  * @param message The error message. Leave empty to determine this automatically based on the error number.
  */
-NetworkError::NetworkError(int error, const std::string &message) : error(error), message(message)
+NetworkError::NetworkError(int error, std::string_view message) : error(error), message(message)
 {
 }
 
@@ -78,7 +78,7 @@ bool NetworkError::IsConnectInProgress() const
  * Get the string representation of the error message.
  * @return The string representation that will get overwritten by next calls.
  */
-const std::string &NetworkError::AsString() const
+std::string_view NetworkError::AsString() const
 {
 	if (this->message.empty()) {
 #if defined(_WIN32)
@@ -152,8 +152,8 @@ bool SetNonBlocking([[maybe_unused]] SOCKET d)
 bool SetNoDelay([[maybe_unused]] SOCKET d)
 {
 	int flags = 1;
-	/* The (const char*) cast is needed for windows */
-	return setsockopt(d, IPPROTO_TCP, TCP_NODELAY, (const char *)&flags, sizeof(flags)) == 0;
+	/* The (const char *) cast is needed for windows */
+	return setsockopt(d, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&flags), sizeof(flags)) == 0;
 }
 
 /**

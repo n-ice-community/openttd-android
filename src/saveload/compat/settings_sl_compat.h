@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file settings_sl_compat.h Loading of settings chunks before table headers were added. */
@@ -185,7 +185,7 @@ const SaveLoadCompat _settings_sl_compat[] = {
 	SLC_NULL(4, SLV_47, SLV_TABLE_CHUNKS),
 	SLC_NULL(8, SLV_130, SLV_TABLE_CHUNKS),
 	SLC_NULL(4, SLV_131, SLV_TABLE_CHUNKS),
-	SLC_VAR("pf.yapf.disable_node_optimization"),
+	SLC_NULL(1, SLV_28, SLV_TABLE_CHUNKS),
 	SLC_VAR("pf.yapf.max_search_nodes"),
 	SLC_VAR("pf.yapf.rail_firstred_twoway_eol"),
 	SLC_VAR("pf.yapf.rail_firstred_penalty"),

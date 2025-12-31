@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_gui.h GUIs related to networking. */
@@ -22,9 +22,9 @@ void ShowNetworkChatQueryWindow(DestType type, int dest);
 void ShowJoinStatusWindow();
 void ShowNetworkGameWindow();
 void ShowClientList();
-void ShowNetworkAskRelay(const std::string &server_connection_string, const std::string &relay_connection_string, const std::string &token);
+void ShowNetworkAskRelay(std::string_view server_connection_string, std::string &&relay_connection_string, std::string &&token);
 void ShowNetworkAskSurvey();
-void ShowSurveyResultTextfileWindow();
+void ShowSurveyResultTextfileWindow(Window *parent);
 
 /** Company information stored at the client side */
 struct NetworkCompanyInfo : NetworkCompanyStats {

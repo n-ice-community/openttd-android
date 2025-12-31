@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file engine_gui.cpp GUI to show engine related information. */
@@ -43,15 +43,16 @@ StringID GetEngineCategoryName(EngineID engine)
 	switch (e->type) {
 		default: NOT_REACHED();
 		case VEH_ROAD:
-			return GetRoadTypeInfo(e->u.road.roadtype)->strings.new_engine;
+			return GetRoadTypeInfo(e->VehInfo<RoadVehicleInfo>().roadtype)->strings.new_engine;
 		case VEH_AIRCRAFT:          return STR_ENGINE_PREVIEW_AIRCRAFT;
 		case VEH_SHIP:              return STR_ENGINE_PREVIEW_SHIP;
 		case VEH_TRAIN:
-			return GetRailTypeInfo(e->u.rail.railtype)->strings.new_loco;
+			assert(e->VehInfo<RailVehicleInfo>().railtypes.Any());
+			return GetRailTypeInfo(e->VehInfo<RailVehicleInfo>().railtypes.GetNthSetBit(0).value())->strings.new_loco;
 	}
 }
 
-static constexpr NWidgetPart _nested_engine_preview_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_engine_preview_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_LIGHT_BLUE),
 		NWidget(WWT_CAPTION, COLOUR_LIGHT_BLUE), SetStringTip(STR_ENGINE_PREVIEW_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -84,7 +85,7 @@ struct EnginePreviewWindow : Window {
 
 		/* Get size of engine sprite, on loan from depot_gui.cpp */
 		EngineID engine = static_cast<EngineID>(this->window_number);
-		EngineImageType image_type = EIT_PURCHASE;
+		EngineImageType image_type = EIT_PREVIEW;
 		uint x, y;
 		int x_offs, y_offs;
 
@@ -141,7 +142,7 @@ struct EnginePreviewWindow : Window {
 };
 
 static WindowDesc _engine_preview_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_ENGINE_PREVIEW, WC_NONE,
 	WindowDefaultFlag::Construction,
 	_nested_engine_preview_widgets
@@ -181,7 +182,26 @@ static std::string GetTrainEngineInfoString(const Engine &e)
 	res << GetString(STR_ENGINE_PREVIEW_COST_WEIGHT, e.GetCost(), e.GetDisplayWeight());
 	res << '\n';
 
-	if (_settings_game.vehicle.train_acceleration_model != AM_ORIGINAL && GetRailTypeInfo(e.u.rail.railtype)->acceleration_type != 2) {
+	if (e.VehInfo<RailVehicleInfo>().railtypes.Count() > 1) {
+		std::string railtypes{};
+		std::string_view list_separator = GetListSeparator();
+
+		for (const auto &rt : _sorted_railtypes) {
+			if (!e.VehInfo<RailVehicleInfo>().railtypes.Test(rt)) continue;
+
+			if (!railtypes.empty()) railtypes += list_separator;
+			AppendStringInPlace(railtypes, GetRailTypeInfo(rt)->strings.name);
+		}
+		res << GetString(STR_ENGINE_PREVIEW_RAILTYPES, railtypes);
+		res << '\n';
+	}
+
+	bool is_maglev = true;
+	for (RailType rt : e.VehInfo<RailVehicleInfo>().railtypes) {
+		is_maglev &= GetRailTypeInfo(rt)->acceleration_type == VehicleAccelerationModel::Maglev;
+	}
+
+	if (_settings_game.vehicle.train_acceleration_model != AM_ORIGINAL && !is_maglev) {
 		res << GetString(STR_ENGINE_PREVIEW_SPEED_POWER_MAX_TE, PackVelocity(e.GetDisplayMaxSpeed(), e.type), e.GetPower(), e.GetDisplayMaxTractiveEffort());
 		res << '\n';
 	} else {

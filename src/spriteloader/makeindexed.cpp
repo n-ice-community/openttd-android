@@ -2,13 +2,12 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file makeindexed.cpp Implementation for converting sprites from another source from 32bpp RGBA to indexed 8bpp. */
 
 #include "../stdafx.h"
-#include "../core/bitmath_func.hpp"
 #include "../core/math_func.hpp"
 #include "../gfx_func.h"
 #include "../palette_func.h"
@@ -48,12 +47,12 @@ static void Convert32bppTo8bpp(SpriteLoader::Sprite &sprite)
 	}
 }
 
-uint8_t SpriteLoaderMakeIndexed::LoadSprite(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool, uint8_t control_flags, uint8_t &avail_8bpp, uint8_t &avail_32bpp)
+ZoomLevels SpriteLoaderMakeIndexed::LoadSprite(SpriteLoader::SpriteCollection &sprite, SpriteFile &file, size_t file_pos, SpriteType sprite_type, bool, SpriteCacheCtrlFlags control_flags, ZoomLevels &avail_8bpp, ZoomLevels &avail_32bpp)
 {
-	uint8_t avail = this->baseloader.LoadSprite(sprite, file, file_pos, sprite_type, true, control_flags, avail_8bpp, avail_32bpp);
+	ZoomLevels avail = this->baseloader.LoadSprite(sprite, file, file_pos, sprite_type, true, control_flags, avail_8bpp, avail_32bpp);
 
-	for (ZoomLevel zoom = ZOOM_LVL_BEGIN; zoom != ZOOM_LVL_END; zoom++) {
-		if (HasBit(avail, zoom)) Convert32bppTo8bpp(sprite[zoom]);
+	for (ZoomLevel zoom : avail) {
+		Convert32bppTo8bpp(sprite[zoom]);
 	}
 
 	return avail;

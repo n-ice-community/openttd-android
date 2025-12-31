@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_gui.cpp Implementation of the Network related GUIs. */
@@ -43,6 +43,7 @@
 #include "../timer/timer_game_calendar.h"
 #include "../textfile_gui.h"
 #include "../stringfilter_type.h"
+#include "../core/string_consumer.hpp"
 
 #include "../widgets/network_widget.h"
 
@@ -477,13 +478,12 @@ public:
 	{
 		switch (widget) {
 			case WID_NG_MATRIX:
-				resize.height = std::max(GetSpriteSize(SPR_BLOT).height, (uint)GetCharacterHeight(FS_NORMAL)) + padding.height;
-				fill.height = resize.height;
+				fill.height = resize.height = std::max<uint>(this->blot.height, GetCharacterHeight(FS_NORMAL)) + padding.height;
 				size.height = 12 * resize.height;
 				break;
 
 			case WID_NG_LASTJOINED:
-				size.height = std::max(GetSpriteSize(SPR_BLOT).height, (uint)GetCharacterHeight(FS_NORMAL)) + WidgetDimensions::scaled.matrix.Vertical();
+				size.height = std::max<uint>(this->blot.height, GetCharacterHeight(FS_NORMAL)) + WidgetDimensions::scaled.matrix.Vertical();
 				break;
 
 			case WID_NG_LASTJOINED_SPACER:
@@ -504,7 +504,7 @@ public:
 
 			case WID_NG_MAPSIZE: {
 				size.width += 2 * Window::SortButtonWidth(); // Make space for the arrow
-				auto max_map_size = GetParamMaxValue(0, MAX_MAP_SIZE);
+				auto max_map_size = GetParamMaxValue(MAX_MAP_SIZE);
 				size = maxdim(size, GetStringBoundingBox(GetString(STR_NETWORK_SERVER_LIST_MAP_SIZE_SHORT, max_map_size, max_map_size)));
 				break;
 			}
@@ -625,8 +625,8 @@ public:
 		tr.top += header_height;
 
 		/* Draw the right menu */
-		/* Create the nice grayish rectangle at the details top */
-		GfxFillRect(r.WithHeight(header_height).Shrink(WidgetDimensions::scaled.bevel), PC_DARK_BLUE);
+		/* Create the nice darker rectangle at the details top */
+		GfxFillRect(r.WithHeight(header_height).Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(COLOUR_LIGHT_BLUE, SHADE_NORMAL));
 		hr.top = DrawStringMultiLine(hr, header_msg, TC_FROMSTRING, SA_HOR_CENTER);
 		if (sel == nullptr) return;
 
@@ -672,10 +672,6 @@ public:
 	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override
 	{
 		switch (widget) {
-			case WID_NG_CANCEL: // Cancel button
-				CloseWindowById(WC_NETWORK_WINDOW, WN_NETWORK_WINDOW_GAME);
-				break;
-
 			case WID_NG_NAME:    // Sort by name
 			case WID_NG_CLIENTS: // Sort by connected clients
 			case WID_NG_MAPSIZE: // Sort by map size
@@ -834,7 +830,7 @@ public:
 	}
 
 	/** Refresh the online servers on a regular interval. */
-	IntervalTimer<TimerWindow> refresh_interval = {std::chrono::seconds(30), [this](uint) {
+	const IntervalTimer<TimerWindow> refresh_interval = {std::chrono::seconds(30), [this](uint) {
 		if (!this->searched_internet) return;
 
 		_network_coordinator_client.GetListing();
@@ -860,7 +856,7 @@ static std::unique_ptr<NWidgetBase> MakeResizableHeader()
 	return std::make_unique<NWidgetServerListHeader>();
 }
 
-static constexpr NWidgetPart _nested_network_game_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_network_game_widgets = {
 	/* TOP */
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_LIGHT_BLUE),
@@ -911,7 +907,7 @@ static constexpr NWidgetPart _nested_network_game_widgets[] = {
 								NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_NEWGRF_MISSING), SetFill(1, 0), SetStringTip(STR_NEWGRF_SETTINGS_FIND_MISSING_CONTENT_BUTTON, STR_NEWGRF_SETTINGS_FIND_MISSING_CONTENT_TOOLTIP),
 							EndContainer(),
 							NWidget(NWID_SELECTION, INVALID_COLOUR, WID_NG_NEWGRF_SEL),
-								NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_NEWGRF), SetFill(1, 0), SetStringTip(STR_INTRO_NEWGRF_SETTINGS),
+								NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_NEWGRF), SetFill(1, 0), SetStringTip(STR_MAPGEN_NEWGRF_SETTINGS, STR_MAPGEN_NEWGRF_SETTINGS_TOOLTIP),
 							EndContainer(),
 							NWidget(NWID_HORIZONTAL, NWidContainerFlag::EqualSize),
 								NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_JOIN), SetFill(1, 0), SetStringTip(STR_NETWORK_SERVER_LIST_JOIN_GAME),
@@ -927,7 +923,6 @@ static constexpr NWidgetPart _nested_network_game_widgets[] = {
 				NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_SEARCH_LAN), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_NETWORK_SERVER_LIST_SEARCH_SERVER_LAN, STR_NETWORK_SERVER_LIST_SEARCH_SERVER_LAN_TOOLTIP),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_ADD), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_NETWORK_SERVER_LIST_ADD_SERVER, STR_NETWORK_SERVER_LIST_ADD_SERVER_TOOLTIP),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_START), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_NETWORK_SERVER_LIST_START_SERVER, STR_NETWORK_SERVER_LIST_START_SERVER_TOOLTIP),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_WHITE, WID_NG_CANCEL), SetResize(1, 0), SetFill(1, 0), SetStringTip(STR_BUTTON_CANCEL),
 			EndContainer(),
 		EndContainer(),
 		/* Resize button. */
@@ -1088,7 +1083,7 @@ struct NetworkStartServerWindow : public Window {
 		}
 	}
 
-	void OnDropdownSelect(WidgetID widget, int index) override
+	void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
 		switch (widget) {
 			case WID_NSS_CONNTYPE_BTN:
@@ -1103,7 +1098,7 @@ struct NetworkStartServerWindow : public Window {
 
 	bool CheckServerName()
 	{
-		std::string str = this->name_editbox.text.GetText();
+		std::string str{this->name_editbox.text.GetText()};
 		if (!NetworkValidateServerName(str)) return false;
 
 		SetSettingValue(GetSettingFromName("network.server_name")->AsStringSetting(), std::move(str));
@@ -1122,12 +1117,13 @@ struct NetworkStartServerWindow : public Window {
 		if (this->widget_id == WID_NSS_SETPWD) {
 			_settings_client.network.server_password = std::move(*str);
 		} else {
-			int32_t value = atoi(str->c_str());
+			auto value = ParseInteger<int32_t>(*str, 10, true);
+			if (!value.has_value()) return;
 			this->SetWidgetDirty(this->widget_id);
 			switch (this->widget_id) {
 				default: NOT_REACHED();
-				case WID_NSS_CLIENTS_TXT:    _settings_client.network.max_clients    = Clamp(value, 2, MAX_CLIENTS); break;
-				case WID_NSS_COMPANIES_TXT:  _settings_client.network.max_companies  = Clamp(value, 1, MAX_COMPANIES); break;
+				case WID_NSS_CLIENTS_TXT:    _settings_client.network.max_clients    = Clamp(*value, 2, MAX_CLIENTS); break;
+				case WID_NSS_COMPANIES_TXT:  _settings_client.network.max_companies  = Clamp(*value, 1, MAX_COMPANIES); break;
 			}
 		}
 
@@ -1135,7 +1131,7 @@ struct NetworkStartServerWindow : public Window {
 	}
 };
 
-static constexpr NWidgetPart _nested_network_start_server_window_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_network_start_server_window_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_LIGHT_BLUE),
 		NWidget(WWT_CAPTION, COLOUR_LIGHT_BLUE), SetStringTip(STR_NETWORK_START_SERVER_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -1203,7 +1199,7 @@ static constexpr NWidgetPart _nested_network_start_server_window_widgets[] = {
 };
 
 static WindowDesc _network_start_server_window_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_NETWORK_WINDOW, WC_NONE,
 	{},
 	_nested_network_start_server_window_widgets
@@ -1223,7 +1219,7 @@ static void ShowNetworkStartServerWindow()
 
 extern void DrawCompanyIcon(CompanyID cid, int x, int y);
 
-static constexpr NWidgetPart _nested_client_list_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_client_list_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_NETWORK_CLIENT_LIST_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -1345,7 +1341,7 @@ public:
 		colour(colour),
 		disabled(disabled)
 	{
-		Dimension d = GetSpriteSize(sprite);
+		Dimension d = GetScaledSpriteSize(sprite);
 		this->height = d.height + WidgetDimensions::scaled.framerect.Vertical();
 		this->width = d.width + WidgetDimensions::scaled.framerect.Horizontal();
 	}
@@ -1388,6 +1384,159 @@ using CompanyButton = Button<CompanyID>;
 using ClientButton = Button<ClientID>;
 
 /**
+ * Base interface for a network client list line.
+ */
+class ButtonLine {
+public:
+	std::vector<std::unique_ptr<ButtonCommon>> buttons{}; ///< Buttons for this line.
+
+	virtual ~ButtonLine() = default;
+
+	/**
+	 * Draw the button line.
+	 * @param r Rect to draw within.
+	 */
+	virtual void Draw(Rect r) const = 0;
+
+	template <typename T, typename...TArgs>
+	T &AddButton(TArgs &&... args)
+	{
+		auto &button = this->buttons.emplace_back(std::make_unique<T>(std::forward<TArgs &&>(args)...));
+		return static_cast<T &>(*button);
+	}
+
+	/**
+	 * Get the button at a given point on the line.
+	 * @param r Rect of line.
+	 * @param pt Point of interest.
+	 * @return Button at point, or \c nullptr if button isn't pressed.
+	 */
+	ButtonCommon *GetButton(Rect r, const Point &pt) const
+	{
+		bool rtl = _current_text_dir == TD_RTL;
+		for (auto &button : this->buttons) {
+			if (r.WithWidth(button->width, !rtl).Contains(pt)) return button.get();
+			r = r.Indent(button->width + WidgetDimensions::scaled.hsep_normal, !rtl);
+		}
+		return nullptr;
+	}
+
+	/**
+	 * Get tooptip for a given point on the line.
+	 * @param r Rect of line.
+	 * @param pt Point of interest.
+	 * @return EncodedString of tooltip, or \c std::nullopt if none.
+	 */
+	virtual std::optional<EncodedString> GetTooltip(Rect r, const Point &pt) const
+	{
+		ButtonCommon *button = this->GetButton(r, pt);
+		if (button == nullptr) return {};
+		return GetEncodedString(button->tooltip);
+	}
+
+protected:
+	/**
+	 * Draw the buttons for this line.
+	 * @param r Rect to draw within.
+	 * @return Rect of remaining space.
+	 */
+	Rect DrawButtons(Rect r) const
+	{
+		bool rtl = _current_text_dir == TD_RTL;
+		for (auto &button : buttons) {
+			Rect br = r.CentreToHeight(button->height).WithWidth(button->width, !rtl);
+			DrawFrameRect(br, button->colour, {});
+			DrawSpriteIgnorePadding(button->sprite, PAL_NONE, br, SA_CENTER);
+			if (button->disabled) {
+				GfxFillRect(br.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(button->colour, SHADE_DARKER), FILLRECT_CHECKER);
+			}
+			r = r.Indent(button->width + WidgetDimensions::scaled.hsep_normal, !rtl);
+		}
+		return r;
+	}
+};
+
+class CompanyButtonLine : public ButtonLine {
+public:
+	CompanyButtonLine(CompanyID company_id) : company_id(company_id) {}
+
+	void Draw(Rect r) const override
+	{
+		bool rtl = _current_text_dir == TD_RTL;
+		r = this->DrawButtons(r);
+
+		Dimension d = GetScaledSpriteSize(SPR_COMPANY_ICON);
+		PaletteID pal = Company::IsValidID(this->company_id) ? GetCompanyPalette(this->company_id) : PALETTE_TO_GREY;
+		DrawSpriteIgnorePadding(SPR_COMPANY_ICON, pal, r.WithWidth(d.width, rtl), SA_CENTER);
+
+		Rect tr = r.CentreToHeight(GetCharacterHeight(FS_NORMAL)).Indent(d.width + WidgetDimensions::scaled.hsep_normal, rtl);
+		if (this->company_id == COMPANY_SPECTATOR) {
+			DrawString(tr, STR_NETWORK_CLIENT_LIST_SPECTATORS, TC_SILVER);
+		} else if (this->company_id == COMPANY_NEW_COMPANY) {
+			DrawString(tr, STR_NETWORK_CLIENT_LIST_NEW_COMPANY, TC_WHITE);
+		} else {
+			DrawString(tr, GetString(STR_COMPANY_NAME, this->company_id, this->company_id), TC_SILVER);
+		}
+	};
+
+private:
+	CompanyID company_id;
+};
+
+class ClientButtonLine : public ButtonLine {
+public:
+	ClientButtonLine(ClientPoolID client_pool_id) : client_pool_id(client_pool_id) {}
+
+	void Draw(Rect r) const override
+	{
+		const NetworkClientInfo *ci = NetworkClientInfo::GetIfValid(this->client_pool_id);
+		if (ci == nullptr) return;
+
+		bool rtl = _current_text_dir == TD_RTL;
+		r = this->DrawButtons(r);
+
+		Rect tr = r.CentreToHeight(GetCharacterHeight(FS_NORMAL));
+
+		SpriteID player_icon = 0;
+		if (ci->client_id == _network_own_client_id) {
+			player_icon = SPR_PLAYER_SELF;
+		} else if (ci->client_id == CLIENT_ID_SERVER) {
+			player_icon = SPR_PLAYER_HOST;
+		}
+
+		if (player_icon != 0) {
+			Dimension d = GetScaledSpriteSize(player_icon);
+			DrawSpriteIgnorePadding(player_icon, PALETTE_TO_GREY, r.WithWidth(d.width, rtl), SA_CENTER);
+			tr = tr.Indent(d.width + WidgetDimensions::scaled.hsep_normal, rtl);
+		}
+
+		DrawString(tr, GetString(STR_JUST_RAW_STRING, ci->client_name), TC_BLACK);
+	}
+
+	std::optional<EncodedString> GetTooltip(Rect r, const Point &pt) const override
+	{
+		bool rtl = _current_text_dir == TD_RTL;
+		Dimension d = GetScaledSpriteSize(SPR_PLAYER_SELF);
+
+		if (r.WithWidth(d.width, rtl).Contains(pt)) {
+			const NetworkClientInfo *ci = NetworkClientInfo::GetIfValid(this->client_pool_id);
+			if (ci != nullptr) {
+				if (ci->client_id == _network_own_client_id) {
+					return GetEncodedString(STR_NETWORK_CLIENT_LIST_PLAYER_ICON_SELF_TOOLTIP);
+				} else if (ci->client_id == CLIENT_ID_SERVER) {
+					return GetEncodedString(STR_NETWORK_CLIENT_LIST_PLAYER_ICON_HOST_TOOLTIP);
+				}
+			}
+		}
+
+		return this->ButtonLine::GetTooltip(r, pt);
+	}
+
+private:
+	ClientPoolID client_pool_id;
+};
+
+/**
  * Main handle for clientlist
  */
 struct NetworkClientListWindow : Window {
@@ -1399,12 +1548,9 @@ private:
 
 	Scrollbar *vscroll = nullptr; ///< Vertical scrollbar of this window.
 	uint line_height = 0; ///< Current lineheight of each entry in the matrix.
-	uint line_count = 0; ///< Amount of lines in the matrix.
 	int hover_index = -1; ///< Index of the current line we are hovering over, or -1 if none.
-	int player_self_index = -1; ///< The line the current player is on.
-	int player_host_index = -1; ///< The line the host is on.
 
-	std::map<uint, std::vector<std::unique_ptr<ButtonCommon>>> buttons{}; ///< Per line which buttons are available.
+	std::vector<std::unique_ptr<ButtonLine>> buttons{}; ///< Per line which buttons are available.
 
 	/**
 	 * Chat button on a Company is clicked.
@@ -1434,7 +1580,7 @@ private:
 	}
 
 	/**
-	 * Crete new company button is clicked.
+	 * Create new company button is clicked.
 	 * @param w The instance of this window.
 	 * @param pt The point where this button was clicked.
 	 */
@@ -1462,7 +1608,7 @@ private:
 		wi_rect.bottom = pt.y;
 
 		w->dd_client_id = client_id;
-		ShowDropDownListAt(w, std::move(list), -1, WID_CL_MATRIX, wi_rect, COLOUR_GREY, true);
+		ShowDropDownListAt(w, std::move(list), -1, WID_CL_MATRIX, wi_rect, COLOUR_GREY, DropDownOption::InstantClose);
 	}
 
 	/**
@@ -1483,7 +1629,7 @@ private:
 		wi_rect.bottom = pt.y;
 
 		w->dd_company_id = company_id;
-		ShowDropDownListAt(w, std::move(list), -1, WID_CL_MATRIX, wi_rect, COLOUR_GREY, true);
+		ShowDropDownListAt(w, std::move(list), -1, WID_CL_MATRIX, wi_rect, COLOUR_GREY, DropDownOption::InstantClose);
 	}
 	/**
 	 * Chat button on a Client is clicked.
@@ -1510,34 +1656,24 @@ private:
 	 */
 	void RebuildListCompany(CompanyID company_id, CompanyID client_playas, bool can_join_company)
 	{
-		ButtonCommon *chat_button = new CompanyButton(SPR_CHAT, company_id == COMPANY_SPECTATOR ? STR_NETWORK_CLIENT_LIST_CHAT_SPECTATOR_TOOLTIP : STR_NETWORK_CLIENT_LIST_CHAT_COMPANY_TOOLTIP, COLOUR_ORANGE, company_id, &NetworkClientListWindow::OnClickCompanyChat);
-
-		if (_network_server) this->buttons[line_count].push_back(std::make_unique<CompanyButton>(SPR_ADMIN, STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_TOOLTIP, COLOUR_RED, company_id, &NetworkClientListWindow::OnClickCompanyAdmin, company_id == COMPANY_SPECTATOR));
-		this->buttons[line_count].emplace_back(chat_button);
-		if (can_join_company) this->buttons[line_count].push_back(std::make_unique<CompanyButton>(SPR_JOIN, STR_NETWORK_CLIENT_LIST_JOIN_TOOLTIP, COLOUR_ORANGE, company_id, &NetworkClientListWindow::OnClickCompanyJoin, company_id != COMPANY_SPECTATOR && Company::Get(company_id)->is_ai));
-
-		this->line_count += 1;
+		ButtonLine &company_line = *this->buttons.emplace_back(std::make_unique<CompanyButtonLine>(company_id));
+		if (_network_server) company_line.AddButton<CompanyButton>(SPR_ADMIN, STR_NETWORK_CLIENT_LIST_ADMIN_COMPANY_TOOLTIP, COLOUR_RED, company_id, &NetworkClientListWindow::OnClickCompanyAdmin, company_id == COMPANY_SPECTATOR);
+		ButtonCommon &chat_button = company_line.AddButton<CompanyButton>(SPR_CHAT, company_id == COMPANY_SPECTATOR ? STR_NETWORK_CLIENT_LIST_CHAT_SPECTATOR_TOOLTIP : STR_NETWORK_CLIENT_LIST_CHAT_COMPANY_TOOLTIP, COLOUR_ORANGE, company_id, &NetworkClientListWindow::OnClickCompanyChat);
+		if (can_join_company) company_line.AddButton<CompanyButton>(SPR_JOIN, STR_NETWORK_CLIENT_LIST_JOIN_TOOLTIP, COLOUR_ORANGE, company_id, &NetworkClientListWindow::OnClickCompanyJoin, company_id != COMPANY_SPECTATOR && Company::Get(company_id)->is_ai);
 
 		bool has_players = false;
 		for (const NetworkClientInfo *ci : NetworkClientInfo::Iterate()) {
 			if (ci->client_playas != company_id) continue;
 			has_players = true;
 
-			if (_network_server) this->buttons[line_count].push_back(std::make_unique<ClientButton>(SPR_ADMIN, STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_TOOLTIP, COLOUR_RED, ci->client_id, &NetworkClientListWindow::OnClickClientAdmin, _network_own_client_id == ci->client_id));
-			if (_network_own_client_id != ci->client_id) this->buttons[line_count].push_back(std::make_unique<ClientButton>(SPR_CHAT, STR_NETWORK_CLIENT_LIST_CHAT_CLIENT_TOOLTIP, COLOUR_ORANGE, ci->client_id, &NetworkClientListWindow::OnClickClientChat));
-			if (_network_own_client_id != ci->client_id && client_playas != COMPANY_SPECTATOR && !ci->CanJoinCompany(client_playas)) this->buttons[line_count].push_back(std::make_unique<ClientButton>(SPR_JOIN, STR_NETWORK_CLIENT_LIST_COMPANY_AUTHORIZE_TOOLTIP, COLOUR_GREEN, ci->client_id, &NetworkClientListWindow::OnClickClientAuthorize));
-
-			if (ci->client_id == _network_own_client_id) {
-				this->player_self_index = this->line_count;
-			} else if (ci->client_id == CLIENT_ID_SERVER) {
-				this->player_host_index = this->line_count;
-			}
-
-			this->line_count += 1;
+			ButtonLine &line = *this->buttons.emplace_back(std::make_unique<ClientButtonLine>(ci->index));
+			if (_network_server) line.AddButton<ClientButton>(SPR_ADMIN, STR_NETWORK_CLIENT_LIST_ADMIN_CLIENT_TOOLTIP, COLOUR_RED, ci->client_id, &NetworkClientListWindow::OnClickClientAdmin, _network_own_client_id == ci->client_id);
+			if (_network_own_client_id != ci->client_id) line.AddButton<ClientButton>(SPR_CHAT, STR_NETWORK_CLIENT_LIST_CHAT_CLIENT_TOOLTIP, COLOUR_ORANGE, ci->client_id, &NetworkClientListWindow::OnClickClientChat);
+			if (_network_own_client_id != ci->client_id && client_playas != COMPANY_SPECTATOR && !ci->CanJoinCompany(client_playas)) line.AddButton<ClientButton>(SPR_JOIN, STR_NETWORK_CLIENT_LIST_COMPANY_AUTHORIZE_TOOLTIP, COLOUR_GREEN, ci->client_id, &NetworkClientListWindow::OnClickClientAuthorize);
 		}
 
 		/* Disable the chat button when there are players in this company. */
-		chat_button->disabled = !has_players;
+		chat_button.disabled = !has_players;
 	}
 
 	/**
@@ -1549,14 +1685,11 @@ private:
 		CompanyID client_playas = own_ci == nullptr ? COMPANY_SPECTATOR : own_ci->client_playas;
 
 		this->buttons.clear();
-		this->line_count = 0;
-		this->player_host_index = -1;
-		this->player_self_index = -1;
 
 		/* As spectator, show a line to create a new company. */
 		if (client_playas == COMPANY_SPECTATOR && !NetworkMaxCompaniesReached()) {
-			this->buttons[line_count].push_back(std::make_unique<CompanyButton>(SPR_JOIN, STR_NETWORK_CLIENT_LIST_NEW_COMPANY_TOOLTIP, COLOUR_ORANGE, COMPANY_SPECTATOR, &NetworkClientListWindow::OnClickCompanyNew));
-			this->line_count += 1;
+			ButtonLine &line = *this->buttons.emplace_back(std::make_unique<CompanyButtonLine>(COMPANY_NEW_COMPANY));
+			line.AddButton<CompanyButton>(SPR_JOIN, STR_NETWORK_CLIENT_LIST_NEW_COMPANY_TOOLTIP, COLOUR_ORANGE, COMPANY_SPECTATOR, &NetworkClientListWindow::OnClickCompanyNew);
 		}
 
 		if (client_playas != COMPANY_SPECTATOR) {
@@ -1573,40 +1706,7 @@ private:
 		/* Spectators */
 		this->RebuildListCompany(COMPANY_SPECTATOR, client_playas, client_playas != COMPANY_SPECTATOR);
 
-		this->vscroll->SetCount(this->line_count);
-	}
-
-	/**
-	 * Get the button at a specific point on the WID_CL_MATRIX.
-	 * @param pt The point to look for a button.
-	 * @return The button or a nullptr if there was none.
-	 */
-	ButtonCommon *GetButtonAtPoint(Point pt)
-	{
-		uint index = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_CL_MATRIX);
-		Rect matrix = this->GetWidget<NWidgetBase>(WID_CL_MATRIX)->GetCurrentRect().Shrink(WidgetDimensions::scaled.framerect);
-
-		bool rtl = _current_text_dir == TD_RTL;
-		uint x = rtl ? matrix.left : matrix.right;
-
-		/* Find the buttons for this row. */
-		auto button_find = this->buttons.find(index);
-		if (button_find == this->buttons.end()) return nullptr;
-
-		/* Check if we want to display a tooltip for any of the buttons. */
-		for (auto &button : button_find->second) {
-			uint left = rtl ? x : x - button->width;
-			uint right = rtl ? x + button->width : x;
-
-			if (IsInsideMM(pt.x, left, right)) {
-				return button.get();
-			}
-
-			int width = button->width + WidgetDimensions::scaled.framerect.Horizontal();
-			x += rtl ? width : -width;
-		}
-
-		return nullptr;
+		this->vscroll->SetCount(this->buttons.size());
 	}
 
 public:
@@ -1620,14 +1720,14 @@ public:
 
 	void OnInit() override
 	{
-		RebuildList();
+		this->RebuildList();
 	}
 
 	void OnInvalidateData([[maybe_unused]] int data = 0, [[maybe_unused]] bool gui_scope = true) override
 	{
 		this->RebuildList();
 
-		/* Currently server information is not sync'd to clients, so we cannot show it on clients. */
+		/* Currently server information is not synced to clients, so we cannot show it on clients. */
 		this->GetWidget<NWidgetStacked>(WID_CL_SERVER_SELECTOR)->SetDisplayedPlane(_network_server ? 0 : SZSP_HORIZONTAL);
 		this->SetWidgetDisabledState(WID_CL_SERVER_NAME_EDIT, !_network_server);
 	}
@@ -1656,13 +1756,12 @@ public:
 				break;
 
 			case WID_CL_MATRIX: {
-				uint height = std::max({GetSpriteSize(SPR_COMPANY_ICON).height, GetSpriteSize(SPR_JOIN).height, GetSpriteSize(SPR_ADMIN).height, GetSpriteSize(SPR_CHAT).height});
+				uint height = std::max({GetScaledSpriteSize(SPR_COMPANY_ICON).height, GetScaledSpriteSize(SPR_JOIN).height, GetScaledSpriteSize(SPR_ADMIN).height, GetScaledSpriteSize(SPR_CHAT).height});
 				height += WidgetDimensions::scaled.framerect.Vertical();
 				this->line_height = std::max(height, (uint)GetCharacterHeight(FS_NORMAL)) + padding.height;
 
 				resize.width = 1;
-				resize.height = this->line_height;
-				fill.height = this->line_height;
+				fill.height = resize.height = this->line_height;
 				size.height = std::max(size.height, 5 * this->line_height);
 				break;
 			}
@@ -1729,7 +1828,11 @@ public:
 				break;
 
 			case WID_CL_MATRIX: {
-				ButtonCommon *button = this->GetButtonAtPoint(pt);
+				auto it = this->vscroll->GetScrolledItemFromWidget(this->buttons, pt.y, this, WID_CL_MATRIX);
+				if (it == std::end(this->buttons)) break;
+
+				Rect r = this->GetWidget<NWidgetBase>(WID_CL_MATRIX)->GetCurrentRect().Shrink(WidgetDimensions::scaled.framerect);
+				ButtonCommon *button = (*it)->GetButton(r, pt);
 				if (button == nullptr) break;
 
 				button->OnClick(this, pt);
@@ -1742,34 +1845,14 @@ public:
 	{
 		switch (widget) {
 			case WID_CL_MATRIX: {
-				int index = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_CL_MATRIX);
+				auto it = this->vscroll->GetScrolledItemFromWidget(this->buttons, pt.y, this, WID_CL_MATRIX);
+				if (it == std::end(this->buttons)) break;
 
-				bool rtl = _current_text_dir == TD_RTL;
-				Rect matrix = this->GetWidget<NWidgetBase>(WID_CL_MATRIX)->GetCurrentRect().Shrink(WidgetDimensions::scaled.framerect);
+				Rect r = this->GetWidget<NWidgetBase>(WID_CL_MATRIX)->GetCurrentRect().Shrink(WidgetDimensions::scaled.framerect);
+				auto tooltip = (*it)->GetTooltip(r, pt);
+				if (!tooltip.has_value()) break;
 
-				Dimension d = GetSpriteSize(SPR_COMPANY_ICON);
-				uint text_left  = matrix.left  + (rtl ? 0 : d.width + WidgetDimensions::scaled.hsep_wide);
-				uint text_right = matrix.right - (rtl ? d.width + WidgetDimensions::scaled.hsep_wide : 0);
-
-				Dimension d2 = GetSpriteSize(SPR_PLAYER_SELF);
-				uint offset_x = WidgetDimensions::scaled.hsep_indent - d2.width - ScaleGUITrad(3);
-
-				uint player_icon_x = rtl ? text_right - offset_x - d2.width : text_left + offset_x;
-
-				if (IsInsideMM(pt.x, player_icon_x, player_icon_x + d2.width)) {
-					if (index == this->player_self_index) {
-						GuiShowTooltips(this, GetEncodedString(STR_NETWORK_CLIENT_LIST_PLAYER_ICON_SELF_TOOLTIP), close_cond);
-						return true;
-					} else if (index == this->player_host_index) {
-						GuiShowTooltips(this, GetEncodedString(STR_NETWORK_CLIENT_LIST_PLAYER_ICON_HOST_TOOLTIP), close_cond);
-						return true;
-					}
-				}
-
-				ButtonCommon *button = this->GetButtonAtPoint(pt);
-				if (button == nullptr) return false;
-
-				GuiShowTooltips(this, GetEncodedString(button->tooltip), close_cond);
+				GuiShowTooltips(this, std::move(*tooltip), close_cond);
 				return true;
 			};
 		}
@@ -1777,15 +1860,15 @@ public:
 		return false;
 	}
 
-	void OnDropdownClose(Point pt, WidgetID widget, int index, bool instant_close) override
+	void OnDropdownClose(Point pt, WidgetID widget, int index, int click_result, bool instant_close) override
 	{
 		/* If you close the dropdown outside the list, don't take any action. */
 		if (widget == WID_CL_MATRIX) return;
 
-		Window::OnDropdownClose(pt, widget, index, instant_close);
+		Window::OnDropdownClose(pt, widget, index, click_result, instant_close);
 	}
 
-	void OnDropdownSelect(WidgetID widget, int index) override
+	void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
 		switch (widget) {
 			case WID_CL_SERVER_VISIBILITY:
@@ -1863,153 +1946,22 @@ public:
 		}
 	}
 
-	/**
-	 * Draw the buttons for a single line in the matrix.
-	 *
-	 * The x-position in RTL is the most left or otherwise the most right pixel
-	 * we can draw the buttons from.
-	 *
-	 * @param x The x-position to start with the buttons. Updated during this function.
-	 * @param y The y-position to start with the buttons.
-	 * @param buttons The buttons to draw.
-	 */
-	void DrawButtons(int &x, uint y, const std::vector<std::unique_ptr<ButtonCommon>> &buttons) const
-	{
-		Rect r;
-
-		for (auto &button : buttons) {
-			bool rtl = _current_text_dir == TD_RTL;
-
-			int offset = (this->line_height - button->height) / 2;
-			r.left = rtl ? x : x - button->width + 1;
-			r.right = rtl ? x + button->width - 1 : x;
-			r.top = y + offset;
-			r.bottom = r.top + button->height - 1;
-
-			DrawFrameRect(r, button->colour, {});
-			DrawSprite(button->sprite, PAL_NONE, r.left + WidgetDimensions::scaled.framerect.left, r.top + WidgetDimensions::scaled.framerect.top);
-			if (button->disabled) {
-				GfxFillRect(r.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(button->colour, SHADE_DARKER), FILLRECT_CHECKER);
-			}
-
-			int width = button->width + WidgetDimensions::scaled.hsep_normal;
-			x += rtl ? width : -width;
-		}
-	}
-
-	/**
-	 * Draw a company and its clients on the matrix.
-	 * @param company_id The company to draw.
-	 * @param r The rect to draw within.
-	 * @param line The Nth line we are drawing. Updated during this function.
-	 */
-	void DrawCompany(CompanyID company_id, const Rect &r, uint &line) const
-	{
-		bool rtl = _current_text_dir == TD_RTL;
-		int text_y_offset = CenterBounds(0, this->line_height, GetCharacterHeight(FS_NORMAL));
-
-		Dimension d = GetSpriteSize(SPR_COMPANY_ICON);
-		int offset = CenterBounds(0, this->line_height, d.height);
-
-		uint line_start = this->vscroll->GetPosition();
-		uint line_end = line_start + this->vscroll->GetCapacity();
-
-		uint y = r.top + (this->line_height * (line - line_start));
-
-		/* Draw the company line (if in range of scrollbar). */
-		if (IsInsideMM(line, line_start, line_end)) {
-			int icon_left = r.WithWidth(d.width, rtl).left;
-			Rect tr = r.Indent(d.width + WidgetDimensions::scaled.hsep_normal, rtl);
-			int &x = rtl ? tr.left : tr.right;
-
-			/* If there are buttons for this company, draw them. */
-			auto button_find = this->buttons.find(line);
-			if (button_find != this->buttons.end()) {
-				this->DrawButtons(x, y, button_find->second);
-			}
-
-			if (company_id == COMPANY_SPECTATOR) {
-				DrawSprite(SPR_COMPANY_ICON, PALETTE_TO_GREY, icon_left, y + offset);
-				DrawString(tr.left, tr.right, y + text_y_offset, STR_NETWORK_CLIENT_LIST_SPECTATORS, TC_SILVER);
-			} else if (company_id == COMPANY_NEW_COMPANY) {
-				DrawSprite(SPR_COMPANY_ICON, PALETTE_TO_GREY, icon_left, y + offset);
-				DrawString(tr.left, tr.right, y + text_y_offset, STR_NETWORK_CLIENT_LIST_NEW_COMPANY, TC_WHITE);
-			} else {
-				DrawCompanyIcon(company_id, icon_left, y + offset);
-
-				DrawString(tr.left, tr.right, y + text_y_offset, GetString(STR_COMPANY_NAME, company_id, company_id), TC_SILVER);
-			}
-		}
-
-		y += this->line_height;
-		line++;
-
-		for (const NetworkClientInfo *ci : NetworkClientInfo::Iterate()) {
-			if (ci->client_playas != company_id) continue;
-
-			/* Draw the player line (if in range of scrollbar). */
-			if (IsInsideMM(line, line_start, line_end)) {
-				Rect tr = r.Indent(WidgetDimensions::scaled.hsep_indent, rtl);
-
-				/* If there are buttons for this client, draw them. */
-				auto button_find = this->buttons.find(line);
-				if (button_find != this->buttons.end()) {
-					int &x = rtl ? tr.left : tr.right;
-					this->DrawButtons(x, y, button_find->second);
-				}
-
-				SpriteID player_icon = 0;
-				if (ci->client_id == _network_own_client_id) {
-					player_icon = SPR_PLAYER_SELF;
-				} else if (ci->client_id == CLIENT_ID_SERVER) {
-					player_icon = SPR_PLAYER_HOST;
-				}
-
-				if (player_icon != 0) {
-					Dimension d2 = GetSpriteSize(player_icon);
-					int offset_y = CenterBounds(0, this->line_height, d2.height);
-					DrawSprite(player_icon, PALETTE_TO_GREY, rtl ? tr.right - d2.width : tr.left, y + offset_y);
-					tr = tr.Indent(d2.width + WidgetDimensions::scaled.hsep_normal, rtl);
-				}
-
-				DrawString(tr.left, tr.right, y + text_y_offset, GetString(STR_JUST_RAW_STRING, ci->client_name), TC_BLACK);
-			}
-
-			y += this->line_height;
-			line++;
-		}
-	}
-
 	void DrawWidget(const Rect &r, WidgetID widget) const override
 	{
 		switch (widget) {
 			case WID_CL_MATRIX: {
-				Rect ir = r.Shrink(WidgetDimensions::scaled.framerect, RectPadding::zero);
-				uint line = 0;
+				Rect ir = r.WithHeight(this->line_height).Shrink(WidgetDimensions::scaled.framerect, RectPadding::zero);
 
 				if (this->hover_index >= 0) {
 					Rect br = r.WithHeight(this->line_height).Translate(0, this->hover_index * this->line_height);
 					GfxFillRect(br.Shrink(WidgetDimensions::scaled.bevel), GREY_SCALE(9));
 				}
 
-				NetworkClientInfo *own_ci = NetworkClientInfo::GetByClientID(_network_own_client_id);
-				CompanyID client_playas = own_ci == nullptr ? COMPANY_SPECTATOR : own_ci->client_playas;
-
-				if (client_playas == COMPANY_SPECTATOR && !NetworkMaxCompaniesReached()) {
-					this->DrawCompany(COMPANY_NEW_COMPANY, ir, line);
+				auto [first, last] = this->vscroll->GetVisibleRangeIterators(this->buttons);
+				for (auto it = first; it != last; ++it) {
+					(*it)->Draw(ir);
+					ir = ir.Translate(0, this->line_height);
 				}
-
-				if (client_playas != COMPANY_SPECTATOR) {
-					this->DrawCompany(client_playas, ir, line);
-				}
-
-				for (const Company *c : Company::Iterate()) {
-					if (client_playas == c->index) continue;
-					this->DrawCompany(c->index, ir, line);
-				}
-
-				/* Spectators */
-				this->DrawCompany(COMPANY_SPECTATOR, ir, line);
 
 				break;
 			}
@@ -2076,12 +2028,12 @@ struct NetworkJoinStatusWindow : Window {
 						}
 						[[fallthrough]];
 
-					default: // Waiting is 15%, so the resting receivement of map is maximum 70%
+					default: // Waiting is 15%, so the remaining downloading of the map is maximum 70%
 						progress = 15 + _network_join_bytes * (100 - 15) / _network_join_bytes_total;
 						break;
 				}
 				DrawFrameRect(ir.WithWidth(ir.Width() * progress / 100, _current_text_dir == TD_RTL), COLOUR_MAUVE, {});
-				DrawString(ir.left, ir.right, CenterBounds(ir.top, ir.bottom, GetCharacterHeight(FS_NORMAL)), STR_NETWORK_CONNECTING_1 + _network_join_status, TC_FROMSTRING, SA_HOR_CENTER);
+				DrawString(ir.left, ir.right, CentreBounds(ir.top, ir.bottom, GetCharacterHeight(FS_NORMAL)), STR_NETWORK_CONNECTING_1 + _network_join_status, TC_FROMSTRING, SA_HOR_CENTER);
 				break;
 			}
 
@@ -2151,7 +2103,7 @@ struct NetworkJoinStatusWindow : Window {
 	}
 };
 
-static constexpr NWidgetPart _nested_network_join_status_window_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_network_join_status_window_widgets = {
 	NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_NETWORK_CONNECTING_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 	NWidget(WWT_PANEL, COLOUR_GREY),
 		NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0), SetPadding(WidgetDimensions::unscaled.modalpopup),
@@ -2163,7 +2115,7 @@ static constexpr NWidgetPart _nested_network_join_status_window_widgets[] = {
 };
 
 static WindowDesc _network_join_status_window_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_NETWORK_STATUS_WINDOW, WC_NONE,
 	WindowDefaultFlag::Modal,
 	_nested_network_join_status_window_widgets
@@ -2192,11 +2144,11 @@ struct NetworkAskRelayWindow : public Window {
 	std::string relay_connection_string{}; ///< The relay server we want to connect to.
 	std::string token{}; ///< The token for this connection.
 
-	NetworkAskRelayWindow(WindowDesc &desc, Window *parent, const std::string &server_connection_string, const std::string &relay_connection_string, const std::string &token) :
+	NetworkAskRelayWindow(WindowDesc &desc, Window *parent, std::string_view server_connection_string, std::string &&relay_connection_string, std::string &&token) :
 		Window(desc),
 		server_connection_string(server_connection_string),
-		relay_connection_string(relay_connection_string),
-		token(token)
+		relay_connection_string(std::move(relay_connection_string)),
+		token(std::move(token))
 	{
 		this->parent = parent;
 		this->InitNested(0);
@@ -2222,7 +2174,7 @@ struct NetworkAskRelayWindow : public Window {
 		}
 	}
 
-	void FindWindowPlacementAndResize([[maybe_unused]] int def_width, [[maybe_unused]] int def_height) override
+	void FindWindowPlacementAndResize(int, int, bool) override
 	{
 		/* Position query window over the calling window, ensuring it's within screen bounds. */
 		this->left = Clamp(parent->left + (parent->width / 2) - (this->width / 2), 0, _screen.width - this->width);
@@ -2252,7 +2204,7 @@ struct NetworkAskRelayWindow : public Window {
 	}
 };
 
-static constexpr NWidgetPart _nested_network_ask_relay_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_network_ask_relay_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_RED),
 		NWidget(WWT_CAPTION, COLOUR_RED, WID_NAR_CAPTION), SetStringTip(STR_NETWORK_ASK_RELAY_CAPTION),
@@ -2270,7 +2222,7 @@ static constexpr NWidgetPart _nested_network_ask_relay_widgets[] = {
 };
 
 static WindowDesc _network_ask_relay_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_NETWORK_ASK_RELAY, WC_NONE,
 	WindowDefaultFlag::Modal,
 	_nested_network_ask_relay_widgets
@@ -2282,12 +2234,12 @@ static WindowDesc _network_ask_relay_desc(
  * @param relay_connection_string The relay server we want to connect to.
  * @param token The token for this connection.
  */
-void ShowNetworkAskRelay(const std::string &server_connection_string, const std::string &relay_connection_string, const std::string &token)
+void ShowNetworkAskRelay(std::string_view server_connection_string, std::string &&relay_connection_string, std::string &&token)
 {
 	CloseWindowByClass(WC_NETWORK_ASK_RELAY, NRWCD_HANDLED);
 
 	Window *parent = GetMainWindow();
-	new NetworkAskRelayWindow(_network_ask_relay_desc, parent, server_connection_string, relay_connection_string, token);
+	new NetworkAskRelayWindow(_network_ask_relay_desc, parent, server_connection_string, std::move(relay_connection_string), std::move(token));
 }
 
 /**
@@ -2315,7 +2267,7 @@ struct NetworkAskSurveyWindow : public Window {
 		}
 	}
 
-	void FindWindowPlacementAndResize([[maybe_unused]] int def_width, [[maybe_unused]] int def_height) override
+	void FindWindowPlacementAndResize(int, int, bool) override
 	{
 		/* Position query window over the calling window, ensuring it's within screen bounds. */
 		this->left = Clamp(parent->left + (parent->width / 2) - (this->width / 2), 0, _screen.width - this->width);
@@ -2327,7 +2279,7 @@ struct NetworkAskSurveyWindow : public Window {
 	{
 		switch (widget) {
 			case WID_NAS_PREVIEW:
-				ShowSurveyResultTextfileWindow();
+				ShowSurveyResultTextfileWindow(this);
 				break;
 
 			case WID_NAS_LINK:
@@ -2347,7 +2299,7 @@ struct NetworkAskSurveyWindow : public Window {
 	}
 };
 
-static constexpr NWidgetPart _nested_network_ask_survey_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_network_ask_survey_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY, WID_NAS_CAPTION), SetStringTip(STR_NETWORK_ASK_SURVEY_CAPTION),
@@ -2368,7 +2320,7 @@ static constexpr NWidgetPart _nested_network_ask_survey_widgets[] = {
 };
 
 static WindowDesc _network_ask_survey_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_NETWORK_ASK_SURVEY, WC_NONE,
 	WindowDefaultFlag::Modal,
 	_nested_network_ask_survey_widgets
@@ -2392,7 +2344,7 @@ void ShowNetworkAskSurvey()
 struct SurveyResultTextfileWindow : public TextfileWindow {
 	const GRFConfig *grf_config; ///< View the textfile of this GRFConfig.
 
-	SurveyResultTextfileWindow(TextfileType file_type) : TextfileWindow(file_type)
+	SurveyResultTextfileWindow(Window *parent, TextfileType file_type) : TextfileWindow(parent, file_type)
 	{
 		this->ConstructWindow();
 
@@ -2402,8 +2354,8 @@ struct SurveyResultTextfileWindow : public TextfileWindow {
 	}
 };
 
-void ShowSurveyResultTextfileWindow()
+void ShowSurveyResultTextfileWindow(Window *parent)
 {
-	CloseWindowById(WC_TEXTFILE, TFT_SURVEY_RESULT);
-	new SurveyResultTextfileWindow(TFT_SURVEY_RESULT);
+	parent->CloseChildWindowById(WC_TEXTFILE, TFT_SURVEY_RESULT);
+	new SurveyResultTextfileWindow(parent, TFT_SURVEY_RESULT);
 }

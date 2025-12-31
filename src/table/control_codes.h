@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file control_codes.h Control codes that are embedded in the translation strings. */
@@ -171,6 +171,9 @@ enum StringControlCode : uint16_t {
 	 * These are mapped to the original glyphs */
 	SCC_LESS_THAN        = SCC_SPRITE_START + 0x3C,
 	SCC_GREATER_THAN     = SCC_SPRITE_START + 0x3E,
+	SCC_TOWN             = SCC_SPRITE_START + 0x9B,
+	SCC_CITY             = SCC_SPRITE_START + 0x9C,
+	SCC_LEFT_ARROW       = SCC_SPRITE_START + 0x9D,
 	SCC_UP_ARROW         = SCC_SPRITE_START + 0xA0,
 	SCC_DOWN_ARROW       = SCC_SPRITE_START + 0xAA,
 	SCC_CHECKMARK        = SCC_SPRITE_START + 0xAC,

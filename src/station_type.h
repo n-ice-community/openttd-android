@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file station_type.h Types related to stations. */
@@ -11,7 +11,6 @@
 #define STATION_TYPE_H
 
 #include "core/pool_type.hpp"
-#include "core/smallstack_type.hpp"
 #include "tilearea_type.h"
 
 using StationID = PoolID<uint16_t, struct StationIDTag, 64000, 0xFFFF>;
@@ -25,8 +24,6 @@ struct Station;
 struct RoadStop;
 struct StationSpec;
 struct Waypoint;
-
-using StationIDStack = SmallStack<StationID::BaseType, StationID::BaseType, StationID::Invalid().base(), 8, StationID::End().base()>;
 
 /** Station types */
 enum class StationType : uint8_t {
@@ -75,6 +72,43 @@ enum StationHadVehicleOfType : uint8_t {
 	HVOT_WAYPOINT = 1 << 6, ///< Station is a waypoint (NewGRF only!)
 };
 DECLARE_ENUM_AS_BIT_SET(StationHadVehicleOfType)
+
+/** Randomisation triggers for stations and roadstops */
+enum class StationRandomTrigger : uint8_t {
+	NewCargo, ///< Trigger station on new cargo arrival.
+	CargoTaken, ///< Trigger station when cargo is completely taken.
+	VehicleArrives, ///< Trigger platform when train arrives.
+	VehicleDeparts, ///< Trigger platform when train leaves.
+	VehicleLoads, ///< Trigger platform when train loads/unloads.
+	PathReservation, ///< Trigger platform when train reserves path.
+};
+using StationRandomTriggers = EnumBitSet<StationRandomTrigger, uint8_t>;
+
+/** Animation triggers for stations and roadstops. */
+enum class StationAnimationTrigger : uint8_t {
+	Built, ///< Trigger tile when built.
+	NewCargo, ///< Trigger station on new cargo arrival.
+	CargoTaken, ///< Trigger station when cargo is completely taken.
+	VehicleArrives, ///< Trigger platform when train arrives.
+	VehicleDeparts, ///< Trigger platform when train leaves.
+	VehicleLoads, ///< Trigger platform when train loads/unloads.
+	AcceptanceTick, ///< Trigger station every 250 ticks.
+	TileLoop, ///< Trigger in the periodic tile loop.
+	PathReservation, ///< Trigger platform when train reserves path.
+	End
+};
+using StationAnimationTriggers = EnumBitSet<StationAnimationTrigger, uint16_t>;
+
+/** Animation triggers for airport tiles */
+enum class AirportAnimationTrigger : uint8_t {
+	Built, ///< Triggered when the airport is built (for all tiles at the same time).
+	TileLoop, ///< Triggered in the periodic tile loop.
+	NewCargo, ///< Triggered when new cargo arrives at the station (for all tiles at the same time).
+	CargoTaken, ///< Triggered when a cargo type is completely removed from the station (for all tiles at the same time).
+	AcceptanceTick, ///< Triggered every 250 ticks (for all tiles at the same time).
+	AirplaneTouchdown, ///< Triggered when an airplane (not a helicopter) touches down at the airport (for single tile).
+};
+using AirportAnimationTriggers = EnumBitSet<AirportAnimationTrigger, uint8_t>;
 
 /* The different catchment area sizes. */
 static constexpr uint CA_NONE = 0; ///< Catchment when the station has no facilities

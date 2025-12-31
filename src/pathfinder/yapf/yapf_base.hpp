@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_base.hpp Base classes for YAPF. */
@@ -35,7 +35,6 @@
  *  Requirements to your pathfinder class derived from CYapfBaseT:
  *  --------------------------------------------------------------
  *  Your pathfinder derived class needs to implement following methods:
- *    inline void PfSetStartupNodes()
  *    inline void PfFollowNode(Node &org)
  *    inline bool PfCalcCost(Node &n)
  *    inline bool PfCalcEstimate(Node &n)
@@ -104,8 +103,6 @@ public:
 	{
 		this->vehicle = v;
 
-		Yapf().PfSetStartupNodes();
-
 		for (;;) {
 			this->num_steps++;
 			Node *best_open_node = this->nodes.GetBestOpenNode();
@@ -162,14 +159,13 @@ public:
 	/** Add new node (created by CreateNewNode and filled with data) into open list */
 	inline void AddStartupNode(Node &n)
 	{
+		assert(n.parent == nullptr);
+		assert(this->num_steps == 0);
+
 		Yapf().PfNodeCacheFetch(n);
 		/* insert the new node only if it is not there */
 		if (this->nodes.FindOpenNode(n.key) == nullptr) {
 			this->nodes.InsertOpenNode(n);
-		} else {
-			/* if we are here, it means that node is already there - how it is possible?
-			 *   probably the train is in the position that both its ends point to the same tile/exit-dir
-			 *   very unlikely, but it happened */
 		}
 	}
 
@@ -186,29 +182,13 @@ public:
 	}
 
 	/**
-	 * In some cases an intermediate node branch should be pruned.
-	 * The most prominent case is when a red EOL signal is encountered, but
-	 * there was a segment change (e.g. a rail type change) before that. If
-	 * the branch would not be pruned, the rail type change location would
-	 * remain the best intermediate node, and thus the vehicle would still
-	 * go towards the red EOL signal.
-	 */
-	void PruneIntermediateNodeBranch(Node *n)
-	{
-		bool intermediate_on_branch = false;
-		while (n != nullptr && !n->segment->end_segment_reason.Test(EndSegmentReason::ChoiceFollows)) {
-			if (n == Yapf().best_intermediate_node) intermediate_on_branch = true;
-			n = n->parent;
-		}
-		if (intermediate_on_branch) Yapf().best_intermediate_node = n;
-	}
-
-	/**
 	 * AddNewNode() - called by Tderived::PfFollowNode() for each child node.
 	 *  Nodes are evaluated here and added into open list
 	 */
-	void AddNewNode(Node &n, const TrackFollower &tf)
+	void AddNewNode(Node &n, const TrackFollower &follower)
 	{
+		assert(n.parent != nullptr);
+
 		/* evaluate the node */
 		bool cached = Yapf().PfNodeCacheFetch(n);
 		if (!cached) {
@@ -217,7 +197,7 @@ public:
 			this->stats_cache_hits++;
 		}
 
-		bool valid = Yapf().PfCalcCost(n, &tf);
+		bool valid = Yapf().PfCalcCost(n, &follower);
 
 		if (valid) valid = Yapf().PfCalcEstimate(n);
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ini.cpp Definition of the IniItem class, related to reading/writing '*.ini' files. */
@@ -101,14 +101,14 @@ bool IniFile::SaveToDisk(const std::string &filename)
 	return true;
 }
 
-/* virtual */ std::optional<FileHandle> IniFile::OpenFile(const std::string &filename, Subdirectory subdir, size_t *size)
+/* virtual */ std::optional<FileHandle> IniFile::OpenFile(std::string_view filename, Subdirectory subdir, size_t *size)
 {
 	/* Open the text file in binary mode to prevent end-of-line translations
 	 * done by ftell() and friends, as defined by K&R. */
 	return FioFOpenFile(filename, "rb", subdir, size);
 }
 
-/* virtual */ void IniFile::ReportFileError(const char * const pre, const char * const buffer, const char * const post)
+/* virtual */ void IniFile::ReportFileError(std::string_view message)
 {
-	ShowInfo("{}{}{}", pre, buffer, post);
+	ShowInfo("{}", message);
 }

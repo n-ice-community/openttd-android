@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file direction_type.h Different types to 'show' directions. */
@@ -37,6 +37,11 @@ enum Direction : uint8_t {
 
 /** Allow incrementing of Direction variables */
 DECLARE_INCREMENT_DECREMENT_OPERATORS(Direction)
+
+using Directions = EnumBitSet<Direction, uint8_t>;
+
+/** All possible directions. */
+static constexpr Directions DIRECTIONS_ALL{DIR_N, DIR_NE, DIR_E, DIR_SE, DIR_S, DIR_SW, DIR_W, DIR_NW};
 
 /**
  * Enumeration for the difference between two directions.
@@ -81,6 +86,8 @@ enum DiagDirection : uint8_t {
 };
 DECLARE_INCREMENT_DECREMENT_OPERATORS(DiagDirection)
 DECLARE_ENUM_AS_ADDABLE(DiagDirection)
+
+using DiagDirections = EnumBitSet<DiagDirection, uint8_t>;
 
 /**
  * Enumeration for the difference between to DiagDirection.

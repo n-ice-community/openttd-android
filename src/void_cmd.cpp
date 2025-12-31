@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file void_cmd.cpp Handling of void tiles. */
@@ -21,7 +21,12 @@
 
 static void DrawTile_Void(TileInfo *ti)
 {
-	DrawGroundSprite(SPR_FLAT_BARE_LAND + SlopeToSpriteOffset(ti->tileh), PALETTE_ALL_BLACK);
+	/* If freeform edges are off, draw infinite water off the edges of the map. */
+	if (!_settings_game.construction.freeform_edges) {
+		DrawGroundSprite(SPR_FLAT_WATER_TILE + SlopeToSpriteOffset(ti->tileh), PAL_NONE);
+	} else {
+		DrawGroundSprite(SPR_FLAT_BARE_LAND + SlopeToSpriteOffset(ti->tileh), PALETTE_ALL_BLACK);
+	}
 }
 
 
@@ -87,4 +92,5 @@ extern const TileTypeProcs _tile_type_void_procs = {
 	nullptr,                     // vehicle_enter_tile_proc
 	GetFoundation_Void,       // get_foundation_proc
 	TerraformTile_Void,       // terraform_tile_proc
+	nullptr, // check_build_above_proc
 };

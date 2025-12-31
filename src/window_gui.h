@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file window_gui.h Functions, definitions and such used only by the GUI. */
@@ -67,7 +67,6 @@ public:
 
 	static constexpr float ASPECT_LOCATION = 12.f / 14.f;
 	static constexpr float ASPECT_RENAME = 12.f / 14.f;
-	static constexpr float ASPECT_SETTINGS_BUTTON = 21.f / 12.f;
 	static constexpr float ASPECT_TOGGLE_SIZE = 12.f / 14.f;
 	static constexpr float ASPECT_LEFT_RIGHT_BUTTON = 8.f / 12.f;
 	static constexpr float ASPECT_UP_DOWN_BUTTON = 11.f / 12.f;
@@ -159,6 +158,7 @@ enum class WindowDefaultFlag : uint8_t {
 using WindowDefaultFlags = EnumBitSet<WindowDefaultFlag, uint8_t>;
 
 Point GetToolbarAlignedWindowPosition(int window_width);
+Point AlignInitialConstructionToolbar(int window_width);
 
 struct HotkeyList;
 
@@ -167,7 +167,7 @@ struct HotkeyList;
  */
 struct WindowDesc {
 
-	WindowDesc(WindowPosition default_pos, const char *ini_key, int16_t def_width_trad, int16_t def_height_trad,
+	WindowDesc(WindowPosition default_pos, std::string_view ini_key, int16_t def_width_trad, int16_t def_height_trad,
 			WindowClass window_class, WindowClass parent_class, WindowDefaultFlags flags,
 			const std::span<const NWidgetPart> nwid_parts, HotkeyList *hotkeys = nullptr,
 			const std::source_location location = std::source_location::current());
@@ -178,7 +178,7 @@ struct WindowDesc {
 	const WindowPosition default_pos; ///< Preferred position of the window. @see WindowPosition()
 	const WindowClass cls; ///< Class of the window, @see WindowClass.
 	const WindowClass parent_cls; ///< Class of the parent window. @see WindowClass
-	const char *ini_key; ///< Key to store window defaults in openttd.cfg. \c nullptr if nothing shall be stored.
+	const std::string_view ini_key; ///< Key to store window defaults in openttd.cfg. An empty string if nothing shall be stored.
 	const WindowDefaultFlags flags; ///< Flags. @see WindowDefaultFlag
 	const std::span<const NWidgetPart> nwid_parts; ///< Span of nested widget parts describing the window.
 	const HotkeyList *hotkeys; ///< Hotkeys for the window.
@@ -278,7 +278,7 @@ private:
 protected:
 	void InitializeData(WindowNumber window_number);
 	void InitializePositionSize(int x, int y, int min_width, int min_height);
-	virtual void FindWindowPlacementAndResize(int def_width, int def_height);
+	virtual void FindWindowPlacementAndResize(int def_width, int def_height, bool allow_resize);
 
 	std::vector<int> scheduled_invalidation_data{}; ///< Data of scheduled OnInvalidateData() calls.
 	bool scheduled_resize = false; ///< Set if window has been resized.
@@ -324,7 +324,7 @@ public:
 	NWidgetStacked *shade_select = nullptr; ///< Selection widget (#NWID_SELECTION) to use for shading the window. If \c nullptr, window cannot shade.
 	Dimension unshaded_size{}; ///< Last known unshaded size (only valid while shaded).
 
-	WidgetID mouse_capture_widget = -1; ///< ID of current mouse capture widget (e.g. dragged scrollbar). -1 if no widget has mouse capture.
+	WidgetID mouse_capture_widget = INVALID_WIDGET; ///< ID of current mouse capture widget (e.g. dragged scrollbar). \c INVALID_WIDGET if no widget has mouse capture.
 
 	Window *parent = nullptr; ///< Parent window.
 	WindowList::iterator z_position{};
@@ -343,7 +343,7 @@ public:
 
 	virtual const struct Textbuf *GetFocusedTextbuf() const;
 	virtual Point GetCaretPosition() const;
-	virtual Rect GetTextBoundingRect(const char *from, const char *to) const;
+	virtual Rect GetTextBoundingRect(size_t from, size_t to) const;
 	virtual ptrdiff_t GetTextCharacterAtPosition(const Point &pt) const;
 
 	void InitNested(WindowNumber number = 0);
@@ -498,7 +498,7 @@ public:
 	bool SetFocusedWidget(WidgetID widget_index);
 
 	EventState HandleEditBoxKey(WidgetID wid, char32_t key, uint16_t keycode);
-	virtual void InsertTextString(WidgetID wid, const char *str, bool marked, const char *caret, const char *insert_location, const char *replacement_end);
+	virtual void InsertTextString(WidgetID wid, std::string_view str, bool marked, std::optional<size_t> caret, std::optional<size_t> insert_location, std::optional<size_t> replacement_end);
 
 	void HandleButtonClick(WidgetID widget);
 	int GetRowFromWidget(int clickpos, WidgetID widget, int padding, int line_height = -1) const;
@@ -547,7 +547,9 @@ public:
 	static int SortButtonWidth();
 
 	Window *FindChildWindow(WindowClass wc = WC_INVALID) const;
+	Window *FindChildWindowById(WindowClass wc, WindowNumber number) const;
 	void CloseChildWindows(WindowClass wc = WC_INVALID) const;
+	void CloseChildWindowById(WindowClass wc, WindowNumber number) const;
 	virtual void Close(int data = 0);
 	static void DeleteClosedWindows();
 
@@ -711,6 +713,13 @@ public:
 	virtual void OnScroll([[maybe_unused]] Point delta) {}
 
 	/**
+	 * Notify window that a scrollbar position has been updated.
+	 * @note Only called when the user scrolls, not if a window moves its scrollbar.
+	 * @param widget the scrollbar widget index.
+	 */
+	virtual void OnScrollbarScroll([[maybe_unused]] WidgetID widget) {}
+
+	/**
 	 * The mouse is currently moving over the window or has just moved outside
 	 * of the window. In the latter case pt is (-1, -1).
 	 * @param pt     the point inside the window that the mouse hovers over.
@@ -721,8 +730,9 @@ public:
 	/**
 	 * The mouse wheel has been turned.
 	 * @param wheel the amount of movement of the mouse wheel.
+	 * @param widget the widget the mouse hovers over.
 	 */
-	virtual void OnMouseWheel([[maybe_unused]] int wheel) {}
+	virtual void OnMouseWheel([[maybe_unused]] int wheel, [[maybe_unused]] WidgetID widget) {}
 
 
 	/**
@@ -757,9 +767,9 @@ public:
 	 * @param widget the widget (button) that the dropdown is associated with.
 	 * @param index  the element in the dropdown that is selected.
 	 */
-	virtual void OnDropdownSelect([[maybe_unused]] WidgetID widget, [[maybe_unused]] int index) {}
+	virtual void OnDropdownSelect([[maybe_unused]] WidgetID widget, [[maybe_unused]] int index, [[maybe_unused]] int click_result) {}
 
-	virtual void OnDropdownClose(Point pt, WidgetID widget, int index, bool instant_close);
+	virtual void OnDropdownClose(Point pt, WidgetID widget, int index, int click_result, bool instant_close);
 
 	/**
 	 * The text in an editbox has been edited.

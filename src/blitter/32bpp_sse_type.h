@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_sse_type.h Types related to SSE 32 bpp blitter. */
@@ -28,18 +28,10 @@
 #endif
 
 #define META_LENGTH 2 ///< Number of uint32_t inserted before each line of pixels in a sprite.
-#define MARGIN_NORMAL_THRESHOLD (zoom == ZOOM_LVL_OUT_8X ? 8 : 4) ///< Minimum width to use margins with BlitterMode::Normal.
+#define MARGIN_NORMAL_THRESHOLD (zoom == ZoomLevel::Out8x ? 8 : 4) ///< Minimum width to use margins with BlitterMode::Normal.
 #define MARGIN_REMAP_THRESHOLD 4 ///< Minimum width to use margins with BlitterMode::ColourRemap.
 
-#undef ALIGN
-
-#ifdef _MSC_VER
-	#define ALIGN(n) __declspec(align(n))
-#else
-	#define ALIGN(n) __attribute__ ((aligned (n)))
-#endif
-
-typedef union ALIGN(16) um128i {
+typedef union alignas(16) um128i {
 	__m128i m128i;
 	uint8_t m128i_u8[16];
 	uint16_t m128i_u16[8];

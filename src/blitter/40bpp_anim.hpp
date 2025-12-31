@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 40bpp_optimized.hpp Optimized 40 bpp blitter. */
@@ -18,16 +18,16 @@
 class Blitter_40bppAnim : public Blitter_32bppOptimized {
 public:
 
-	void SetPixel(void *video, int x, int y, uint8_t colour) override;
-	void DrawRect(void *video, int width, int height, uint8_t colour) override;
-	void DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, uint8_t colour, int width, int dash) override;
+	void SetPixel(void *video, int x, int y, PixelColour colour) override;
+	void DrawRect(void *video, int width, int height, PixelColour colour) override;
+	void DrawLine(void *video, int x, int y, int x2, int y2, int screen_width, int screen_height, PixelColour colour, int width, int dash) override;
 	void CopyFromBuffer(void *video, const void *src, int width, int height) override;
 	void CopyToBuffer(const void *video, void *dst, int width, int height) override;
 	void CopyImageToBuffer(const void *video, void *dst, int width, int height, int dst_pitch) override;
 	void ScrollBuffer(void *video, int &left, int &top, int &width, int &height, int scroll_x, int scroll_y) override;
 	void Draw(Blitter::BlitterParams *bp, BlitterMode mode, ZoomLevel zoom) override;
 	void DrawColourMappingRect(void *dst, int width, int height, PaletteID pal) override;
-	Sprite *Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override;
+	Sprite *Encode(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override;
 	size_t BufferSize(uint width, uint height) override;
 	Blitter::PaletteAnimation UsePaletteAnimation() override;
 	bool NeedsAnimationBuffer() override;

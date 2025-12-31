@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_vehicle.hpp Everything to query and build vehicles. */
@@ -370,7 +370,7 @@ public:
 	 *   is owned by you.
 	 * @pre ScriptEngine::IsBuildable(engine_id).
 	 * @pre ScriptCargo::IsValidCargo(cargo).
-	 * @return The capacity the vehicle will have when refited.
+	 * @return The capacity the vehicle will have when refitted.
 	 */
 	static SQInteger GetBuildWithRefitCapacity(TileIndex depot, EngineID engine_id, CargoType cargo);
 
@@ -431,7 +431,7 @@ public:
 	 * @pre ScriptCargo::IsValidCargo(cargo).
 	 * @pre You must own the vehicle.
 	 * @pre The vehicle must be stopped in the depot.
-	 * @return The capacity the vehicle will have when refited.
+	 * @return The capacity the vehicle will have when refitted.
 	 */
 	static SQInteger GetRefitCapacity(VehicleID vehicle_id, CargoType cargo);
 

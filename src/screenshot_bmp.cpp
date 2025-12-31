@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file screenshot_bmp.cpp BMP screenshot provider. */
@@ -43,7 +43,7 @@ class ScreenshotProvider_Bmp : public ScreenshotProvider {
 public:
 	ScreenshotProvider_Bmp() : ScreenshotProvider("bmp", "BMP", 10) {}
 
-	bool MakeImage(const char *name, ScreenshotCallback *callb, void *userdata, uint w, uint h, int pixelformat, const Colour *palette) override
+	bool MakeImage(std::string_view name, const ScreenshotCallback &callb, uint w, uint h, int pixelformat, const Colour *palette) const override
 	{
 		uint bpp; // bytes per pixel
 		switch (pixelformat) {
@@ -117,13 +117,13 @@ public:
 			h -= n;
 
 			/* Render the pixels */
-			callb(userdata, buff.data(), h, w, n);
+			callb(buff.data(), h, w, n);
 
 			/* Write each line */
 			while (n-- != 0) {
 				if (pixelformat == 8) {
 					/* Move to 'line', leave last few pixels in line zeroed */
-					memcpy(line.data(), buff.data() + n * w, w);
+					std::copy_n(buff.data() + n * w, w, line.data());
 				} else {
 					/* Convert from 'native' 32bpp to BMP-like 24bpp.
 					 * Works for both big and little endian machines */
@@ -145,6 +145,9 @@ public:
 
 		return true;
 	}
+
+private:
+	static ScreenshotProvider_Bmp instance;
 };
 
-static ScreenshotProvider_Bmp s_screenshot_provider_bmp;
+/* static */ ScreenshotProvider_Bmp ScreenshotProvider_Bmp::instance{};

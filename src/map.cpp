@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file map.cpp Base functions related to the map and distances on them. */
@@ -22,6 +22,8 @@
 /* static */ uint Map::size_y;    ///< Size of the map along the Y
 /* static */ uint Map::size;      ///< The number of tiles on the map
 /* static */ uint Map::tile_mask; ///< _map_size - 1 (to mask the mapsize)
+
+/* static */ uint Map::initial_land_count; ///< Initial number of land tiles on the map.
 
 /* static */ std::unique_ptr<Tile::TileBase[]> Tile::base_tiles; ///< Base tiles of the map
 /* static */ std::unique_ptr<Tile::TileExtended[]> Tile::extended_tiles; ///< Extended tiles of the map
@@ -56,6 +58,20 @@
 	Tile::extended_tiles = std::make_unique<Tile::TileExtended[]>(Map::size);
 
 	AllocateWaterRegions();
+}
+
+/* static */ void Map::CountLandTiles()
+{
+	/* Count number of tiles that are land. */
+	Map::initial_land_count = 0;
+	for (const auto tile : Map::Iterate()) {
+		Map::initial_land_count += IsWaterTile(tile) ? 0 : 1;
+	}
+
+	/* Compensate for default values being set for (or users are most familiar with) at least
+	 * very low sea level. Dividing by 12 adds roughly 8%. */
+	Map::initial_land_count += Map::initial_land_count / 12;
+	Map::initial_land_count = std::min(Map::initial_land_count, Map::size);
 }
 
 
@@ -225,95 +241,6 @@ uint DistanceFromEdgeDir(TileIndex tile, DiagDirection dir)
 		case DIAGDIR_SE: return Map::MaxY() - TileY(tile) - 1;
 		default: NOT_REACHED();
 	}
-}
-
-/**
- * Function performing a search around a center tile and going outward, thus in circle.
- * Although it really is a square search...
- * Every tile will be tested by means of the callback function proc,
- * which will determine if yes or no the given tile meets criteria of search.
- * @param tile to start the search from. Upon completion, it will return the tile matching the search
- * @param size: number of tiles per side of the desired search area
- * @param proc: callback testing function pointer.
- * @param user_data to be passed to the callback function. Depends on the implementation
- * @return result of the search
- * @pre proc != nullptr
- * @pre size > 0
- */
-bool CircularTileSearch(TileIndex *tile, uint size, TestTileOnSearchProc proc, void *user_data)
-{
-	assert(proc != nullptr);
-	assert(size > 0);
-
-	if (size % 2 == 1) {
-		/* If the length of the side is uneven, the center has to be checked
-		 * separately, as the pattern of uneven sides requires to go around the center */
-		if (proc(*tile, user_data)) return true;
-
-		/* If tile test is not successful, get one tile up,
-		 * ready for a test in first circle around center tile */
-		*tile = TileAddByDir(*tile, DIR_N);
-		return CircularTileSearch(tile, size / 2, 1, 1, proc, user_data);
-	} else {
-		return CircularTileSearch(tile, size / 2, 0, 0, proc, user_data);
-	}
-}
-
-/**
- * Generalized circular search allowing for rectangles and a hole.
- * Function performing a search around a center rectangle and going outward.
- * The center rectangle is left out from the search. To do a rectangular search
- * without a hole, set either h or w to zero.
- * Every tile will be tested by means of the callback function proc,
- * which will determine if yes or no the given tile meets criteria of search.
- * @param tile to start the search from. Upon completion, it will return the tile matching the search.
- *  This tile should be directly north of the hole (if any).
- * @param radius How many tiles to search outwards. Note: This is a radius and thus different
- *                from the size parameter of the other CircularTileSearch function, which is a diameter.
- * @param w the width of the inner rectangle
- * @param h the height of the inner rectangle
- * @param proc callback testing function pointer.
- * @param user_data to be passed to the callback function. Depends on the implementation
- * @return result of the search
- * @pre proc != nullptr
- * @pre radius > 0
- */
-bool CircularTileSearch(TileIndex *tile, uint radius, uint w, uint h, TestTileOnSearchProc proc, void *user_data)
-{
-	assert(proc != nullptr);
-	assert(radius > 0);
-
-	uint x = TileX(*tile) + w + 1;
-	uint y = TileY(*tile);
-
-	const uint extent[DIAGDIR_END] = { w, h, w, h };
-
-	for (uint n = 0; n < radius; n++) {
-		for (DiagDirection dir = DIAGDIR_BEGIN; dir < DIAGDIR_END; dir++) {
-			/* Is the tile within the map? */
-			for (uint j = extent[dir] + n * 2 + 1; j != 0; j--) {
-				if (x < Map::SizeX() && y < Map::SizeY()) {
-					TileIndex t = TileXY(x, y);
-					/* Is the callback successful? */
-					if (proc(t, user_data)) {
-						/* Stop the search */
-						*tile = t;
-						return true;
-					}
-				}
-
-				/* Step to the next 'neighbour' in the circular line */
-				x += _tileoffs_by_diagdir[dir].x;
-				y += _tileoffs_by_diagdir[dir].y;
-			}
-		}
-		/* Jump to next circle to test */
-		x += _tileoffs_by_dir[DIR_W].x;
-		y += _tileoffs_by_dir[DIR_W].y;
-	}
-
-	*tile = INVALID_TILE;
-	return false;
 }
 
 /**

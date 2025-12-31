@@ -2,13 +2,15 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file industry_type.h Types related to the industry. */
 
 #ifndef INDUSTRY_TYPE_H
 #define INDUSTRY_TYPE_H
+
+#include "core/pool_type.hpp"
 
 using IndustryID = PoolID<uint16_t, struct IndustryIDTag, 64000, 0xFFFF>;
 
@@ -18,6 +20,24 @@ struct Industry;
 
 struct IndustrySpec;
 struct IndustryTileSpec;
+
+/** Available industry random triggers. */
+enum class IndustryRandomTrigger : uint8_t {
+	TileLoop, ///< The tile of the industry has been triggered during the tileloop.
+	IndustryTick, ///< The industry has been triggered via its tick.
+	CargoReceived, ///< Cargo has been delivered.
+};
+using IndustryRandomTriggers = EnumBitSet<IndustryRandomTrigger, uint8_t>;
+
+/** Animation triggers of the industries. */
+enum class IndustryAnimationTrigger : uint8_t {
+	ConstructionStageChanged, ///< Trigger whenever the construction stage changes.
+	TileLoop, ///< Trigger in the periodic tile loop.
+	IndustryTick, ///< Trigger every tick.
+	CargoReceived, ///< Trigger when cargo is received .
+	CargoDistributed, ///< Trigger when cargo is distributed.
+};
+using IndustryAnimationTriggers = EnumBitSet<IndustryAnimationTrigger, uint8_t>;
 
 static const IndustryType NUM_INDUSTRYTYPES_PER_GRF = 128;            ///< maximum number of industry types per NewGRF; limited to 128 because bit 7 has a special meaning in some variables/callbacks (see MapNewGRFIndustryType).
 

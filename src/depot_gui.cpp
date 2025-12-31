@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file depot_gui.cpp The GUI for depots. */
@@ -17,8 +17,9 @@
 #include "viewport_func.h"
 #include "command_func.h"
 #include "depot_base.h"
-#include "spritecache.h"
+#include "spritecache_type.h"
 #include "strings_func.h"
+#include "sound_func.h"
 #include "vehicle_func.h"
 #include "company_func.h"
 #include "tilehighlight_func.h"
@@ -46,7 +47,7 @@
  */
 
 /** Nested widget definition for train depots. */
-static constexpr NWidgetPart _nested_train_depot_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_train_depot_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(NWID_SELECTION, INVALID_COLOUR, WID_D_SHOW_RENAME), SetAspect(WidgetDimensions::ASPECT_RENAME), // rename button
@@ -228,7 +229,7 @@ void InitDepotWindowBlockSizes()
 		if (!e->IsEnabled()) continue;
 
 		uint w = TRAININFO_DEFAULT_VEHICLE_WIDTH;
-		if (e->GetGRF() != nullptr && is_custom_sprite(e->u.rail.image_index)) {
+		if (e->GetGRF() != nullptr && IsCustomVehicleSpriteNum(e->VehInfo<RailVehicleInfo>().image_index)) {
 			w = e->GetGRF()->traininfo_vehicle_width;
 			if (w != VEHICLEINFO_FULL_VEHICLE_WIDTH) {
 				/* Hopeless.
@@ -259,7 +260,7 @@ struct DepotWindow : Window {
 	VehicleType type = VEH_INVALID;
 	bool generate_list = true;
 	bool check_unitnumber_digits = true;
-	WidgetID hovered_widget = -1; ///< Index of the widget being hovered during drag/drop. -1 if no drag is in progress.
+	WidgetID hovered_widget = INVALID_WIDGET; ///< Index of the widget being hovered during drag/drop. \c INVALID_WIDGET if no drag is in progress.
 	VehicleList vehicle_list{};
 	VehicleList wagon_list{};
 	uint unitnumber_digits = 2;
@@ -303,6 +304,35 @@ struct DepotWindow : Window {
 	}
 
 	/**
+	 * Count the dragged selection length if appropriate for the provided train.
+	 * @note This ignores potential changes in length due to callback returning different results.
+	 * @param t Train being counted.
+	 * @return Additional length of dragged selection to add.
+	 */
+	uint CountDraggedLength(const Train *t) const
+	{
+		/* Nothing is selected to add. */
+		if (this->sel == VehicleID::Invalid()) return 0;
+
+		/* Test if the dragged selection applies to this train. */
+		bool add_dragged = false;
+		for (const Train *u = t; u != nullptr; u = u->Next()) {
+			if (u->index == this->sel) return 0; // Selection is part of this train, so doesn't increase its length.
+			if (u->index == this->vehicle_over) add_dragged = true;
+		}
+
+		if (!add_dragged) return 0;
+
+		/* Sum the length of the dragged selection. */
+		uint length = 0;
+		for (Train *u = Train::Get(this->sel); u != nullptr; u = _cursor.vehchain ? u->Next() : (u->HasArticulatedPart() ? u->GetNextArticulatedPart() : nullptr)) {
+			length += u->gcache.cached_veh_length;
+		}
+
+		return length;
+	}
+
+	/**
 	 * Draw a vehicle in the depot window in the box with the top left corner at x,y.
 	 * @param v     Vehicle to draw.
 	 * @param r     Rect to draw in.
@@ -327,9 +357,10 @@ struct DepotWindow : Window {
 				DrawTrainImage(u, image.Indent(x_space, rtl), this->sel, EIT_IN_DEPOT, free_wagon ? 0 : this->hscroll->GetPosition(), this->vehicle_over);
 
 				/* Length of consist in tiles with 1 fractional digit (rounded up) */
+				uint length = u->gcache.cached_total_length + this->CountDraggedLength(u);
 				Rect count = text.WithWidth(this->count_width - WidgetDimensions::scaled.hsep_normal, !rtl);
 				DrawString(count.left, count.right, count.bottom - GetCharacterHeight(FS_SMALL) + 1,
-						GetString(STR_JUST_DECIMAL, CeilDiv(u->gcache.cached_total_length * 10, TILE_SIZE), 1),
+						GetString(STR_JUST_DECIMAL, CeilDiv(length * 10, TILE_SIZE), 1),
 						TC_BLACK, SA_RIGHT | SA_FORCE, false, FS_SMALL); // Draw the counter
 				break;
 			}
@@ -383,7 +414,7 @@ struct DepotWindow : Window {
 		 */
 		if (this->type == VEH_TRAIN && _consistent_train_width != 0) {
 			int w = ScaleSpriteTrad(2 * _consistent_train_width);
-			int col = GetColourGradient(wid->colour, SHADE_NORMAL);
+			PixelColour col = GetColourGradient(wid->colour, SHADE_NORMAL);
 			Rect image = ir.Indent(this->header_width, rtl).Indent(this->count_width, !rtl);
 			int first_line = w + (-this->hscroll->GetPosition()) % w;
 			if (rtl) {
@@ -786,6 +817,7 @@ struct DepotWindow : Window {
 				} else {
 					ResetObjectToPlace();
 				}
+				SndClickBeep();
 				break;
 
 			case WID_D_LOCATION:
@@ -970,10 +1002,10 @@ struct DepotWindow : Window {
 		this->vehicle_over = VehicleID::Invalid();
 		this->SetWidgetDirty(WID_D_MATRIX);
 
-		if (this->hovered_widget != -1) {
+		if (this->hovered_widget != INVALID_WIDGET) {
 			this->SetWidgetLoweredState(this->hovered_widget, false);
 			this->SetWidgetDirty(this->hovered_widget);
-			this->hovered_widget = -1;
+			this->hovered_widget = INVALID_WIDGET;
 		}
 	}
 
@@ -1085,7 +1117,7 @@ struct DepotWindow : Window {
 				this->SetDirty();
 				break;
 		}
-		this->hovered_widget = -1;
+		this->hovered_widget = INVALID_WIDGET;
 		_cursor.vehchain = false;
 	}
 

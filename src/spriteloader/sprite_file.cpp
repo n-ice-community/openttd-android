@@ -2,13 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sprite_file.cpp Implementation of logic specific to the SpriteFile class. */
 
 #include "../stdafx.h"
 #include "sprite_file_type.hpp"
+#include "../safeguards.h"
 
 /** Signature of a container version 2 GRF. */
 extern const std::array<uint8_t, 8> _grf_cont_v2_sig = {'G', 'R', 'F', 0x82, 0x0D, 0x0A, 0x1A, 0x0A};

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_admin_json.cpp Tests for the Squirrel -> JSON conversion in ScriptAdmin. */
@@ -22,6 +22,8 @@
 
 #include <squirrel.h>
 
+#include "../safeguards.h"
+
 /**
  * A controller to start enough so we can use Squirrel for testing.
  *
@@ -35,7 +37,7 @@
 class TestScriptController {
 public:
 	GameInstance game{};
-	ScriptObject::ActiveInstance active{&game};
+	ScriptObject::ActiveInstance active{game};
 
 	Squirrel engine{"test"};
 	ScriptAllocatorScope scope{&engine};
@@ -50,19 +52,19 @@ extern bool ScriptAdminMakeJSON(nlohmann::json &json, HSQUIRRELVM vm, SQInteger 
 static std::optional<std::string> TestScriptAdminMakeJSON(std::string_view squirrel)
 {
 	auto vm = sq_open(1024);
-	/* sq_compile creates a closure with our snipper, which is a table.
+	/* sq_compile creates a closure with our snippet, which is a table.
 	 * Add "return " to get the table on the stack. */
 	std::string buffer = fmt::format("return {}", squirrel);
 
 	/* Insert an (empty) class for testing. */
 	sq_pushroottable(vm);
-	sq_pushstring(vm, "DummyClass", -1);
+	sq_pushstring(vm, "DummyClass");
 	sq_newclass(vm, SQFalse);
 	sq_newslot(vm, -3, SQFalse);
 	sq_pop(vm, 1);
 
 	/* Compile the snippet. */
-	REQUIRE(sq_compilebuffer(vm, buffer.c_str(), buffer.size(), "test", SQTrue) == SQ_OK);
+	REQUIRE(sq_compilebuffer(vm, buffer, "test", SQTrue) == SQ_OK);
 	/* Execute the snippet, capturing the return value. */
 	sq_pushroottable(vm);
 	REQUIRE(sq_call(vm, 1, SQTrue, SQTrue) == SQ_OK);

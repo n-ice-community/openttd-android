@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file base_media_music.h Generic functions for replacing base music data. */
@@ -33,14 +33,14 @@ enum MusicTrackType : uint8_t {
 
 /** Metadata about a music track. */
 struct MusicSongInfo {
-	std::string songname;    ///< name of song displayed in UI
-	uint8_t tracknr;            ///< track number of song displayed in UI
-	std::string filename;    ///< file on disk containing song (when used in MusicSet class)
+	std::string songname; ///< name of song displayed in UI
+	std::string filename; ///< file on disk containing song (when used in MusicSet class)
+	int cat_index; ///< entry index in CAT file, for filetype==MTT_MPSMIDI
+	int override_start; ///< MIDI ticks to skip over in beginning
+	int override_end; ///< MIDI tick to end the song at (0 if no override)
+	uint8_t tracknr; ///< track number of song displayed in UI
 	MusicTrackType filetype; ///< decoder required for song file
-	int cat_index;           ///< entry index in CAT file, for filetype==MTT_MPSMIDI
-	bool loop;               ///< song should play in a tight loop if possible, never ending
-	int override_start;      ///< MIDI ticks to skip over in beginning
-	int override_end;        ///< MIDI tick to end the song at (0 if no override)
+	bool loop; ///< song should play in a tight loop if possible, never ending
 };
 
 template <> struct BaseSetTraits<struct MusicSet> {

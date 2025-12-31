@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file road_gui.cpp GUI for building roads. */
@@ -39,7 +39,7 @@
 #include "waypoint_cmd.h"
 #include "road_cmd.h"
 #include "tunnelbridge_cmd.h"
-#include "newgrf_badge.h"
+#include "newgrf_badge_gui.h"
 #include "newgrf_roadstop.h"
 #include "picker_gui.h"
 #include "timer/timer.h"
@@ -333,7 +333,7 @@ static bool RoadToolbar_CtrlChanged(Window *w)
 /** Road toolbar window handler. */
 struct BuildRoadToolbarWindow : Window {
 	RoadType roadtype = INVALID_ROADTYPE; ///< Road type to build.
-	int last_started_action = INVALID_WID_ROT; ///< Last started user action.
+	WidgetID last_started_action = INVALID_WIDGET; ///< Last started user action.
 	bool last_started_action_remove = false; ///< Use bulldozer button with last action
 	bool last_started_action_oneway = false; ///< Use 'one way road' button with last action
 
@@ -574,7 +574,7 @@ struct BuildRoadToolbarWindow : Window {
 
 				CloseWindowById(WC_SELECT_STATION, 0);
 				ToggleRoadButton_Remove(this);
-				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+				SndClickBeep();
 				break;
 
 			case WID_ROT_CONVERT_ROAD:
@@ -681,7 +681,7 @@ struct BuildRoadToolbarWindow : Window {
 	void SelectLastTool() override
 	{
 		// User misplaced something - activate last selected tool again
-		if (this->last_started_action == INVALID_WID_ROT)
+		if (this->last_started_action == INVALID_WIDGET)
 			return;
 		Point dummy = {0, 0};
 		this->RaiseWidget(this->last_started_action);
@@ -732,6 +732,11 @@ struct BuildRoadToolbarWindow : Window {
 		}
 
 		VpSelectTilesWithMethod(pt.x, pt.y, select_method);
+	}
+
+	Point OnInitialPosition(int16_t sm_width, [[maybe_unused]] int16_t sm_height, [[maybe_unused]] int window_number) override
+	{
+		return AlignInitialConstructionToolbar(sm_width);
 	}
 
 	void OnPlaceMouseUp([[maybe_unused]] ViewportPlaceMethod select_method, ViewportDragDropSelectionProcess select_proc, [[maybe_unused]] Point pt, TileIndex start_tile, TileIndex end_tile) override
@@ -933,7 +938,7 @@ struct BuildRoadToolbarWindow : Window {
 	}, TramToolbarGlobalHotkeys};
 };
 
-static constexpr NWidgetPart _nested_build_road_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_road_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN, WID_ROT_CAPTION), SetTextStyle(TC_WHITE),
@@ -941,44 +946,46 @@ static constexpr NWidgetPart _nested_build_road_widgets[] = {
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_X),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_Y),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_AUTOROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_AUTOROAD, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_AUTOROAD, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOROAD),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_DEMOLISH),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_DEPOT),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_DEPOT, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_VEHICLE_DEPOT),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_DEPOT, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_VEHICLE_DEPOT),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_WAYPOINT),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_WAYPOINT, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_ROAD_TO_WAYPOINT),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_WAYPOINT, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_ROAD_TO_WAYPOINT),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUS_STATION),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_BUS_STATION, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_BUS_STATION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_BUS_STATION, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_BUS_STATION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_TRUCK_STATION),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_TRUCK_BAY, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRUCK_LOADING_BAY),
-		NWidget(WWT_PANEL, COLOUR_DARK_GREEN, -1), SetMinimalSize(0, 22), SetFill(1, 1), EndContainer(),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_TRUCK_BAY, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRUCK_LOADING_BAY),
+
+		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetFill(1, 1), EndContainer(),
+
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ONE_WAY),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_ONE_WAY, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_ONE_WAY_ROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_ONE_WAY, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_ONE_WAY_ROAD),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_BRIDGE),
-						SetFill(0, 1), SetMinimalSize(43, 22), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_BRIDGE),
+						SetFill(0, 1), SetToolbarMinimalSize(2), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_BRIDGE),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_TUNNEL),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_TUNNEL),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_TUNNEL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_REMOVE),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_ROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_ROAD),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_CONVERT_ROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_ROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_ROAD),
 	EndContainer(),
 };
 
 static WindowDesc _build_road_desc(
-	WDP_ALIGN_TOOLBAR, "toolbar_road", 0, 0,
+	WDP_MANUAL, "toolbar_road", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WindowDefaultFlag::Construction,
 	_nested_build_road_widgets,
 	&BuildRoadToolbarWindow::road_hotkeys
 );
 
-static constexpr NWidgetPart _nested_build_tramway_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_tramway_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN, WID_ROT_CAPTION), SetTextStyle(TC_WHITE),
@@ -986,35 +993,37 @@ static constexpr NWidgetPart _nested_build_tramway_widgets[] = {
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_X),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_TRAMWAY_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_TRAMWAY_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_Y),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_TRAMWAY_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_TRAMWAY_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_AUTOROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_AUTOTRAM, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOTRAM),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_AUTOTRAM, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOTRAM),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_DEMOLISH),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_DEPOT),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_DEPOT, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAM_VEHICLE_DEPOT),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_DEPOT, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAM_VEHICLE_DEPOT),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_WAYPOINT),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_WAYPOINT, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_TRAM_TO_WAYPOINT),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_WAYPOINT, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_TRAM_TO_WAYPOINT),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUS_STATION),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_BUS_STATION, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_PASSENGER_TRAM_STATION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_BUS_STATION, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_PASSENGER_TRAM_STATION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_TRUCK_STATION),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_TRUCK_BAY, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_CARGO_TRAM_STATION),
-		NWidget(WWT_PANEL, COLOUR_DARK_GREEN, -1), SetMinimalSize(0, 22), SetFill(1, 1), EndContainer(),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_TRUCK_BAY, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_CARGO_TRAM_STATION),
+
+		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetFill(1, 1), EndContainer(),
+
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_BRIDGE),
-						SetFill(0, 1), SetMinimalSize(43, 22), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_BRIDGE),
+						SetFill(0, 1), SetToolbarMinimalSize(2), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_BRIDGE),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_TUNNEL),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_TUNNEL),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_TUNNEL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_REMOVE),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_TRAMWAYS),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_TRAMWAYS),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_CONVERT_ROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_TRAM),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_TRAM),
 	EndContainer(),
 };
 
 static WindowDesc _build_tramway_desc(
-	WDP_ALIGN_TOOLBAR, "toolbar_tramway", 0, 0,
+	WDP_MANUAL, "toolbar_tramway", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WindowDefaultFlag::Construction,
 	_nested_build_tramway_widgets,
@@ -1039,7 +1048,7 @@ Window *ShowBuildRoadToolbar(RoadType roadtype)
 	return AllocateWindowDescFront<BuildRoadToolbarWindow>(RoadTypeIsRoad(_cur_roadtype) ? _build_road_desc : _build_tramway_desc, TRANSPORT_ROAD);
 }
 
-static constexpr NWidgetPart _nested_build_road_scen_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_road_scen_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN, WID_ROT_CAPTION), SetTextStyle(TC_WHITE),
@@ -1047,24 +1056,26 @@ static constexpr NWidgetPart _nested_build_road_scen_widgets[] = {
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_X),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_Y),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_AUTOROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_AUTOROAD, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_AUTOROAD, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOROAD),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_DEMOLISH),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
-		NWidget(WWT_PANEL, COLOUR_DARK_GREEN, -1), SetMinimalSize(0, 22), SetFill(1, 1), EndContainer(),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
+
+		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetFill(1, 1), EndContainer(),
+
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ONE_WAY),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_ONE_WAY, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_ONE_WAY_ROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_ONE_WAY, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_ONE_WAY_ROAD),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_BRIDGE),
-						SetFill(0, 1), SetMinimalSize(43, 22), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_BRIDGE),
+						SetFill(0, 1), SetToolbarMinimalSize(2), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_BRIDGE),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_TUNNEL),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_TUNNEL),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_ROAD_TUNNEL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_REMOVE),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_ROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_ROAD),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_CONVERT_ROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_ROAD),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_ROAD),
 	EndContainer(),
 };
 
@@ -1076,7 +1087,7 @@ static WindowDesc _build_road_scen_desc(
 	&BuildRoadToolbarWindow::road_hotkeys
 );
 
-static constexpr NWidgetPart _nested_build_tramway_scen_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_tramway_scen_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN, WID_ROT_CAPTION), SetTextStyle(TC_WHITE),
@@ -1084,22 +1095,24 @@ static constexpr NWidgetPart _nested_build_tramway_scen_widgets[] = {
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_X),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_TRAMWAY_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_TRAMWAY_X_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_ROAD_Y),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_TRAMWAY_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_TRAMWAY_Y_DIR, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_SECTION),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_AUTOROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_AUTOTRAM, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOTRAM),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_AUTOTRAM, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_AUTOTRAM),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_DEMOLISH),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
-		NWidget(WWT_PANEL, COLOUR_DARK_GREEN, -1), SetMinimalSize(0, 22), SetFill(1, 1), EndContainer(),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
+
+		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetFill(1, 1), EndContainer(),
+
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_BRIDGE),
-						SetFill(0, 1), SetMinimalSize(43, 22), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_BRIDGE),
+						SetFill(0, 1), SetToolbarMinimalSize(2), SetSpriteTip(SPR_IMG_BRIDGE, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_BRIDGE),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_BUILD_TUNNEL),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_TUNNEL),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_ROAD_TUNNEL, STR_ROAD_TOOLBAR_TOOLTIP_BUILD_TRAMWAY_TUNNEL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_REMOVE),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_TRAMWAYS),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_REMOVE, STR_ROAD_TOOLBAR_TOOLTIP_TOGGLE_BUILD_REMOVE_FOR_TRAMWAYS),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_ROT_CONVERT_ROAD),
-						SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_TRAM),
+						SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_CONVERT_ROAD, STR_ROAD_TOOLBAR_TOOLTIP_CONVERT_TRAM),
 	EndContainer(),
 };
 
@@ -1172,7 +1185,7 @@ struct BuildRoadDepotWindow : public PickerWindowBase {
 				this->RaiseWidget(WID_BROD_DEPOT_NE + _road_depot_orientation);
 				_road_depot_orientation = (DiagDirection)(widget - WID_BROD_DEPOT_NE);
 				this->LowerWidget(WID_BROD_DEPOT_NE + _road_depot_orientation);
-				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+				SndClickBeep();
 				this->SetDirty();
 				break;
 
@@ -1182,7 +1195,7 @@ struct BuildRoadDepotWindow : public PickerWindowBase {
 	}
 };
 
-static constexpr NWidgetPart _nested_build_road_depot_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_road_depot_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN, WID_BROD_CAPTION), SetStringTip(STR_BUILD_DEPOT_ROAD_ORIENTATION_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -1202,7 +1215,7 @@ static constexpr NWidgetPart _nested_build_road_depot_widgets[] = {
 };
 
 static WindowDesc _build_road_depot_desc(
-	WDP_AUTO, nullptr, 0, 0,
+	WDP_AUTO, {}, 0, 0,
 	WC_BUILD_DEPOT, WC_BUILD_TOOLBAR,
 	WindowDefaultFlag::Construction,
 	_nested_build_road_depot_widgets
@@ -1504,7 +1517,7 @@ public:
 				this->RaiseWidget(WID_BROS_STATION_NE + _roadstop_gui.orientation);
 				_roadstop_gui.orientation = (DiagDirection)(widget - WID_BROS_STATION_NE);
 				this->LowerWidget(WID_BROS_STATION_NE + _roadstop_gui.orientation);
-				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+				SndClickBeep();
 				this->SetDirty();
 				CloseWindowById(WC_SELECT_STATION, 0);
 				break;
@@ -1514,7 +1527,7 @@ public:
 				this->RaiseWidget(_settings_client.gui.station_show_coverage + WID_BROS_LT_OFF);
 				_settings_client.gui.station_show_coverage = (widget != WID_BROS_LT_OFF);
 				this->LowerWidget(_settings_client.gui.station_show_coverage + WID_BROS_LT_OFF);
-				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+				SndClickBeep();
 				this->SetDirty();
 				SetViewportCatchmentStation(nullptr, true);
 				break;
@@ -1540,7 +1553,7 @@ public:
 };
 
 /** Widget definition of the build road station window */
-static constexpr NWidgetPart _nested_road_station_picker_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_road_station_picker_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION,  COLOUR_DARK_GREEN, WID_BROS_CAPTION),
@@ -1602,7 +1615,7 @@ static WindowDesc _road_station_picker_desc(
 );
 
 /** Widget definition of the build tram station window */
-static constexpr NWidgetPart _nested_tram_station_picker_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_tram_station_picker_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION,  COLOUR_DARK_GREEN, WID_BROS_CAPTION),
@@ -1741,7 +1754,7 @@ struct BuildRoadWaypointWindow : public PickerWindow {
 };
 
 /** Nested widget definition for the build NewGRF road waypoint window */
-static constexpr NWidgetPart _nested_build_road_waypoint_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_road_waypoint_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_WAYPOINT_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -1837,7 +1850,7 @@ DropDownList GetRoadTypeDropDownList(RoadTramTypes rtts, bool for_replacement, b
 			std::string str = rti->max_speed > 0
 				? GetString(STR_TOOLBAR_RAILTYPE_VELOCITY, rti->strings.menu_text, rti->max_speed / 2)
 				: GetString(rti->strings.menu_text);
-			list.push_back(MakeDropDownListBadgeIconItem(badge_class_list, rti->badges, GSF_ROADTYPES, rti->introduction_date, d, rti->gui_sprites.build_x_road, PAL_NONE, std::move(str), rt, !avail_roadtypes.Test(rt)));
+			list.push_back(MakeDropDownListBadgeIconItem(badge_class_list, rti->badges, GSF_ROADTYPES, rti->introduction_date, RoadBuildCost(rt), d, rti->gui_sprites.build_x_road, PAL_NONE, std::move(str), rt, !avail_roadtypes.Test(rt)));
 		}
 	}
 
@@ -1881,7 +1894,7 @@ DropDownList GetScenRoadTypeDropDownList(RoadTramTypes rtts)
 		std::string str = rti->max_speed > 0
 			? GetString(STR_TOOLBAR_RAILTYPE_VELOCITY, rti->strings.menu_text, rti->max_speed / 2)
 			: GetString(rti->strings.menu_text);
-		list.push_back(MakeDropDownListBadgeIconItem(badge_class_list, rti->badges, GSF_ROADTYPES, rti->introduction_date, d, rti->gui_sprites.build_x_road, PAL_NONE, std::move(str), rt, !avail_roadtypes.Test(rt)));
+		list.push_back(MakeDropDownListBadgeIconItem(badge_class_list, rti->badges, GSF_ROADTYPES, rti->introduction_date, RoadBuildCost(rt), d, rti->gui_sprites.build_x_road, PAL_NONE, std::move(str), rt, !avail_roadtypes.Test(rt)));
 	}
 
 	if (list.empty()) {

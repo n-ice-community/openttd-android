@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file airport_gui.cpp The GUI for airports. */
@@ -21,7 +21,7 @@
 #include "company_base.h"
 #include "station_type.h"
 #include "newgrf_airport.h"
-#include "newgrf_badge.h"
+#include "newgrf_badge_gui.h"
 #include "newgrf_callbacks.h"
 #include "dropdown_type.h"
 #include "dropdown_func.h"
@@ -85,7 +85,7 @@ static void PlaceAirport(TileIndex tile)
 
 /** Airport build toolbar window handler. */
 struct BuildAirToolbarWindow : Window {
-	int last_user_action = INVALID_WID_AT; // Last started user action.
+	WidgetID last_user_action = INVALID_WIDGET; // Last started user action.
 
 	BuildAirToolbarWindow(WindowDesc &desc, WindowNumber window_number) : Window(desc)
 	{
@@ -165,6 +165,11 @@ struct BuildAirToolbarWindow : Window {
 		VpSelectTilesWithMethod(pt.x, pt.y, select_method);
 	}
 
+	Point OnInitialPosition(int16_t sm_width, [[maybe_unused]] int16_t sm_height, [[maybe_unused]] int window_number) override
+	{
+		return AlignInitialConstructionToolbar(sm_width);
+	}
+
 	void OnPlaceMouseUp([[maybe_unused]] ViewportPlaceMethod select_method, ViewportDragDropSelectionProcess select_proc, [[maybe_unused]] Point pt, TileIndex start_tile, TileIndex end_tile) override
 	{
 		if (pt.x == -1) return;
@@ -213,21 +218,21 @@ struct BuildAirToolbarWindow : Window {
 	}, AirportToolbarGlobalHotkeys};
 };
 
-static constexpr NWidgetPart _nested_air_toolbar_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_air_toolbar_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_TOOLBAR_AIRCRAFT_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 		NWidget(WWT_STICKYBOX, COLOUR_DARK_GREEN),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_AT_AIRPORT), SetFill(0, 1), SetMinimalSize(42, 22), SetSpriteTip(SPR_IMG_AIRPORT, STR_TOOLBAR_AIRCRAFT_BUILD_AIRPORT_TOOLTIP),
-		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetMinimalSize(4, 22), SetFill(1, 1), EndContainer(),
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_AT_DEMOLISH), SetFill(0, 1), SetMinimalSize(22, 22), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_AT_AIRPORT), SetFill(0, 1), SetToolbarMinimalSize(2), SetSpriteTip(SPR_IMG_AIRPORT, STR_TOOLBAR_AIRCRAFT_BUILD_AIRPORT_TOOLTIP),
+		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetToolbarSpacerMinimalSize(), SetFill(1, 1), EndContainer(),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_AT_DEMOLISH), SetFill(0, 1), SetToolbarMinimalSize(1), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
 	EndContainer(),
 };
 
 static WindowDesc _air_toolbar_desc(
-	WDP_ALIGN_TOOLBAR, "toolbar_air", 0, 0,
+	WDP_MANUAL, "toolbar_air", 0, 0,
 	WC_BUILD_TOOLBAR, WC_NONE,
 	WindowDefaultFlag::Construction,
 	_nested_air_toolbar_widgets,
@@ -418,7 +423,7 @@ public:
 			case WID_AP_AIRPORT_SPRITE:
 				if (this->preview_sprite != 0) {
 					Dimension d = GetSpriteSize(this->preview_sprite);
-					DrawSprite(this->preview_sprite, COMPANY_SPRITE_COLOUR(_local_company), CenterBounds(r.left, r.right, d.width), CenterBounds(r.top, r.bottom, d.height));
+					DrawSprite(this->preview_sprite, GetCompanyPalette(_local_company), CentreBounds(r.left, r.right, d.width), CentreBounds(r.top, r.bottom, d.height));
 				}
 				break;
 
@@ -526,7 +531,7 @@ public:
 				this->SetWidgetLoweredState(WID_AP_BTN_DONTHILIGHT, !_settings_client.gui.station_show_coverage);
 				this->SetWidgetLoweredState(WID_AP_BTN_DOHILIGHT, _settings_client.gui.station_show_coverage);
 				this->SetDirty();
-				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+				SndClickBeep();
 				this->UpdateSelectSize();
 				SetViewportCatchmentStation(nullptr, true);
 				break;
@@ -578,7 +583,7 @@ public:
 		this->SelectOtherAirport(-1);
 	}
 
-	void OnDropdownSelect(WidgetID widget, int index) override
+	void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
 		if (widget == WID_AP_CLASS_DROPDOWN) {
 			_selected_airport_class = (AirportClassID)index;
@@ -592,12 +597,12 @@ public:
 		CheckRedrawStationCoverage(this);
 	}
 
-	IntervalTimer<TimerGameCalendar> yearly_interval = {{TimerGameCalendar::YEAR, TimerGameCalendar::Priority::NONE}, [this](auto) {
+	const IntervalTimer<TimerGameCalendar> yearly_interval = {{TimerGameCalendar::YEAR, TimerGameCalendar::Priority::NONE}, [this](auto) {
 		this->InvalidateData();
 	}};
 };
 
-static constexpr NWidgetPart _nested_build_airport_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_airport_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_STATION_BUILD_AIRPORT_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -635,7 +640,7 @@ static constexpr NWidgetPart _nested_build_airport_widgets[] = {
 };
 
 static WindowDesc _build_airport_desc(
-	WDP_AUTO, nullptr, 0, 0,
+	WDP_AUTO, {}, 0, 0,
 	WC_BUILD_STATION, WC_BUILD_TOOLBAR,
 	WindowDefaultFlag::Construction,
 	_nested_build_airport_widgets

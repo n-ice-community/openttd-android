@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file industry_map.h Accessors for industries */
@@ -49,7 +49,7 @@ enum IndustryGraphics : uint8_t {
 	GFX_PLASTIC_FOUNTAIN_ANIMATED_8    = 155,
 	GFX_BUBBLE_GENERATOR               = 161,
 	GFX_BUBBLE_CATCHER                 = 162,
-	GFX_TOFFEE_QUARY                   = 165,
+	GFX_TOFFEE_QUARRY                  = 165,
 	GFX_SUGAR_MINE_SIEVE               = 174,
 	GFX_WATERTILE_SPECIALCHECK         = 255,  ///< not really a tile, but rather a very special check
 };
@@ -247,10 +247,10 @@ inline void SetIndustryRandomBits(Tile tile, uint8_t bits)
  * @pre IsTileType(tile, MP_INDUSTRY)
  * @return requested triggers
  */
-inline uint8_t GetIndustryTriggers(Tile tile)
+inline IndustryRandomTriggers GetIndustryRandomTriggers(Tile tile)
 {
 	assert(IsTileType(tile, MP_INDUSTRY));
-	return GB(tile.m6(), 3, 3);
+	return static_cast<IndustryRandomTriggers>(GB(tile.m6(), 3, 3));
 }
 
 
@@ -261,10 +261,10 @@ inline uint8_t GetIndustryTriggers(Tile tile)
  * @param triggers the triggers to set
  * @pre IsTileType(tile, MP_INDUSTRY)
  */
-inline void SetIndustryTriggers(Tile tile, uint8_t triggers)
+inline void SetIndustryRandomTriggers(Tile tile, IndustryRandomTriggers triggers)
 {
 	assert(IsTileType(tile, MP_INDUSTRY));
-	SB(tile.m6(), 3, 3, triggers);
+	SB(tile.m6(), 3, 3, triggers.base());
 }
 
 /**
@@ -283,9 +283,11 @@ inline void MakeIndustry(Tile t, IndustryID index, IndustryGfx gfx, uint8_t rand
 	SetIndustryRandomBits(t, random); // m3
 	t.m4() = 0;
 	SetIndustryGfx(t, gfx); // m5, part of m6
-	SetIndustryTriggers(t, 0); // rest of m6
+	SetIndustryRandomTriggers(t, {}); // rest of m6
 	SetWaterClass(t, wc);
+	SB(t.m6(), 6, 2, 0);
 	t.m7() = 0;
+	t.m8() = 0;
 }
 
 #endif /* INDUSTRY_MAP_H */

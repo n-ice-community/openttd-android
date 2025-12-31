@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -11,12 +11,10 @@
  */
 
 #include "../stdafx.h"
-#include "../debug.h"
+
 #include "../window_func.h"
 #include "network_internal.h"
-#include "network_udp.h"
 #include "network_gamelist.h"
-#include <atomic>
 
 #include "../safeguards.h"
 
@@ -29,7 +27,7 @@ int _network_game_list_version = 0; ///< Current version of all items in the lis
  * @param connection_string the address of the to-be added item
  * @return a point to the newly added or already existing item
  */
-NetworkGame *NetworkGameListAddItem(const std::string &connection_string)
+NetworkGame *NetworkGameListAddItem(std::string_view connection_string)
 {
 	/* Parse the connection string to ensure the default port is there. */
 	const std::string resolved_connection_string = ServerAddress::Parse(connection_string, NETWORK_DEFAULT_PORT).connection_string;

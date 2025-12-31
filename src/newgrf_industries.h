@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_industries.h Functions for NewGRF industries. */
@@ -34,7 +34,7 @@ struct IndustriesScopeResolver : public ScopeResolver {
 
 	uint32_t GetRandomBits() const override;
 	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const override;
-	uint32_t GetTriggers() const override;
+	uint32_t GetRandomTriggers() const override;
 	void StorePSA(uint pos, int32_t value) override;
 };
 
@@ -86,7 +86,7 @@ enum IndustryAvailabilityCallType : uint8_t {
 };
 
 /* in newgrf_industry.cpp */
-uint16_t GetIndustryCallback(CallbackID callback, uint32_t param1, uint32_t param2, Industry *industry, IndustryType type, TileIndex tile);
+uint16_t GetIndustryCallback(CallbackID callback, uint32_t param1, uint32_t param2, Industry *industry, IndustryType type, TileIndex tile, std::span<int32_t> regs100 = {});
 uint32_t GetIndustryIDAtOffset(TileIndex new_tile, const Industry *i, uint32_t cur_grfid);
 void IndustryProductionCallback(Industry *ind, int reason);
 CommandCost CheckIfCallBackAllowsCreation(TileIndex tile, IndustryType type, size_t layout, uint32_t seed, uint16_t initial_random_bits, Owner founder, IndustryAvailabilityCallType creation_type);

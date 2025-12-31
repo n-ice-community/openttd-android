@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -11,7 +11,6 @@
 
 #include "../../stdafx.h"
 #include "network_game_info.h"
-#include "../../core/bitmath_func.hpp"
 #include "../../company_base.h"
 #include "../../timer/timer_game_calendar.h"
 #include "../../timer/timer_game_tick.h"
@@ -42,7 +41,7 @@ NetworkServerGameInfo _network_game_info; ///< Information about our game.
 
 /**
  * Get the network version string used by this build.
- * The returned string is guaranteed to be at most NETWORK_REVISON_LENGTH bytes including '\0' terminator.
+ * The returned string is guaranteed to be at most NETWORK_REVISION_LENGTH bytes including '\0' terminator.
  */
 std::string_view GetNetworkRevisionString()
 {

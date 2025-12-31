@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_tile.hpp Everything to query and manipulate tiles. */
@@ -276,6 +276,14 @@ public:
 	static bool IsDesertTile(TileIndex tile);
 
 	/**
+	 * Check if the tile is town house/building
+	 * @param tile The tile to check on.
+	 * @pre ScriptMap::IsValidTile(tile).
+	 * @return True if and only if the tile is house tile.
+	 */
+	static bool IsHouseTile(TileIndex tile);
+
+	/**
 	 * Get the type of terrain regardless of buildings or infrastructure.
 	 * @note When a desert or rainforest tile are changed, their terrain type will remain the same. In other words, a sea tile can be of the desert terrain type.
 	 * @note The snow terrain type can change to the normal terrain type and vice versa based on landscaping or variable snow lines from NewGRFs.
@@ -415,7 +423,7 @@ public:
 	 * Raise the given corners of the tile. The corners can be combined,
 	 *  for example: SLOPE_N | SLOPE_W (= SLOPE_NW) will raise the west and the north corner.
 	 * @note The corners will be modified in the order west (first), south, east, north (last).
-	 *       Changing one corner might cause another corner to be changed too. So modifiing
+	 *       Changing one corner might cause another corner to be changed too. So modifying
 	 *       multiple corners may result in changing some corners by multiple steps.
 	 * @param tile The tile to raise.
 	 * @param slope Corners to raise (SLOPE_xxx).
@@ -432,7 +440,7 @@ public:
 	 * Lower the given corners of the tile. The corners can be combined,
 	 *  for example: SLOPE_N | SLOPE_W (= SLOPE_NW) will lower the west and the north corner.
 	 * @note The corners will be modified in the order west (first), south, east, north (last).
-	 *       Changing one corner might cause another corner to be changed too. So modifiing
+	 *       Changing one corner might cause another corner to be changed too. So modifying
 	 *       multiple corners may result in changing some corners by multiple steps.
 	 * @param tile The tile to lower.
 	 * @param slope Corners to lower (SLOPE_xxx).

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_rail.cpp The rail pathfinding. */
@@ -24,17 +24,16 @@ template <typename Tpf> void DumpState(Tpf &pf1, Tpf &pf2)
 	DumpTarget dmp1, dmp2;
 	pf1.DumpBase(dmp1);
 	pf2.DumpBase(dmp2);
-	auto f1 = FileHandle::Open("yapf1.txt", "wt");
-	auto f2 = FileHandle::Open("yapf2.txt", "wt");
+	auto f1 = FileHandle::Open("yapf1.txt"sv, "wt");
+	auto f2 = FileHandle::Open("yapf2.txt"sv, "wt");
 	assert(f1.has_value());
 	assert(f2.has_value());
-	fwrite(dmp1.m_out.c_str(), 1, dmp1.m_out.size(), *f1);
-	fwrite(dmp2.m_out.c_str(), 1, dmp2.m_out.size(), *f2);
+	fwrite(dmp1.m_out.data(), 1, dmp1.m_out.size(), *f1);
+	fwrite(dmp2.m_out.data(), 1, dmp2.m_out.size(), *f2);
 }
 
 template <class Types>
-class CYapfReserveTrack
-{
+class CYapfReserveTrack {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class)
 	typedef typename Types::TrackFollower TrackFollower;
@@ -80,7 +79,9 @@ private:
 			tile = TileAdd(tile, diff);
 		} while (IsCompatibleTrainStationTile(tile, start) && tile != this->origin_tile);
 
-		TriggerStationRandomisation(nullptr, start, SRT_PATH_RESERVATION);
+		auto *st = Station::GetByTile(start);
+		TriggerStationRandomisation(st, start, StationRandomTrigger::PathReservation);
+		TriggerStationAnimation(st, start, StationAnimationTrigger::PathReservation);
 
 		return true;
 	}
@@ -108,6 +109,12 @@ private:
 				this->signals_set_to_red.emplace_back(tile, rev_td);
 				SetSignalStateByTrackdir(tile, rev_td, SIGNAL_STATE_RED);
 				MarkTileDirtyByTile(tile);
+			}
+
+			if (IsRailWaypointTile(tile)) {
+				auto *st = BaseStation::GetByTile(tile);
+				TriggerStationRandomisation(st, tile, StationRandomTrigger::PathReservation);
+				TriggerStationAnimation(st, tile, StationAnimationTrigger::PathReservation);
 			}
 		}
 
@@ -200,8 +207,7 @@ public:
 };
 
 template <class Types>
-class CYapfFollowAnyDepotRailT
-{
+class CYapfFollowAnyDepotRailT {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class)
 	typedef typename Types::TrackFollower TrackFollower;
@@ -223,9 +229,9 @@ public:
 	 */
 	inline void PfFollowNode(Node &old_node)
 	{
-		TrackFollower F(Yapf().GetVehicle());
-		if (F.Follow(old_node.GetLastTile(), old_node.GetLastTrackdir())) {
-			Yapf().AddMultipleNodes(&old_node, F);
+		TrackFollower follower{Yapf().GetVehicle()};
+		if (follower.Follow(old_node.GetLastTile(), old_node.GetLastTrackdir())) {
+			Yapf().AddMultipleNodes(&old_node, follower);
 		}
 	}
 
@@ -292,8 +298,7 @@ public:
 };
 
 template <class Types>
-class CYapfFollowAnySafeTileRailT : public CYapfReserveTrack<Types>
-{
+class CYapfFollowAnySafeTileRailT : public CYapfReserveTrack<Types> {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class)
 	typedef typename Types::TrackFollower TrackFollower;
@@ -315,9 +320,9 @@ public:
 	 */
 	inline void PfFollowNode(Node &old_node)
 	{
-		TrackFollower F(Yapf().GetVehicle(), Yapf().GetCompatibleRailTypes());
-		if (F.Follow(old_node.GetLastTile(), old_node.GetLastTrackdir()) && F.MaskReservedTracks()) {
-			Yapf().AddMultipleNodes(&old_node, F);
+		TrackFollower follower{Yapf().GetVehicle(), Yapf().GetCompatibleRailTypes()};
+		if (follower.Follow(old_node.GetLastTile(), old_node.GetLastTrackdir()) && follower.MaskReservedTracks()) {
+			Yapf().AddMultipleNodes(&old_node, follower);
 		}
 	}
 
@@ -375,8 +380,7 @@ public:
 };
 
 template <class Types>
-class CYapfFollowRailT : public CYapfReserveTrack<Types>
-{
+class CYapfFollowRailT : public CYapfReserveTrack<Types> {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class)
 	typedef typename Types::TrackFollower TrackFollower;
@@ -398,9 +402,9 @@ public:
 	 */
 	inline void PfFollowNode(Node &old_node)
 	{
-		TrackFollower F(Yapf().GetVehicle());
-		if (F.Follow(old_node.GetLastTile(), old_node.GetLastTrackdir())) {
-			Yapf().AddMultipleNodes(&old_node, F);
+		TrackFollower follower{Yapf().GetVehicle()};
+		if (follower.Follow(old_node.GetLastTile(), old_node.GetLastTrackdir())) {
+			Yapf().AddMultipleNodes(&old_node, follower);
 		}
 	}
 
@@ -524,14 +528,13 @@ public:
 	}
 };
 
-template <class Tpf_, class Ttrack_follower, class Tnode_list, template <class Types> class TdestinationT, template <class Types> class TfollowT>
-struct CYapfRail_TypesT
-{
-	typedef CYapfRail_TypesT<Tpf_, Ttrack_follower, Tnode_list, TdestinationT, TfollowT>  Types;
+template <class Tpf_, class Ttrack_follower, template <class Types> class TdestinationT, template <class Types> class TfollowT>
+struct CYapfRail_TypesT {
+	typedef CYapfRail_TypesT<Tpf_, Ttrack_follower, TdestinationT, TfollowT>  Types;
 
 	typedef Tpf_                                Tpf;
 	typedef Ttrack_follower                     TrackFollower;
-	typedef Tnode_list                          NodeList;
+	typedef CRailNodeList                       NodeList;
 	typedef Train                               VehicleType;
 	typedef CYapfBaseT<Types>                   PfBase;
 	typedef TfollowT<Types>                     PfFollow;
@@ -541,21 +544,44 @@ struct CYapfRail_TypesT
 	typedef CYapfCostRailT<Types>               PfCost;
 };
 
-struct CYapfRail1         : CYapfT<CYapfRail_TypesT<CYapfRail1        , CFollowTrackRail    , CRailNodeListTrackDir, CYapfDestinationTileOrStationRailT, CYapfFollowRailT> > {};
-struct CYapfRail2         : CYapfT<CYapfRail_TypesT<CYapfRail2        , CFollowTrackRailNo90, CRailNodeListTrackDir, CYapfDestinationTileOrStationRailT, CYapfFollowRailT> > {};
+template <typename Types>
+struct CYapfRailBase : CYapfT<Types> {
+	typedef typename Types::NodeList::Item Node;
 
-struct CYapfAnyDepotRail1 : CYapfT<CYapfRail_TypesT<CYapfAnyDepotRail1, CFollowTrackRail    , CRailNodeListTrackDir, CYapfDestinationAnyDepotRailT     , CYapfFollowAnyDepotRailT> > {};
-struct CYapfAnyDepotRail2 : CYapfT<CYapfRail_TypesT<CYapfAnyDepotRail2, CFollowTrackRailNo90, CRailNodeListTrackDir, CYapfDestinationAnyDepotRailT     , CYapfFollowAnyDepotRailT> > {};
+	/**
+	 * In some cases an intermediate node branch should be pruned.
+	 * The most prominent case is when a red EOL signal is encountered, but
+	 * there was a segment change (e.g. a rail type change) before that. If
+	 * the branch would not be pruned, the rail type change location would
+	 * remain the best intermediate node, and thus the vehicle would still
+	 * go towards the red EOL signal.
+	 */
+	void PruneIntermediateNodeBranch(Node *n)
+	{
+		bool intermediate_on_branch = false;
+		while (n != nullptr && !n->segment->end_segment_reason.Test(EndSegmentReason::ChoiceFollows)) {
+			if (n == this->best_intermediate_node) intermediate_on_branch = true;
+			n = n->parent;
+		}
+		if (intermediate_on_branch) this->best_intermediate_node = n;
+	}
+};
 
-struct CYapfAnySafeTileRail1 : CYapfT<CYapfRail_TypesT<CYapfAnySafeTileRail1, CFollowTrackFreeRail    , CRailNodeListTrackDir, CYapfDestinationAnySafeTileRailT , CYapfFollowAnySafeTileRailT> > {};
-struct CYapfAnySafeTileRail2 : CYapfT<CYapfRail_TypesT<CYapfAnySafeTileRail2, CFollowTrackFreeRailNo90, CRailNodeListTrackDir, CYapfDestinationAnySafeTileRailT , CYapfFollowAnySafeTileRailT> > {};
+struct CYapfRail         : CYapfRailBase<CYapfRail_TypesT<CYapfRail        , CFollowTrackRail    , CYapfDestinationTileOrStationRailT, CYapfFollowRailT>> {};
+struct CYapfRailNo90     : CYapfRailBase<CYapfRail_TypesT<CYapfRailNo90    , CFollowTrackRailNo90, CYapfDestinationTileOrStationRailT, CYapfFollowRailT>> {};
+
+struct CYapfAnyDepotRail     : CYapfRailBase<CYapfRail_TypesT<CYapfAnyDepotRail,     CFollowTrackRail    , CYapfDestinationAnyDepotRailT     , CYapfFollowAnyDepotRailT>> {};
+struct CYapfAnyDepotRailNo90 : CYapfRailBase<CYapfRail_TypesT<CYapfAnyDepotRailNo90, CFollowTrackRailNo90, CYapfDestinationAnyDepotRailT     , CYapfFollowAnyDepotRailT>> {};
+
+struct CYapfAnySafeTileRail     : CYapfRailBase<CYapfRail_TypesT<CYapfAnySafeTileRail    , CFollowTrackFreeRail    , CYapfDestinationAnySafeTileRailT , CYapfFollowAnySafeTileRailT>> {};
+struct CYapfAnySafeTileRailNo90 : CYapfRailBase<CYapfRail_TypesT<CYapfAnySafeTileRailNo90, CFollowTrackFreeRailNo90, CYapfDestinationAnySafeTileRailT , CYapfFollowAnySafeTileRailT>> {};
 
 
 Track YapfTrainChooseTrack(const Train *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, PBSTileInfo *target, TileIndex *dest)
 {
 	Trackdir td_ret = _settings_game.pf.forbid_90_deg
-		? CYapfRail2::stChooseRailTrack(v, tile, enterdir, tracks, path_found, reserve_track, target, dest)
-		: CYapfRail1::stChooseRailTrack(v, tile, enterdir, tracks, path_found, reserve_track, target, dest);
+		? CYapfRailNo90::stChooseRailTrack(v, tile, enterdir, tracks, path_found, reserve_track, target, dest)
+		: CYapfRail::stChooseRailTrack(v, tile, enterdir, tracks, path_found, reserve_track, target, dest);
 
 	return (td_ret != INVALID_TRACKDIR) ? TrackdirToTrack(td_ret) : FindFirstTrack(tracks);
 }
@@ -607,8 +633,8 @@ bool YapfTrainCheckReverse(const Train *v)
 	if (reverse_penalty == 0) reverse_penalty = 1;
 
 	bool reverse = _settings_game.pf.forbid_90_deg
-		? CYapfRail2::stCheckReverseTrain(v, tile, td, tile_rev, td_rev, reverse_penalty)
-		: CYapfRail1::stCheckReverseTrain(v, tile, td, tile_rev, td_rev, reverse_penalty);
+		? CYapfRailNo90::stCheckReverseTrain(v, tile, td, tile_rev, td_rev, reverse_penalty)
+		: CYapfRail::stCheckReverseTrain(v, tile, td, tile_rev, td_rev, reverse_penalty);
 
 	return reverse;
 }
@@ -622,15 +648,15 @@ FindDepotData YapfTrainFindNearestDepot(const Train *v, int max_penalty)
 	Trackdir td_rev = ReverseTrackdir(last_veh->GetVehicleTrackdir());
 
 	return _settings_game.pf.forbid_90_deg
-		? CYapfAnyDepotRail2::stFindNearestDepotTwoWay(v, origin.tile, origin.trackdir, last_tile, td_rev, max_penalty, YAPF_INFINITE_PENALTY)
-		: CYapfAnyDepotRail1::stFindNearestDepotTwoWay(v, origin.tile, origin.trackdir, last_tile, td_rev, max_penalty, YAPF_INFINITE_PENALTY);
+		? CYapfAnyDepotRailNo90::stFindNearestDepotTwoWay(v, origin.tile, origin.trackdir, last_tile, td_rev, max_penalty, YAPF_INFINITE_PENALTY)
+		: CYapfAnyDepotRail::stFindNearestDepotTwoWay(v, origin.tile, origin.trackdir, last_tile, td_rev, max_penalty, YAPF_INFINITE_PENALTY);
 }
 
 bool YapfTrainFindNearestSafeTile(const Train *v, TileIndex tile, Trackdir td, bool override_railtype)
 {
 	return _settings_game.pf.forbid_90_deg
-		? CYapfAnySafeTileRail2::stFindNearestSafeTile(v, tile, td, override_railtype)
-		: CYapfAnySafeTileRail1::stFindNearestSafeTile(v, tile, td, override_railtype);
+		? CYapfAnySafeTileRailNo90::stFindNearestSafeTile(v, tile, td, override_railtype)
+		: CYapfAnySafeTileRail::stFindNearestSafeTile(v, tile, td, override_railtype);
 }
 
 /** if any track changes, this counter is incremented - that will invalidate segment cost cache */

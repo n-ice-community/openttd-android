@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file enum_type.hpp Type (helpers) for enums */
@@ -65,6 +65,55 @@ inline constexpr enum_type operator --(enum_type &e, int)
 		static const bool value = true; \
 	};
 
+/** Trait to enable prefix/postfix incrementing operators. */
+template <typename enum_type>
+struct is_enum_sequential {
+	static constexpr bool value = false;
+};
+
+template <typename enum_type>
+constexpr bool is_enum_sequential_v = is_enum_sequential<enum_type>::value;
+
+/** Add integer. */
+template <typename enum_type, std::enable_if_t<is_enum_sequential_v<enum_type>, bool> = true>
+inline constexpr enum_type operator+(enum_type e, int offset)
+{
+	return static_cast<enum_type>(to_underlying(e) + offset);
+}
+
+template <typename enum_type, std::enable_if_t<is_enum_sequential_v<enum_type>, bool> = true>
+inline constexpr enum_type &operator+=(enum_type &e, int offset)
+{
+	e = e + offset;
+	return e;
+}
+
+/** Sub integer. */
+template <typename enum_type, std::enable_if_t<is_enum_sequential_v<enum_type>, bool> = true>
+inline constexpr enum_type operator-(enum_type e, int offset)
+{
+	return static_cast<enum_type>(to_underlying(e) - offset);
+}
+
+template <typename enum_type, std::enable_if_t<is_enum_sequential_v<enum_type>, bool> = true>
+inline constexpr enum_type &operator-=(enum_type &e, int offset)
+{
+	e = e - offset;
+	return e;
+}
+
+/** Distance */
+template <typename enum_type, std::enable_if_t<is_enum_sequential_v<enum_type>, bool> = true>
+inline constexpr auto operator-(enum_type a, enum_type b)
+{
+	return to_underlying(a) - to_underlying(b);
+}
+
+/** For some enums it is useful to add/sub more than 1 */
+#define DECLARE_ENUM_AS_SEQUENTIAL(enum_type) \
+	template <> struct is_enum_sequential<enum_type> { \
+		static const bool value = true; \
+	};
 
 /** Operators to allow to work with enum as with type safe bit set in C++ */
 #define DECLARE_ENUM_AS_BIT_SET(enum_type) \
@@ -90,7 +139,7 @@ inline constexpr enum_type operator --(enum_type &e, int)
  * @return True iff the flag is set.
  */
 template <typename T, class = typename std::enable_if_t<std::is_enum_v<T>>>
-debug_inline constexpr bool HasFlag(const T x, const T y)
+[[debug_inline]] inline constexpr bool HasFlag(const T x, const T y)
 {
 	return (x & y) == y;
 }
@@ -101,7 +150,7 @@ debug_inline constexpr bool HasFlag(const T x, const T y)
  * @param y The flag to toggle.
  */
 template <typename T, class = typename std::enable_if_t<std::is_enum_v<T>>>
-debug_inline constexpr void ToggleFlag(T &x, const T y)
+[[debug_inline]] inline constexpr void ToggleFlag(T &x, const T y)
 {
 	if (HasFlag(x, y)) {
 		x &= ~y;

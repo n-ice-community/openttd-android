@@ -2,12 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file driver.cpp Base for all driver handling. */
 
 #include "stdafx.h"
+#include "core/string_consumer.hpp"
 #include "debug.h"
 #include "error.h"
 #include "error_func.h"
@@ -17,6 +18,7 @@
 #include "video/video_driver.hpp"
 #include "string_func.h"
 #include "fileio_func.h"
+#include "core/string_consumer.hpp"
 
 #include "table/strings.h"
 
@@ -42,18 +44,18 @@ static const std::string HWACCELERATION_TEST_FILE = "hwaccel.dat"; ///< Filename
  * @param name The parameter name we're looking for.
  * @return The parameter value.
  */
-const char *GetDriverParam(const StringList &parm, const char *name)
+std::optional<std::string_view> GetDriverParam(const StringList &parm, std::string_view name)
 {
-	if (parm.empty()) return nullptr;
+	if (parm.empty()) return std::nullopt;
 
-	size_t len = strlen(name);
 	for (auto &p : parm) {
-		if (p.compare(0, len, name) == 0) {
-			if (p.length() == len) return "";
-			if (p[len] == '=') return p.c_str() + len + 1;
+		StringConsumer consumer{p};
+		if (consumer.ReadIf(name)) {
+			if (!consumer.AnyBytesLeft()) return "";
+			if (consumer.ReadIf("=")) return consumer.GetLeftData();
 		}
 	}
-	return nullptr;
+	return std::nullopt;
 }
 
 /**
@@ -62,9 +64,9 @@ const char *GetDriverParam(const StringList &parm, const char *name)
  * @param name The parameter name we're looking for.
  * @return The parameter value.
  */
-bool GetDriverParamBool(const StringList &parm, const char *name)
+bool GetDriverParamBool(const StringList &parm, std::string_view name)
 {
-	return GetDriverParam(parm, name) != nullptr;
+	return GetDriverParam(parm, name).has_value();
 }
 
 /**
@@ -74,10 +76,13 @@ bool GetDriverParamBool(const StringList &parm, const char *name)
  * @param def  The default value if the parameter doesn't exist.
  * @return The parameter value.
  */
-int GetDriverParamInt(const StringList &parm, const char *name, int def)
+int GetDriverParamInt(const StringList &parm, std::string_view name, int def)
 {
-	const char *p = GetDriverParam(parm, name);
-	return p != nullptr ? atoi(p) : def;
+	auto p = GetDriverParam(parm, name);
+	if (!p.has_value()) return def;
+	auto value = ParseInteger<int>(*p);
+	if (value.has_value()) return *value;
+	UserError("Invalid value for driver parameter {}: {}", name, *p);
 }
 
 /**
@@ -140,11 +145,12 @@ bool DriverFactoryBase::SelectDriverImpl(const std::string &name, Driver::Type t
 
 				/* Keep old driver in case we need to switch back, or may still need to process an OS callback. */
 				auto oldd = std::move(GetActiveDriver(type));
-				GetActiveDriver(type) = d->CreateInstance();
+				auto newd = d->CreateInstance();
 
-				auto err = GetActiveDriver(type)->Start({});
+				auto err = newd->Start({});
 				if (!err) {
 					Debug(driver, 1, "Successfully probed {} driver '{}'", GetDriverTypeName(type), d->name);
+					GetActiveDriver(type) = std::move(newd);
 					return true;
 				}
 
@@ -237,7 +243,7 @@ void DriverFactoryBase::GetDriversInfo(std::back_insert_iterator<std::string> &o
  * @param name        The name of the driver.
  * @param description A long-ish description of the driver.
  */
-DriverFactoryBase::DriverFactoryBase(Driver::Type type, int priority, const char *name, const char *description) :
+DriverFactoryBase::DriverFactoryBase(Driver::Type type, int priority, std::string_view name, std::string_view description) :
 	type(type), priority(priority), name(name), description(description)
 {
 	/* Prefix the name with driver type to make it unique */

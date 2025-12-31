@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file linkgraphjob.h Declaration of link graph job classes used for cargo distribution. */
@@ -167,7 +167,7 @@ protected:
 	std::atomic<bool> job_completed = false; ///< Is the job still running. This is accessed by multiple threads and reads may be stale.
 	std::atomic<bool> job_aborted = false; ///< Has the job been aborted. This is accessed by multiple threads and reads may be stale.
 
-	void EraseFlows(NodeID from);
+	void EraseFlows(StationID from);
 	void JoinThread();
 	void SpawnThread();
 
@@ -299,7 +299,7 @@ public:
 	 * @param total Total capacity.
 	 * @return free * 16 / max(total, 1).
 	 */
-	inline static int GetCapacityRatio(int free, uint total)
+	static inline int GetCapacityRatio(int free, uint total)
 	{
 		return Clamp(free, PATH_CAP_MIN_FREE, PATH_CAP_MAX_FREE) * PATH_CAP_MULTIPLIER / std::max(total, 1U);
 	}

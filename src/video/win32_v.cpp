@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file win32_v.cpp Implementation of the Windows (GDI) video driver. */
@@ -31,6 +31,13 @@
 #if defined(_MSC_VER) && defined(NTDDI_WIN10_RS4)
 #include <winrt/Windows.UI.ViewManagement.h>
 #endif
+
+#ifdef WITH_OPENGL
+#include <GL/gl.h>
+#include "../3rdparty/opengl/glext.h"
+#include "../3rdparty/opengl/wglext.h"
+#include "opengl.h"
+#endif /* WITH_OPENGL */
 
 #include "../safeguards.h"
 
@@ -152,9 +159,7 @@ bool VideoDriver_Win32Base::MakeWindow(bool full_screen, bool resize)
 	}
 
 	if (full_screen) {
-		DEVMODE settings;
-
-		memset(&settings, 0, sizeof(settings));
+		DEVMODE settings{};
 		settings.dmSize = sizeof(settings);
 		settings.dmFields =
 			DM_BITSPERPEL |
@@ -346,8 +351,8 @@ static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 
 			/* Transmit text to windowing system. */
 			if (len > 0) {
-				HandleTextInput(nullptr, true); // Clear marked string.
-				HandleTextInput(FS2OTTD(str).c_str());
+				HandleTextInput({}, true); // Clear marked string.
+				HandleTextInput(FS2OTTD(str));
 			}
 			SetCompositionPos(hwnd);
 
@@ -364,7 +369,7 @@ static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 
 			if (len > 0) {
 				static char utf8_buf[1024];
-				convert_from_fs(str.c_str(), utf8_buf);
+				convert_from_fs(str, utf8_buf);
 
 				/* Convert caret position from bytes in the input string to a position in the UTF-8 encoded string. */
 				LONG caret_bytes = ImmGetCompositionString(hIMC, GCS_CURSORPOS, nullptr, 0);
@@ -380,9 +385,9 @@ static LRESULT HandleIMEComposition(HWND hwnd, WPARAM wParam, LPARAM lParam)
 					++caret;
 				}
 
-				HandleTextInput(utf8_buf, true, utf8_buf + caret.GetByteOffset());
+				HandleTextInput(utf8_buf, true, caret.GetByteOffset());
 			} else {
-				HandleTextInput(nullptr, true);
+				HandleTextInput({}, true);
 			}
 
 			lParam &= ~(GCS_COMPSTR | GCS_COMPATTR | GCS_COMPCLAUSE | GCS_CURSORPOS | GCS_DELTASTART);
@@ -400,8 +405,42 @@ static void CancelIMEComposition(HWND hwnd)
 	if (hIMC != nullptr) ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
 	ImmReleaseContext(hwnd, hIMC);
 	/* Clear any marked string from the current edit box. */
-	HandleTextInput(nullptr, true);
+	HandleTextInput({}, true);
 }
+
+#if defined(_MSC_VER) && defined(NTDDI_WIN10_RS4)
+/* We only use WinRT functions on Windows 10 or later. Unfortunately, newer Windows SDKs are now
+ * linking the two functions below directly instead of using dynamic linking as previously.
+ * To avoid any runtime linking errors on Windows 7 or older, we stub in our own dynamic
+ * linking trampoline. */
+
+static LibraryLoader _combase("combase.dll");
+
+extern "C" int32_t __stdcall WINRT_IMPL_RoOriginateLanguageException(int32_t error, void *message, void *languageException) noexcept
+{
+	typedef BOOL(WINAPI *PFNRoOriginateLanguageException)(int32_t, void *, void *);
+	static PFNRoOriginateLanguageException RoOriginateLanguageException = _combase.GetFunction("RoOriginateLanguageException");
+
+	if (RoOriginateLanguageException != nullptr) {
+		return RoOriginateLanguageException(error, message, languageException);
+	} else {
+		return TRUE;
+	}
+}
+
+extern "C" int32_t __stdcall WINRT_IMPL_RoGetActivationFactory(void *classId, winrt::guid const &iid, void **factory) noexcept
+{
+	typedef BOOL(WINAPI *PFNRoGetActivationFactory)(void *, winrt::guid const &, void **);
+	static PFNRoGetActivationFactory RoGetActivationFactory = _combase.GetFunction("RoGetActivationFactory");
+
+	if (RoGetActivationFactory != nullptr) {
+		return RoGetActivationFactory(classId, iid, factory);
+	} else {
+		*factory = nullptr;
+		return winrt::impl::error_class_not_available;
+	}
+}
+#endif
 
 static bool IsDarkModeEnabled()
 {
@@ -442,7 +481,7 @@ static void SetDarkModeForWindow(HWND hWnd, bool dark_mode)
 	 * reason, the code uses dynamic loading and ignores any errors for a best-effort result. */
 	static LibraryLoader _dwmapi("dwmapi.dll");
 	typedef HRESULT(WINAPI *PFNDWMSETWINDOWATTRIBUTE)(HWND, DWORD, LPCVOID, DWORD);
-	static PFNDWMSETWINDOWATTRIBUTE DwmSetWindowAttribute = _dwmapi.GetFunction("DwmSetWindowAttribute");
+	static const PFNDWMSETWINDOWATTRIBUTE DwmSetWindowAttribute = _dwmapi.GetFunction("DwmSetWindowAttribute");
 
 	if (DwmSetWindowAttribute != nullptr) {
 		/* Contrary to the published documentation, DWMWA_USE_IMMERSIVE_DARK_MODE does not change the
@@ -597,7 +636,7 @@ LRESULT CALLBACK WndProcGdi(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_IME_ENDCOMPOSITION:
 			/* Clear any pending composition string. */
-			HandleTextInput(nullptr, true);
+			HandleTextInput({}, true);
 			if (DrawIMECompositionString()) return 0;
 			break;
 
@@ -1047,47 +1086,6 @@ Dimension VideoDriver_Win32Base::GetScreenSize() const
 	return { static_cast<uint>(GetSystemMetrics(SM_CXSCREEN)), static_cast<uint>(GetSystemMetrics(SM_CYSCREEN)) };
 }
 
-float VideoDriver_Win32Base::GetDPIScale()
-{
-	typedef UINT (WINAPI *PFNGETDPIFORWINDOW)(HWND hwnd);
-	typedef UINT (WINAPI *PFNGETDPIFORSYSTEM)(VOID);
-	typedef HRESULT (WINAPI *PFNGETDPIFORMONITOR)(HMONITOR hMonitor, int dpiType, UINT *dpiX, UINT *dpiY);
-
-	static PFNGETDPIFORWINDOW _GetDpiForWindow = nullptr;
-	static PFNGETDPIFORSYSTEM _GetDpiForSystem = nullptr;
-	static PFNGETDPIFORMONITOR _GetDpiForMonitor = nullptr;
-
-	static bool init_done = false;
-	if (!init_done) {
-		init_done = true;
-		static LibraryLoader _user32("user32.dll");
-		static LibraryLoader _shcore("shcore.dll");
-		_GetDpiForWindow = _user32.GetFunction("GetDpiForWindow");
-		_GetDpiForSystem = _user32.GetFunction("GetDpiForSystem");
-		_GetDpiForMonitor = _shcore.GetFunction("GetDpiForMonitor");
-	}
-
-	UINT cur_dpi = 0;
-
-	if (cur_dpi == 0 && _GetDpiForWindow != nullptr && this->main_wnd != nullptr) {
-		/* Per window DPI is supported since Windows 10 Ver 1607. */
-		cur_dpi = _GetDpiForWindow(this->main_wnd);
-	}
-	if (cur_dpi == 0 && _GetDpiForMonitor != nullptr && this->main_wnd != nullptr) {
-		/* Per monitor is supported since Windows 8.1. */
-		UINT dpiX, dpiY;
-		if (SUCCEEDED(_GetDpiForMonitor(MonitorFromWindow(this->main_wnd, MONITOR_DEFAULTTOPRIMARY), 0 /* MDT_EFFECTIVE_DPI */, &dpiX, &dpiY))) {
-			cur_dpi = dpiX; // X and Y are always identical.
-		}
-	}
-	if (cur_dpi == 0 && _GetDpiForSystem != nullptr) {
-		/* Fall back to system DPI. */
-		cur_dpi = _GetDpiForSystem();
-	}
-
-	return cur_dpi > 0 ? cur_dpi / 96.0f : 1.0f; // Default Windows DPI value is 96.
-}
-
 bool VideoDriver_Win32Base::LockVideoBuffer()
 {
 	if (this->buffer_locked) return false;
@@ -1294,11 +1292,6 @@ void VideoDriver_Win32GDI::Paint()
 
 #ifdef WITH_OPENGL
 
-#include <GL/gl.h>
-#include "../3rdparty/opengl/glext.h"
-#include "../3rdparty/opengl/wglext.h"
-#include "opengl.h"
-
 #ifndef PFD_SUPPORT_COMPOSITION
 #	define PFD_SUPPORT_COMPOSITION 0x00008000
 #endif
@@ -1379,13 +1372,13 @@ static void LoadWGLExtensions()
 			/* Get list of WGL extensions. */
 			PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)wglGetProcAddress("wglGetExtensionsStringARB");
 			if (wglGetExtensionsStringARB != nullptr) {
-				const char *wgl_exts = wglGetExtensionsStringARB(dc);
+				std::string_view wgl_exts = wglGetExtensionsStringARB(dc);
 				/* Bind supported functions. */
-				if (FindStringInExtensionList(wgl_exts, "WGL_ARB_create_context") != nullptr) {
+				if (HasStringInExtensionList(wgl_exts, "WGL_ARB_create_context")) {
 					_wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
 				}
-				_hasWGLARBCreateContextProfile = FindStringInExtensionList(wgl_exts, "WGL_ARB_create_context_profile") != nullptr;
-				if (FindStringInExtensionList(wgl_exts, "WGL_EXT_swap_control") != nullptr) {
+				_hasWGLARBCreateContextProfile = HasStringInExtensionList(wgl_exts, "WGL_ARB_create_context_profile");
+				if (HasStringInExtensionList(wgl_exts, "WGL_EXT_swap_control")) {
 					_wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
 				}
 			}
@@ -1509,7 +1502,7 @@ std::optional<std::string_view> VideoDriver_Win32OpenGL::AllocateContext()
 		rc = wglCreateContext(this->dc);
 		if (rc == nullptr) return "Can't create OpenGL context";
 	}
-	if (!wglMakeCurrent(this->dc, rc)) return "Can't active GL context";
+	if (!wglMakeCurrent(this->dc, rc)) return "Can't activate GL context";
 
 	this->ToggleVsync(_video_vsync);
 

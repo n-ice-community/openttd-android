@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_query.h Query part of the network protocol. */
@@ -36,14 +36,14 @@ public:
 	 * @param s The socket to connect with.
 	 * @param connection_string The connection string of the server.
 	 */
-	QueryNetworkGameSocketHandler(SOCKET s, const std::string &connection_string) : NetworkGameSocketHandler(s), connection_string(connection_string) {}
+	QueryNetworkGameSocketHandler(SOCKET s, std::string_view connection_string) : NetworkGameSocketHandler(s), connection_string(connection_string) {}
 
 	/**
 	 * Start to query a server based on an open socket.
 	 * @param s The socket to connect with.
 	 * @param connection_string The connection string of the server.
 	 */
-	static void QueryServer(SOCKET s, const std::string &connection_string)
+	static void QueryServer(SOCKET s, std::string_view connection_string)
 	{
 		auto query = std::make_unique<QueryNetworkGameSocketHandler>(s, connection_string);
 		query->SendGameInfo();

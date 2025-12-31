@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file dbg_helpers.h Functions to be used for debug printings. */
@@ -16,25 +16,16 @@
 #include "../signal_type.h"
 #include "../tile_type.h"
 #include "../track_type.h"
-
-/** Helper template class that provides C array length and item type */
-template <typename T> struct ArrayT;
-
-/** Helper template class that provides C array length and item type */
-template <typename T, size_t N> struct ArrayT<T[N]> {
-	static const size_t length = N;
-	using Item = T;
-};
-
+#include "../core/format.hpp"
 
 /**
  * Helper template function that returns item of array at given index
  * or t_unk when index is out of bounds.
  */
-template <typename E, typename T>
-inline typename ArrayT<T>::Item ItemAtT(E idx, const T &t, typename ArrayT<T>::Item t_unk)
+template <typename E>
+inline std::string_view ItemAt(E idx, std::span<const std::string_view> t, std::string_view t_unk)
 {
-	if (static_cast<size_t>(idx) >= ArrayT<T>::length) {
+	if (static_cast<size_t>(idx) >= std::size(t)) {
 		return t_unk;
 	}
 	return t[idx];
@@ -45,16 +36,13 @@ inline typename ArrayT<T>::Item ItemAtT(E idx, const T &t, typename ArrayT<T>::I
  * or t_inv when index == idx_inv
  * or t_unk when index is out of bounds.
  */
-template <typename E, typename T>
-inline typename ArrayT<T>::Item ItemAtT(E idx, const T &t, typename ArrayT<T>::Item t_unk, E idx_inv, typename ArrayT<T>::Item t_inv)
+template <typename E>
+inline std::string_view ItemAt(E idx, std::span<const std::string_view> t, std::string_view t_unk, E idx_inv, std::string_view t_inv)
 {
-	if (static_cast<size_t>(idx) < ArrayT<T>::length) {
-		return t[idx];
-	}
 	if (idx == idx_inv) {
 		return t_inv;
 	}
-	return t_unk;
+	return ItemAt(idx, t, t_unk);
 }
 
 /**
@@ -63,8 +51,8 @@ inline typename ArrayT<T>::Item ItemAtT(E idx, const T &t, typename ArrayT<T>::I
  * or t_inv when index == idx_inv
  * or t_unk when index is out of bounds.
  */
-template <typename E, typename T>
-inline std::string ComposeNameT(E value, T &t, const char *t_unk, E val_inv, const char *name_inv)
+template <typename E>
+inline std::string ComposeName(E value, std::span<const std::string_view> t, std::string_view t_unk, E val_inv, std::string_view name_inv)
 {
 	std::string out;
 	if (value == val_inv) {
@@ -72,7 +60,7 @@ inline std::string ComposeNameT(E value, T &t, const char *t_unk, E val_inv, con
 	} else if (value == 0) {
 		out = "<none>";
 	} else {
-		for (size_t i = 0; i < ArrayT<T>::length; i++) {
+		for (size_t i = 0; i < std::size(t); i++) {
 			if ((value & (1 << i)) == 0) continue;
 			out += (!out.empty() ? "+" : "");
 			out += t[i];
@@ -92,7 +80,7 @@ inline std::string ComposeNameT(E value, T &t, const char *t_unk, E val_inv, con
  * or unknown_name when index is out of bounds.
  */
 template <typename E>
-inline std::string ComposeNameT(E value, std::span<const std::string_view> names, std::string_view unknown_name)
+inline std::string ComposeName(E value, std::span<const std::string_view> names, std::string_view unknown_name)
 {
 	std::string out;
 	if (value.base() == 0) {
@@ -156,23 +144,28 @@ struct DumpTarget {
 
 	void WriteIndent();
 
-	void WriteValue(const std::string &name, int value);
-	void WriteValue(const std::string &name, const std::string &value_str);
-	void WriteTile(const std::string &name, TileIndex t);
+	/** Write 'name = value' with indent and new-line. */
+	void WriteValue(std::string_view name, const auto &value)
+	{
+		WriteIndent();
+		format_append(m_out, "{} = {}\n", name, value);
+	}
+
+	void WriteTile(std::string_view name, TileIndex t);
 
 	/** Dump given enum value (as a number and as named value) */
-	template <typename E> void WriteEnumT(const std::string &name, E e)
+	template <typename E> void WriteEnumT(std::string_view name, E e)
 	{
 		WriteValue(name, ValueStr(e));
 	}
 
-	void BeginStruct(size_t type_id, const std::string &name, const void *ptr);
+	void BeginStruct(size_t type_id, std::string_view name, const void *ptr);
 	void EndStruct();
 
 	/** Dump nested object (or only its name if this instance is already known). */
-	template <typename S> void WriteStructT(const std::string &name, const S *s)
+	template <typename S> void WriteStructT(std::string_view name, const S *s)
 	{
-		static size_t type_id = ++LastTypeId();
+		static const size_t type_id = ++LastTypeId();
 
 		if (s == nullptr) {
 			/* No need to dump nullptr struct. */
@@ -193,9 +186,9 @@ struct DumpTarget {
 	}
 
 	/** Dump nested object (or only its name if this instance is already known). */
-	template <typename S> void WriteStructT(const std::string &name, const std::deque<S> *s)
+	template <typename S> void WriteStructT(std::string_view name, const std::deque<S> *s)
 	{
-		static size_t type_id = ++LastTypeId();
+		static const size_t type_id = ++LastTypeId();
 
 		if (s == nullptr) {
 			/* No need to dump nullptr struct. */
@@ -211,7 +204,7 @@ struct DumpTarget {
 			/* Still unknown, dump it */
 			BeginStruct(type_id, name, s);
 			size_t num_items = s->size();
-			this->WriteValue("num_items", std::to_string(num_items));
+			this->WriteValue("num_items", num_items);
 			for (size_t i = 0; i < num_items; i++) {
 				const auto &item = (*s)[i];
 				this->WriteStructT(fmt::format("item[{}]", i), &item);

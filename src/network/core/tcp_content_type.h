@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -13,6 +13,9 @@
 #define NETWORK_CORE_TCP_CONTENT_TYPE_H
 
 #include "../../3rdparty/md5/md5.h"
+
+#include "../../string_type.h"
+#include "../../textfile_type.h"
 
 /** The values in the enum are important; they are used as database 'keys' */
 enum ContentType : uint8_t {
@@ -30,6 +33,7 @@ enum ContentType : uint8_t {
 	CONTENT_TYPE_END,               ///< Helper to mark the end of the types
 	INVALID_CONTENT_TYPE       = 0xFF, ///< Invalid/uninitialized content
 };
+using ContentTypes = EnumBitSet<ContentType, uint16_t, CONTENT_TYPE_END>;
 
 /** Enum with all types of TCP content packets. The order MUST not be changed **/
 enum PacketContentType : uint8_t {
@@ -51,13 +55,13 @@ static constexpr ContentID INVALID_CONTENT_ID = UINT32_MAX; ///< Sentinel for in
 /** Container for all important information about a piece of content. */
 struct ContentInfo {
 	/** The state the content can be in. */
-	enum State : uint8_t {
-		UNSELECTED,     ///< The content has not been selected
-		SELECTED,       ///< The content has been manually selected
-		AUTOSELECTED,   ///< The content has been selected as dependency
-		ALREADY_HERE,   ///< The content is already at the client side
-		DOES_NOT_EXIST, ///< The content does not exist in the content system
-		INVALID,        ///< The content's invalid
+	enum class State : uint8_t {
+		Unselected, ///< The content has not been selected
+		Selected, ///< The content has been manually selected
+		Autoselected, ///< The content has been selected as dependency
+		AlreadyHere, ///< The content is already at the client side
+		DoesNotExist, ///< The content does not exist in the content system
+		Invalid, ///< The content's invalid
 	};
 
 	ContentType type = INVALID_CONTENT_TYPE; ///< Type of content
@@ -72,7 +76,7 @@ struct ContentInfo {
 	MD5Hash md5sum;                          ///< The MD5 checksum
 	std::vector<ContentID> dependencies;     ///< The dependencies (unique server side ids)
 	StringList tags;                         ///< Tags associated with the content
-	State state = State::UNSELECTED;         ///< Whether the content info is selected (for download)
+	State state = State::Unselected;         ///< Whether the content info is selected (for download)
 	bool upgrade = false;                    ///< This item is an upgrade
 
 	bool IsSelected() const;

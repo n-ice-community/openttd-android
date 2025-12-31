@@ -2,15 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file hashtable.hpp Hash table support. */
 
 #ifndef HASHTABLE_HPP
 #define HASHTABLE_HPP
-
-#include "../core/math_func.hpp"
 
 template <class TItem>
 struct HashTableSlot
@@ -147,7 +145,7 @@ protected:
 	int number_of_items = 0; // item counter
 
 	/** static helper - return hash for the given key modulo number of slots */
-	inline static int CalcHash(const Tkey &key)
+	static inline int CalcHash(const Tkey &key)
 	{
 		uint32_t hash = key.CalcHash();
 		hash -= (hash >> 17);          // hash * 131071 / 131072
@@ -157,7 +155,7 @@ protected:
 	}
 
 	/** static helper - return hash for the given item modulo number of slots */
-	inline static int CalcHash(const Titem &item)
+	static inline int CalcHash(const Titem &item)
 	{
 		return CalcHash(item.GetKey());
 	}

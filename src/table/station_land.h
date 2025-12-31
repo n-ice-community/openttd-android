@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file station_land.h Sprites to use and how to display them for station tiles. */
@@ -657,13 +657,13 @@ static const DrawTileSeqStruct _station_display_datas_road_waypoint_Y[] = {
 };
 
 static const DrawTileSeqStruct _station_display_datas_waypoint_X[] = {
-	TILE_SEQ_LINE( 0,  0,  0, 16,  5, 23, SPR_WAYPOINT_X_1 | (1U << PALETTE_MODIFIER_COLOUR))
-	TILE_SEQ_LINE( 0, 11,  0, 16,  5, 23, SPR_WAYPOINT_X_2 | (1U << PALETTE_MODIFIER_COLOUR))
+	TILE_SEQ_LINE( 0,  0,  0, 16,  5, 16, SPR_WAYPOINT_X_1 | (1U << PALETTE_MODIFIER_COLOUR))
+	TILE_SEQ_LINE( 0, 11,  0, 16,  5, 16, SPR_WAYPOINT_X_2 | (1U << PALETTE_MODIFIER_COLOUR))
 };
 
 static const DrawTileSeqStruct _station_display_datas_waypoint_Y[] = {
-	TILE_SEQ_LINE( 0,  0,  0,  5, 16, 23, SPR_WAYPOINT_Y_1 | (1U << PALETTE_MODIFIER_COLOUR))
-	TILE_SEQ_LINE(11,  0,  0,  5, 16, 23, SPR_WAYPOINT_Y_2 | (1U << PALETTE_MODIFIER_COLOUR))
+	TILE_SEQ_LINE( 0,  0,  0,  5, 16, 16, SPR_WAYPOINT_Y_1 | (1U << PALETTE_MODIFIER_COLOUR))
+	TILE_SEQ_LINE(11,  0,  0,  5, 16, 16, SPR_WAYPOINT_Y_2 | (1U << PALETTE_MODIFIER_COLOUR))
 };
 
 #undef TILE_SEQ_LINE
@@ -901,4 +901,63 @@ static const std::array<std::span<const DrawTileSpriteSpan>, to_underlying(Stati
 	_station_display_datas_buoy,
 	_station_display_datas_waypoint,
 	_station_display_datas_road_waypoint,
+}};
+
+static const BridgeableTileInfo _station_bridgeable_info_rail[] = {
+	{2, {BridgePillarFlag::EdgeSW, BridgePillarFlag::EdgeNE}}, // X-axis empty platform.
+	{2, {BridgePillarFlag::EdgeNW, BridgePillarFlag::EdgeSE}}, // Y-axis empty platform.
+	{2, {BridgePillarFlag::EdgeSW, BridgePillarFlag::EdgeNE}}, // X-axis small building.
+	{2, {BridgePillarFlag::EdgeNW, BridgePillarFlag::EdgeSE}}, // Y-axis small building.
+	{5, {BridgePillarFlag::EdgeSW, BridgePillarFlag::EdgeNE, BridgePillarFlag::EdgeSE, BridgePillarFlag::CornerE, BridgePillarFlag::CornerS}}, // X large building north.
+	{5, {BridgePillarFlag::EdgeNW, BridgePillarFlag::EdgeSE, BridgePillarFlag::EdgeSW, BridgePillarFlag::CornerS, BridgePillarFlag::CornerW}}, // Y large building north.
+	{5, {BridgePillarFlag::EdgeSW, BridgePillarFlag::EdgeNE, BridgePillarFlag::EdgeNW, BridgePillarFlag::CornerN, BridgePillarFlag::CornerW}}, // X large building south.
+	{5, {BridgePillarFlag::EdgeNW, BridgePillarFlag::EdgeSE, BridgePillarFlag::EdgeNE, BridgePillarFlag::CornerN, BridgePillarFlag::CornerE}}, // Y large building south.
+};
+
+static const BridgeableTileInfo _station_bridgeable_info_waypoint[] = {
+	{2, {BridgePillarFlag::EdgeSW, BridgePillarFlag::EdgeNE}}, // X-axis waypoint.
+	{2, {BridgePillarFlag::EdgeNW, BridgePillarFlag::EdgeSE}}, // Y-axis waypoint.
+};
+
+static const BridgeableTileInfo _station_bridgeable_info_dock[] = {
+	{2, {}}, // Northeast slope.
+	{2, {}}, // Southeast slope.
+	{2, {}}, // Southwest slope.
+	{2, {}}, // Northwest slope.
+	{3, {}}, // X-axis part on water.
+	{3, {}}, // Y-axis part on water.
+};
+
+static const BridgeableTileInfo _station_bridgeable_info_buoy[] = {
+	{1, {}},
+};
+
+static const BridgeableTileInfo _station_bridgeable_info_roadstop[] = {
+	{2, {BridgePillarFlag::EdgeNE}}, // NE bay.
+	{2, {BridgePillarFlag::EdgeSE}}, // SE bay.
+	{2, {BridgePillarFlag::EdgeSW}}, // SW bay.
+	{2, {BridgePillarFlag::EdgeNW}}, // NW bay.
+	{2, {BridgePillarFlag::EdgeSW, BridgePillarFlag::EdgeNE}}, // X-axis drive-through.
+	{2, {BridgePillarFlag::EdgeNW, BridgePillarFlag::EdgeSE}}, // Y-axis drive-through.
+};
+
+static const BridgeableTileInfo _station_bridgeable_info_road_waypoint[] = {
+	{}, // NE bay (unused)
+	{}, // SE bay (unused)
+	{}, // SW bay (unused)
+	{}, // NW bay (unused)
+	{2, {BridgePillarFlag::EdgeSW, BridgePillarFlag::EdgeNE}}, // X-axis waypoint.
+	{2, {BridgePillarFlag::EdgeNW, BridgePillarFlag::EdgeSE}}, // Y-axis waypoint.
+};
+
+static const std::array<std::span<const BridgeableTileInfo>, to_underlying(StationType::End)> _station_bridgeable_info = {{
+	_station_bridgeable_info_rail, // Rail
+	{}, // Airport
+	_station_bridgeable_info_roadstop, // Truck
+	_station_bridgeable_info_roadstop, // Bus
+	{}, // Oilrig
+	_station_bridgeable_info_dock, // Dock
+	_station_bridgeable_info_buoy, // Buoy
+	_station_bridgeable_info_waypoint, // RailWaypoint
+	_station_bridgeable_info_road_waypoint, // RoadWaypoint
 }};

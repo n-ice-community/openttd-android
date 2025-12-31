@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_widget.h Types related to the newgrf widgets. */
@@ -23,7 +23,6 @@ enum NewGRFParametersWidgets : WidgetID {
 	WID_NP_NUMPAR_TEXT,      ///< Text description.
 	WID_NP_BACKGROUND,       ///< Panel to draw the settings on.
 	WID_NP_SCROLLBAR,        ///< Scrollbar to scroll through all settings.
-	WID_NP_ACCEPT,           ///< Accept button.
 	WID_NP_RESET,            ///< Reset button.
 	WID_NP_SHOW_DESCRIPTION, ///< #NWID_SELECTION to optionally display parameter descriptions.
 	WID_NP_DESCRIPTION,      ///< Multi-line description of a parameter.
@@ -59,7 +58,8 @@ enum NewGRFStateWidgets : WidgetID {
 	WID_NS_CONTENT_DOWNLOAD,  ///< Open content download (available NewGRFs).
 	WID_NS_CONTENT_DOWNLOAD2, ///< Open content download (active NewGRFs).
 	WID_NS_SHOW_REMOVE,       ///< Select active list buttons (0 = normal, 1 = simple layout).
-	WID_NS_SHOW_APPLY,        ///< Select display of the buttons below the 'details'.
+	WID_NS_SHOW_EDIT,         ///< Select display of the buttons below the 'details'.
+	WID_NS_SHOW_APPLY,        ///< Select display of the apply button.
 };
 
 /** Widgets of the #SavePresetWindow class. */
@@ -67,7 +67,6 @@ enum SavePresetWidgets : WidgetID {
 	WID_SVP_PRESET_LIST, ///< List with available preset names.
 	WID_SVP_SCROLLBAR,   ///< Scrollbar for the list available preset names.
 	WID_SVP_EDITBOX,     ///< Edit box for changing the preset name.
-	WID_SVP_CANCEL,      ///< Button to cancel saving the preset.
 	WID_SVP_SAVE,        ///< Button to save the preset.
 };
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act5.h Information about NewGRF Action 5. */
@@ -10,10 +10,12 @@
 #ifndef NEWGRF_ACT5_H
 #define NEWGRF_ACT5_H
 
+#include "gfx_type.h"
+
 /** The type of action 5 type. */
 enum Action5BlockType : uint8_t {
 	A5BLOCK_FIXED,                ///< Only allow replacing a whole block of sprites. (TTDP compatible)
-	A5BLOCK_ALLOW_OFFSET,         ///< Allow replacing any subset by specifiing an offset.
+	A5BLOCK_ALLOW_OFFSET,         ///< Allow replacing any subset by specifying an offset.
 	A5BLOCK_INVALID,              ///< unknown/not-implemented type
 };
 

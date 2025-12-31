@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file saveload.h Functions/types related to saving and loading games. */
@@ -400,6 +400,18 @@ enum SaveLoadVersion : uint16_t {
 	SLV_ENCODED_STRING_FORMAT,              ///< 350  PR#13499 Encoded String format changed.
 	SLV_PROTECT_PLACED_HOUSES,              ///< 351  PR#13270 Houses individually placed by players can be protected from town/AI removal.
 	SLV_SCRIPT_SAVE_INSTANCES,              ///< 352  PR#13556 Scripts are allowed to save instances.
+	SLV_FIX_SCC_ENCODED_NEGATIVE,           ///< 353  PR#14049 Fix encoding of negative parameters.
+	SLV_ORDERS_OWNED_BY_ORDERLIST,          ///< 354  PR#13948 Orders stored in OrderList, pool removed.
+
+	SLV_FACE_STYLES,                        ///< 355  PR#14319 Addition of face styles, replacing gender and ethnicity.
+	SLV_INDUSTRY_NUM_VALID_HISTORY,         ///< 356  PR#14416 Store number of valid history records for industries.
+	SLV_INDUSTRY_ACCEPTED_HISTORY,          ///< 357  PR#14321 Add per-industry history of cargo delivered and waiting.
+	SLV_TOWN_SUPPLY_HISTORY,                ///< 358  PR#14461 Town supply history.
+	SLV_STATIONS_UNDER_BRIDGES,             ///< 359  PR#14477 Allow stations under bridges.
+
+	SLV_DOCKS_UNDER_BRIDGES,                ///< 360  PR#14594 Allow docks under bridges.
+	SLV_LOCKS_UNDER_BRIDGES,                ///< 361  PR#14595 Allow locks under bridges.
+	SLV_ENGINE_MULTI_RAILTYPE,              ///< 362  PR#14357 Train engines can have multiple railtypes.
 
 	SL_MAX_VERSION,                         ///< Highest possible saveload version
 };
@@ -414,15 +426,13 @@ enum SaveOrLoadResult : uint8_t {
 /** Deals with the type of the savegame, independent of extension */
 struct FileToSaveLoad {
 	SaveLoadOperation file_op;       ///< File operation to perform.
-	DetailedFileType detail_ftype;   ///< Concrete file type (PNG, BMP, old save, etc).
-	AbstractFileType abstract_ftype; ///< Abstract type of file (scenario, heightmap, etc).
+	FiosType ftype;                  ///< File type.
 	std::string name;                ///< Name of the file.
-	std::string title;               ///< Internal name of the game.
+	EncodedString title;             ///< Internal name of the game.
 	bool cloud_save;                 ///< Save the file to the cloud from the video thread.
 	bool cloud_load;                 ///< Load the file from the cloud from the video thread.
 
-	void SetMode(FiosType ft);
-	void SetMode(SaveLoadOperation fop, AbstractFileType aft, DetailedFileType dft);
+	void SetMode(const FiosType &ft, SaveLoadOperation fop = SLO_LOAD);
 	void Set(const FiosItem &item);
 };
 
@@ -442,7 +452,7 @@ std::string GenerateDefaultSaveName();
 void SetSaveLoadError(StringID str);
 EncodedString GetSaveLoadErrorType();
 EncodedString GetSaveLoadErrorMessage();
-SaveOrLoadResult SaveOrLoad(const std::string &filename, SaveLoadOperation fop, DetailedFileType dft, Subdirectory sb, bool threaded = true);
+SaveOrLoadResult SaveOrLoad(std::string_view filename, SaveLoadOperation fop, DetailedFileType dft, Subdirectory sb, bool threaded = true);
 void WaitTillSaved();
 void ProcessAsyncSaveFinish();
 void DoExitSave();
@@ -605,7 +615,6 @@ public:
 
 /** Type of reference (#SLE_REF, #SLE_CONDREF). */
 enum SLRefType : uint8_t {
-	REF_ORDER          =  0, ///< Load/save a reference to an order.
 	REF_VEHICLE        =  1, ///< Load/save a reference to a vehicle.
 	REF_STATION        =  2, ///< Load/save a reference to a station.
 	REF_TOWN           =  3, ///< Load/save a reference to a town.
@@ -660,7 +669,7 @@ enum VarTypes : uint16_t {
 	SLE_VAR_NULL  =  9 << 4, ///< useful to write zeros in savegame.
 	SLE_VAR_STR   = 12 << 4, ///< string pointer
 	SLE_VAR_STRQ  = 13 << 4, ///< string pointer enclosed in quotes
-	SLE_VAR_NAME  = 14 << 4, ///< old custom name to be converted to a char pointer
+	SLE_VAR_NAME  = 14 << 4, ///< old custom name to be converted to a string pointer
 	/* 1 more possible memory-primitives */
 
 	/* Shortcut values */
@@ -694,6 +703,7 @@ enum VarTypes : uint16_t {
 	 * Flags directing saving/loading of a variable */
 	SLF_ALLOW_CONTROL   = 1 << 8, ///< Allow control codes in the strings.
 	SLF_ALLOW_NEWLINE   = 1 << 9, ///< Allow new lines in the strings.
+	SLF_REPLACE_TABCRLF = 1 << 10, ///< Replace tabs, cr and lf in the string with spaces.
 };
 
 typedef uint32_t VarType;

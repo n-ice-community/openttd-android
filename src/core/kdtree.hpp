@@ -2,15 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file kdtree.hpp K-d tree template specialised for 2-dimensional Manhattan geometry */
 
 #ifndef KDTREE_HPP
 #define KDTREE_HPP
-
-#include "../stdafx.h"
 
 /**
  * K-dimensional tree, specialised for 2-dimensional space.
@@ -330,11 +328,11 @@ class Kdtree {
 		assert(cy < max_y);
 
 		if (level % 2 == 0) {
-			// split in dimension 0 = x
+			/* split in dimension 0 = x */
 			this->CheckInvariant(n.left,  level + 1, min_x, cx, min_y, max_y);
 			this->CheckInvariant(n.right, level + 1, cx, max_x, min_y, max_y);
 		} else {
-			// split in dimension 1 = y
+			/* split in dimension 1 = y */
 			this->CheckInvariant(n.left,  level + 1, min_x, max_x, min_y, cy);
 			this->CheckInvariant(n.right, level + 1, min_x, max_x, cy, max_y);
 		}

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file road.h Road specific functions. */
@@ -12,27 +12,13 @@
 
 #include "road_type.h"
 #include "gfx_type.h"
-#include "core/bitmath_func.hpp"
+#include "core/flatset_type.hpp"
 #include "strings_type.h"
 #include "timer/timer_game_calendar.h"
 #include "core/enum_type.hpp"
 #include "newgrf.h"
 #include "newgrf_badge_type.h"
 #include "economy_func.h"
-
-
-enum RoadTramType : bool {
-	RTT_ROAD,
-	RTT_TRAM,
-};
-
-enum RoadTramTypes : uint8_t {
-	RTTB_ROAD = 1 << RTT_ROAD,
-	RTTB_TRAM = 1 << RTT_TRAM,
-};
-DECLARE_ENUM_AS_BIT_SET(RoadTramTypes)
-
-static const RoadTramType _roadtramtypes[] = { RTT_ROAD, RTT_TRAM };
 
 /** Roadtype flag bit numbers. */
 enum class RoadTypeFlag : uint8_t {
@@ -62,9 +48,6 @@ enum RoadTypeSpriteGroup : uint8_t {
 	ROTSG_ONEWAY,         ///< Optional: One-way indicator images
 	ROTSG_END,
 };
-
-/** List of road type labels. */
-typedef std::vector<RoadTypeLabel> RoadTypeLabelList;
 
 class RoadTypeInfo {
 public:
@@ -140,12 +123,12 @@ public:
 	/**
 	 * Road type labels this type provides in addition to the main label.
 	 */
-	RoadTypeLabelList alternate_labels;
+	FlatSet<RoadTypeLabel> alternate_labels;
 
 	/**
 	 * Colour on mini-map
 	 */
-	uint8_t map_colour;
+	PixelColour map_colour;
 
 	/**
 	 * Introduction date.
@@ -188,6 +171,8 @@ public:
 	{
 		return this->group[ROTSG_GROUND] != nullptr;
 	}
+
+	RoadType Index() const;
 };
 
 /**
@@ -232,19 +217,6 @@ inline const RoadTypeInfo *GetRoadTypeInfo(RoadType roadtype)
 	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
 	assert(roadtype < ROADTYPE_END);
 	return &_roadtypes[roadtype];
-}
-
-/**
- * Returns the railtype for a Railtype information.
- * @param rti Pointer to static RailTypeInfo
- * @return Railtype in static railtype definitions
- */
-inline RoadType GetRoadTypeInfoIndex(const RoadTypeInfo *rti)
-{
-	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
-	size_t index = rti - _roadtypes;
-	assert(index < ROADTYPE_END && rti == _roadtypes + index);
-	return static_cast<RoadType>(index);
 }
 
 /**

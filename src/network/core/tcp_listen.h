@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -14,7 +14,8 @@
 
 #include "tcp.h"
 #include "../network.h"
-#include "../../core/pool_type.hpp"
+#include "../network_func.h"
+#include "../network_internal.h"
 #include "../../debug.h"
 
 #include "table/strings.h"
@@ -41,7 +42,7 @@ public:
 
 				Debug(net, 2, "[{}] Banned ip tried to join ({}), refused", Tsocket::GetName(), entry);
 
-				if (p.TransferOut<int>(send, s, 0) < 0) {
+				if (p.TransferOut(SocketSender{s}) < 0) {
 					Debug(net, 0, "[{}] send failed: {}", Tsocket::GetName(), NetworkError::GetLast().AsString());
 				}
 				closesocket(s);
@@ -56,7 +57,7 @@ public:
 			Packet p(nullptr, Tfull_packet);
 			p.PrepareToSend();
 
-			if (p.TransferOut<int>(send, s, 0) < 0) {
+			if (p.TransferOut(SocketSender{s}) < 0) {
 				Debug(net, 0, "[{}] send failed: {}", Tsocket::GetName(), NetworkError::GetLast().AsString());
 			}
 			closesocket(s);
@@ -74,8 +75,7 @@ public:
 	static void AcceptClient(SOCKET ls)
 	{
 		for (;;) {
-			struct sockaddr_storage sin;
-			memset(&sin, 0, sizeof(sin));
+			struct sockaddr_storage sin{};
 			socklen_t sin_len = sizeof(sin);
 			SOCKET s = accept(ls, (struct sockaddr*)&sin, &sin_len);
 			if (s == INVALID_SOCKET) return;

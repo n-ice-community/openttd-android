@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act11.cpp NewGRF Action 0x11 handler. */
@@ -175,6 +175,6 @@ static void SkipAct11(ByteReader &buf)
 template <> void GrfActionHandler<0x11>::FileScan(ByteReader &buf) { SkipAct11(buf); }
 template <> void GrfActionHandler<0x11>::SafetyScan(ByteReader &buf) { GRFUnsafe(buf); }
 template <> void GrfActionHandler<0x11>::LabelScan(ByteReader &buf) { SkipAct11(buf); }
-template <> void GrfActionHandler<0x11>::Init(ByteReader &buf) { SkipAct11(buf); }
+template <> void GrfActionHandler<0x11>::Init(ByteReader &buf) { GRFSound(buf); }
 template <> void GrfActionHandler<0x11>::Reserve(ByteReader &buf) { SkipAct11(buf); }
 template <> void GrfActionHandler<0x11>::Activation(ByteReader &buf) { GRFSound(buf); }

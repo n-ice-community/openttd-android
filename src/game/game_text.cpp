@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_text.cpp Implementation of handling translated strings. */
@@ -63,19 +63,13 @@ LanguageStrings ReadRawLanguageStrings(const std::string &file)
 
 	char buffer[2048];
 	while (to_read != 0 && fgets(buffer, sizeof(buffer), *fh) != nullptr) {
-		size_t len = strlen(buffer);
+		std::string_view view{buffer};
+		ret.lines.emplace_back(StrTrimView(view, StringConsumer::WHITESPACE_OR_NEWLINE));
 
-		/* Remove trailing spaces/newlines from the string. */
-		size_t i = len;
-		while (i > 0 && (buffer[i - 1] == '\r' || buffer[i - 1] == '\n' || buffer[i - 1] == ' ')) i--;
-		buffer[i] = '\0';
-
-		ret.lines.emplace_back(buffer, i);
-
-		if (len > to_read) {
+		if (view.size() > to_read) {
 			to_read = 0;
 		} else {
-			to_read -= len;
+			to_read -= view.size();
 		}
 	}
 
@@ -96,7 +90,7 @@ struct StringListReader : StringReader {
 	 * @param translation Are we reading a translation?
 	 */
 	StringListReader(StringData &data, const LanguageStrings &strings, bool master, bool translation) :
-			StringReader(data, strings.language.c_str(), master, translation), p(strings.lines.begin()), end(strings.lines.end())
+			StringReader(data, strings.language, master, translation), p(strings.lines.begin()), end(strings.lines.end())
 	{
 	}
 
@@ -134,9 +128,9 @@ struct TranslationWriter : LanguageWriter {
 		/* We don't write the length. */
 	}
 
-	void Write(const char *buffer, size_t length) override
+	void Write(std::string_view buffer) override
 	{
-		this->strings.emplace_back(buffer, length);
+		this->strings.emplace_back(buffer);
 	}
 };
 
@@ -231,15 +225,15 @@ static std::shared_ptr<GameStrings> LoadTranslations()
 		if (!tar_filename.empty() && (iter = _tar_list[GAME_DIR].find(tar_filename)) != _tar_list[GAME_DIR].end()) {
 			/* The main script is in a tar file, so find all files that
 			 * are in the same tar and add them to the langfile scanner. */
-			for (const auto &tar : _tar_filelist[GAME_DIR]) {
+			for (const auto &[name, entry] : _tar_filelist[GAME_DIR]) {
 				/* Not in the same tar. */
-				if (tar.second.tar_filename != iter->first) continue;
+				if (entry.tar_filename != iter->first) continue;
 
 				/* Check the path and extension. */
-				if (tar.first.size() <= ldir.size() || tar.first.compare(0, ldir.size(), ldir) != 0) continue;
-				if (tar.first.compare(tar.first.size() - 4, 4, ".txt") != 0) continue;
+				if (!name.starts_with(ldir)) continue;
+				if (!name.ends_with(".txt")) continue;
 
-				scanner.AddFile(tar.first, 0, tar_filename);
+				scanner.AddFile(name, 0, tar_filename);
 			}
 		} else {
 			/* Scan filesystem */
@@ -267,7 +261,7 @@ static void ExtractStringParams(const StringData &data, StringParamsList &params
 
 		if (ls != nullptr) {
 			StringParams &param = params.emplace_back();
-			ParsedCommandStruct pcs = ExtractCommandString(ls->english.c_str(), false);
+			ParsedCommandStruct pcs = ExtractCommandString(ls->english, false);
 
 			for (auto it = pcs.consuming_commands.begin(); it != pcs.consuming_commands.end(); it++) {
 				if (*it == nullptr) {
@@ -356,25 +350,27 @@ const std::string &GetGameStringName(StringIndexInTab id)
  * Register the current translation to the Squirrel engine.
  * @param engine The engine to update/
  */
-void RegisterGameTranslation(Squirrel *engine)
+void RegisterGameTranslation(Squirrel &engine)
 {
 	_current_gamestrings_data = LoadTranslations();
 	if (_current_gamestrings_data == nullptr) return;
 
-	HSQUIRRELVM vm = engine->GetVM();
+	HSQUIRRELVM vm = engine.GetVM();
 	sq_pushroottable(vm);
-	sq_pushstring(vm, "GSText", -1);
+	sq_pushstring(vm, "GSText");
 	if (SQ_FAILED(sq_get(vm, -2))) return;
 
 	int idx = 0;
 	for (const auto &p : _current_gamestrings_data->string_names) {
-		sq_pushstring(vm, p, -1);
+		sq_pushstring(vm, p);
 		sq_pushinteger(vm, idx);
 		sq_rawset(vm, -3);
 		idx++;
 	}
 
 	sq_pop(vm, 2);
+
+	ScriptText::SetPadParameterCount(vm);
 
 	ReconsiderGameScriptLanguage();
 }
@@ -386,7 +382,7 @@ void ReconsiderGameScriptLanguage()
 {
 	if (_current_gamestrings_data == nullptr) return;
 
-	std::string language = FS2OTTD(_current_language->file.stem());
+	std::string language = FS2OTTD(_current_language->file.stem().native());
 	for (auto &p : _current_gamestrings_data->compiled_strings) {
 		if (p.language == language) {
 			_current_gamestrings_data->cur_language = &p;

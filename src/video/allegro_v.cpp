@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -28,26 +28,25 @@
 #include "allegro_v.h"
 #include <allegro.h>
 
-#include "../safeguards.h"
-
 #ifdef _DEBUG
 /* Allegro replaces SEGV/ABRT signals meaning that the debugger will never
  * be triggered, so rereplace the signals and make the debugger useful. */
 #include <signal.h>
 #endif
 
+#include "../safeguards.h"
+
 static FVideoDriver_Allegro iFVideoDriver_Allegro;
 
 static BITMAP *_allegro_screen;
 
-#define MAX_DIRTY_RECTS 100
-static PointDimension _dirty_rects[MAX_DIRTY_RECTS];
-static int _num_dirty_rects;
+static PointDimension _dirty_rects[100];
+static size_t _num_dirty_rects;
 static Palette _local_palette; ///< Current palette to use for drawing.
 
 void VideoDriver_Allegro::MakeDirty(int left, int top, int width, int height)
 {
-	if (_num_dirty_rects < MAX_DIRTY_RECTS) {
+	if (_num_dirty_rects < std::size(_dirty_rects)) {
 		_dirty_rects[_num_dirty_rects].x = left;
 		_dirty_rects[_num_dirty_rects].y = top;
 		_dirty_rects[_num_dirty_rects].width = width;
@@ -60,16 +59,16 @@ void VideoDriver_Allegro::Paint()
 {
 	PerformanceMeasurer framerate(PFE_VIDEO);
 
-	int n = _num_dirty_rects;
+	size_t n = _num_dirty_rects;
 	if (n == 0) return;
 
 	_num_dirty_rects = 0;
-	if (n > MAX_DIRTY_RECTS) {
+	if (n > std::size(_dirty_rects)) {
 		blit(_allegro_screen, screen, 0, 0, 0, 0, _allegro_screen->w, _allegro_screen->h);
 		return;
 	}
 
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		blit(_allegro_screen, screen, _dirty_rects[i].x, _dirty_rects[i].y, _dirty_rects[i].x, _dirty_rects[i].y, _dirty_rects[i].width, _dirty_rects[i].height);
 	}
 }
@@ -204,7 +203,7 @@ static bool CreateMainSurface(uint w, uint h)
 	_screen.dst_ptr = _allegro_screen->line[0];
 
 	/* Initialise the screen so we don't blit garbage to the screen */
-	memset(_screen.dst_ptr, 0, static_cast<size_t>(_screen.height) * _screen.pitch);
+	std::fill_n(static_cast<std::byte *>(_screen.dst_ptr), static_cast<size_t>(_screen.height) * _screen.pitch, static_cast<std::byte>(0));
 
 	/* Set the mouse at the place where we expect it */
 	poll_mouse();

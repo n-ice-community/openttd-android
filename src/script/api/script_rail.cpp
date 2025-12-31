@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_rail.cpp Implementation of ScriptRail. */
@@ -28,7 +28,7 @@
 {
 	if (!IsRailTypeAvailable(rail_type)) return std::nullopt;
 
-	return ::StrMakeValid(::GetString(GetRailTypeInfo((::RailType)rail_type)->strings.menu_text));
+	return ::StrMakeValid(::GetString(GetRailTypeInfo((::RailType)rail_type)->strings.menu_text), {});
 }
 
 /* static */ bool ScriptRail::IsRailTile(TileIndex tile)
@@ -175,8 +175,7 @@
 	EnforcePrecondition(false, source_industry == ScriptIndustryType::INDUSTRYTYPE_UNKNOWN || source_industry == ScriptIndustryType::INDUSTRYTYPE_TOWN || ScriptIndustryType::IsValidIndustryType(source_industry));
 	EnforcePrecondition(false, goal_industry   == ScriptIndustryType::INDUSTRYTYPE_UNKNOWN || goal_industry   == ScriptIndustryType::INDUSTRYTYPE_TOWN || ScriptIndustryType::IsValidIndustryType(goal_industry));
 
-	const GRFFile *file;
-	uint16_t res = GetAiPurchaseCallbackResult(
+	auto res = GetAiPurchaseCallbackResult(
 		GSF_STATIONS,
 		cargo_type,
 		0,
@@ -185,17 +184,16 @@
 		ClampTo<uint8_t>(distance / 2),
 		AICE_STATION_GET_STATION_ID,
 		source_station ? 0 : 1,
-		std::min<SQInteger>(15u, num_platforms) << 4 | std::min<SQInteger>(15u, platform_length),
-		&file
+		std::min<SQInteger>(15u, num_platforms) << 4 | std::min<SQInteger>(15u, platform_length)
 	);
 
 	Axis axis = direction == RAILTRACK_NW_SE ? AXIS_Y : AXIS_X;
 	bool adjacent = station_id != ScriptStation::STATION_JOIN_ADJACENT;
 	StationID to_join = ScriptStation::IsValidStation(station_id) ? station_id : StationID::Invalid();
-	if (res != CALLBACK_FAILED) {
-		const StationSpec *spec = StationClass::GetByGrf(file->grfid, res);
+	if (res.second != CALLBACK_FAILED) {
+		const StationSpec *spec = StationClass::GetByGrf(res.first->grfid, res.second);
 		if (spec == nullptr) {
-			Debug(grf, 1, "{} returned an invalid station ID for 'AI construction/purchase selection (18)' callback", file->filename);
+			Debug(grf, 1, "{} returned an invalid station ID for 'AI construction/purchase selection (18)' callback", res.first->filename);
 		} else {
 			/* We might have gotten an usable station spec. Try to build it, but if it fails we'll fall back to the original station. */
 			if (ScriptObject::Command<CMD_BUILD_RAIL_STATION>::Do(tile, (::RailType)GetCurrentRailType(), axis, num_platforms, platform_length, spec->class_index, spec->index, to_join, adjacent)) return true;

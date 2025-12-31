@@ -2,10 +2,15 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file cargo_const.h Table of all default cargo types */
+
+#include "../table/sprites.h"
+#ifndef CHECK_UNUSED_STRINGS
+#include "table/strings.h"
+#endif
 
 /** Construction macros for the #CargoSpec StringID entries. */
 #define MK_STR_CARGO_PLURAL(label_plural) STR_CARGO_PLURAL_ ## label_plural
@@ -44,7 +49,7 @@
  * @param classes      Classes of this cargo type. @see CargoClass
  */
 #define MK(bt, label, colour, weight, mult, ip, td1, td2, freight, tae, str_plural, str_singular, str_volume, classes) \
-		{label, bt, colour, colour, weight, mult, classes, ip, {td1, td2}, freight, tae, INVALID_TPE, TOWN_PRODUCTION_DIVISOR, CargoCallbackMasks{}, \
+		{label, bt, PixelColour{colour}, PixelColour{colour}, weight, mult, classes, ip, {td1, td2}, freight, tae, INVALID_TPE, TOWN_PRODUCTION_DIVISOR, CargoCallbackMasks{}, \
 		MK_STR_CARGO_PLURAL(str_plural), MK_STR_CARGO_SINGULAR(str_singular), str_volume, MK_STR_QUANTITY(str_plural), MK_STR_ABBREV(str_plural), \
 		MK_SPRITE(str_plural), nullptr, nullptr, 0}
 

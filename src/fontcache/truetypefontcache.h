@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file truetypefontcache.h Common base definition for font file based font caches. */
@@ -29,7 +29,7 @@ protected:
 
 	/** Container for information about a glyph. */
 	struct GlyphEntry {
-		std::unique_ptr<uint8_t[]> data; ///< The loaded sprite.
+		std::unique_ptr<std::byte[]> data; ///< The loaded sprite.
 		uint8_t width = 0; ///< The width of the glyph.
 
 		Sprite *GetSprite() { return reinterpret_cast<Sprite *>(data.get()); }
@@ -46,8 +46,6 @@ public:
 	TrueTypeFontCache(FontSize fs, int pixels);
 	virtual ~TrueTypeFontCache();
 	int GetFontSize() const override { return this->used_size; }
-	void SetUnicodeGlyph(char32_t key, SpriteID sprite) override { this->parent->SetUnicodeGlyph(key, sprite); }
-	void InitializeUnicodeGlyphMap() override { this->parent->InitializeUnicodeGlyphMap(); }
 	const Sprite *GetGlyph(GlyphID key) override;
 	void ClearFontCache() override;
 	uint GetGlyphWidth(GlyphID key) override;

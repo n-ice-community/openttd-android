@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_bidges.cpp NewGRF Action 0x00 handler for bridges. */
@@ -93,6 +93,7 @@ static ChangeInfoResult BridgeChangeInfo(uint first, uint last, int prop, ByteRe
 						MapSpriteMappingRecolour(&bridge->sprite_table[tableid][sprite]);
 					}
 				}
+				if (!bridge->ctrl_flags.Test(BridgeSpec::ControlFlag::CustomPillarFlags)) bridge->ctrl_flags.Set(BridgeSpec::ControlFlag::InvalidPillarFlags);
 				break;
 			}
 
@@ -119,6 +120,21 @@ static ChangeInfoResult BridgeChangeInfo(uint first, uint last, int prop, ByteRe
 			case 0x13: // 16 bits cost multiplier
 				bridge->price = buf.ReadWord();
 				break;
+
+			case 0x15: { // Pillar information for each bridge piece.
+				uint16_t tiles = buf.ReadExtendedByte();
+				for (uint j = 0; j != tiles; ++j) {
+					if (j < std::size(bridge->pillar_flags)) {
+						bridge->pillar_flags[j][AXIS_X] = BridgePillarFlags{buf.ReadByte()};
+						bridge->pillar_flags[j][AXIS_Y] = BridgePillarFlags{buf.ReadByte()};
+					} else {
+						buf.ReadWord();
+					}
+				}
+				bridge->ctrl_flags.Reset(BridgeSpec::ControlFlag::InvalidPillarFlags);
+				bridge->ctrl_flags.Set(BridgeSpec::ControlFlag::CustomPillarFlags);
+				break;
+			}
 
 			default:
 				ret = CIR_UNKNOWN;

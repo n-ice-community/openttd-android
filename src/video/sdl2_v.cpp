@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sdl2_v.cpp Implementation of the SDL2 video driver. */
@@ -13,9 +13,7 @@
 #include "../blitter/factory.hpp"
 #include "../thread.h"
 #include "../progress.h"
-#include "../core/random_func.hpp"
 #include "../core/math_func.hpp"
-#include "../core/mem_func.hpp"
 #include "../core/geometry_func.hpp"
 #include "../core/utf8.hpp"
 #include "../fileio_func.h"
@@ -473,8 +471,8 @@ bool VideoDriver_SDL_Base::PollEvent()
 				char32_t character;
 
 				uint keycode = ConvertSdlKeyIntoMy(&ev.key.keysym, &character);
-				// Only handle non-text keys here. Text is handled in
-				// SDL_TEXTINPUT below.
+				/* Only handle non-text keys here. Text is handled in
+				 * SDL_TEXTINPUT below. */
 				if (!this->edit_box_focused ||
 					keycode == WKC_DELETE ||
 					keycode == WKC_NUM_ENTER ||
@@ -509,19 +507,19 @@ bool VideoDriver_SDL_Base::PollEvent()
 		}
 		case SDL_WINDOWEVENT: {
 			if (ev.window.event == SDL_WINDOWEVENT_EXPOSED) {
-				// Force a redraw of the entire screen.
+				/* Force a redraw of the entire screen. */
 				this->MakeDirty(0, 0, _screen.width, _screen.height);
 			} else if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
 				int w = std::max(ev.window.data1, 64);
 				int h = std::max(ev.window.data2, 64);
 				CreateMainSurface(w, h, w != ev.window.data1 || h != ev.window.data2);
 			} else if (ev.window.event == SDL_WINDOWEVENT_ENTER) {
-				// mouse entered the window, enable cursor
+				/* mouse entered the window, enable cursor */
 				_cursor.in_window = true;
 				/* Ensure pointer lock will not occur. */
 				SDL_SetRelativeMouseMode(SDL_FALSE);
 			} else if (ev.window.event == SDL_WINDOWEVENT_LEAVE) {
-				// mouse left the window, undraw cursor
+				/* mouse left the window, undraw cursor */
 				UndrawMouseCursor();
 				_cursor.in_window = false;
 			}

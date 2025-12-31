@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_basestation.cpp Implementation of ScriptBaseStation. */
@@ -28,11 +28,17 @@
 	return st != nullptr && (st->owner == ScriptObject::GetCompany() || ScriptCompanyMode::IsDeity() || st->owner == OWNER_NONE);
 }
 
+/* static */ ScriptCompany::CompanyID ScriptBaseStation::GetOwner(StationID station_id)
+{
+	if (!IsValidBaseStation(station_id)) return ScriptCompany::COMPANY_INVALID;
+	return ScriptCompany::ToScriptCompanyID(::BaseStation::Get(station_id)->owner);
+}
+
 /* static */ std::optional<std::string> ScriptBaseStation::GetName(StationID station_id)
 {
 	if (!IsValidBaseStation(station_id)) return std::nullopt;
 
-	return ::StrMakeValid(::GetString(::Station::IsValidID(station_id) ? STR_STATION_NAME : STR_WAYPOINT_NAME, station_id));
+	return ::StrMakeValid(::GetString(::Station::IsValidID(station_id) ? STR_STATION_NAME : STR_WAYPOINT_NAME, station_id), {});
 }
 
 /* static */ bool ScriptBaseStation::SetName(StationID station_id, Text *name)

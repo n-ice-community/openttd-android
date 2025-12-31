@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_event_types.cpp Implementation of all EventTypes. */
@@ -34,7 +34,7 @@ std::optional<std::string> ScriptEventEnginePreview::GetName()
 {
 	if (!this->IsEngineValid()) return std::nullopt;
 
-	return ::StrMakeValid(::GetString(STR_ENGINE_NAME, this->engine));
+	return ::StrMakeValid(::GetString(STR_ENGINE_NAME, this->engine), {});
 }
 
 CargoType ScriptEventEnginePreview::GetCargoType()
@@ -139,7 +139,7 @@ static bool ScriptEventAdminPortReadValue(HSQUIRRELVM vm, nlohmann::json &json)
 
 		case nlohmann::json::value_t::string: {
 			auto value = json.get<std::string>();
-			sq_pushstring(vm, value.data(), value.size());
+			sq_pushstring(vm, value);
 			break;
 		}
 
@@ -152,7 +152,7 @@ static bool ScriptEventAdminPortReadValue(HSQUIRRELVM vm, nlohmann::json &json)
 			sq_newtable(vm);
 
 			for (auto &[key, value] : json.items()) {
-				sq_pushstring(vm, key.data(), key.size());
+				sq_pushstring(vm, key);
 
 				if (!ScriptEventAdminPortReadValue(vm, value)) {
 					return false;

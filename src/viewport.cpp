@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -228,7 +228,7 @@ void InitializeWindowViewport(Window *w, int x, int y,
 	vp->width = width;
 	vp->height = height;
 
-	vp->zoom = static_cast<ZoomLevel>(Clamp(zoom, _settings_client.gui.zoom_min, _settings_client.gui.zoom_max));
+	vp->zoom = Clamp(zoom, _settings_client.gui.zoom_min, _settings_client.gui.zoom_max);
 
 	vp->virtual_width = ScaleByZoom(width, zoom);
 	vp->virtual_height = ScaleByZoom(height, zoom);
@@ -661,11 +661,16 @@ static void AddCombinedSprite(SpriteID image, PaletteID pal, int x, int y, int z
  * @param bb_offset_z bounding box extent towards negative Z (world)
  * @param sub Only draw a part of the sprite.
  */
-void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int w, int h, int dz, int z, bool transparent, int bb_offset_x, int bb_offset_y, int bb_offset_z, const SubSprite *sub)
+void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int z, const SpriteBounds &bounds, bool transparent, const SubSprite *sub)
 {
 	int32_t left, right, top, bottom;
 
 	assert((image & SPRITE_MASK) < MAX_SPRITES);
+
+	/* Move to bounding box. */
+	x += bounds.origin.x;
+	y += bounds.origin.y;
+	z += bounds.origin.z;
 
 	/* make the sprites transparent with the right palette */
 	if (transparent) {
@@ -674,21 +679,21 @@ void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int w,
 	}
 
 	if (_vd.combine_sprites == SPRITE_COMBINE_ACTIVE) {
-		AddCombinedSprite(image, pal, x, y, z, sub);
+		AddCombinedSprite(image, pal, x + bounds.offset.x, y + bounds.offset.y, z + bounds.offset.z, sub);
 		return;
 	}
 
 	_vd.last_child = LAST_CHILD_NONE;
 
-	Point pt = RemapCoords(x, y, z);
+	Point pt = RemapCoords(x + bounds.offset.x, y + bounds.offset.y, z + bounds.offset.z);
 	int tmp_left, tmp_top, tmp_x = pt.x, tmp_y = pt.y;
 
 	/* Compute screen extents of sprite */
 	if (image == SPR_EMPTY_BOUNDING_BOX) {
-		left = tmp_left = RemapCoords(x + w          , y + bb_offset_y, z + bb_offset_z).x;
-		right           = RemapCoords(x + bb_offset_x, y + h          , z + bb_offset_z).x + 1;
-		top  = tmp_top  = RemapCoords(x + bb_offset_x, y + bb_offset_y, z + dz         ).y;
-		bottom          = RemapCoords(x + w          , y + h          , z + bb_offset_z).y + 1;
+		left = tmp_left = RemapCoords(x + bounds.extent.x, y, z).x;
+		right           = RemapCoords(x, y + bounds.extent.y, z).x + 1;
+		top  = tmp_top  = RemapCoords(x, y, z + bounds.extent.z).y;
+		bottom          = RemapCoords(x + bounds.extent.x, y + bounds.extent.y, z).y + 1;
 	} else {
 		const Sprite *spr = GetSprite(image & SPRITE_MASK, SpriteType::Normal);
 		left = tmp_left = (pt.x += spr->x_offs);
@@ -699,10 +704,10 @@ void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int w,
 
 	if (_draw_bounding_boxes && (image != SPR_EMPTY_BOUNDING_BOX)) {
 		/* Compute maximal extents of sprite and its bounding box */
-		left   = std::min(left  , RemapCoords(x + w          , y + bb_offset_y, z + bb_offset_z).x);
-		right  = std::max(right , RemapCoords(x + bb_offset_x, y + h          , z + bb_offset_z).x + 1);
-		top    = std::min(top   , RemapCoords(x + bb_offset_x, y + bb_offset_y, z + dz         ).y);
-		bottom = std::max(bottom, RemapCoords(x + w          , y + h          , z + bb_offset_z).y + 1);
+		left   = std::min(left  , RemapCoords(x + bounds.extent.x, y, z).x);
+		right  = std::max(right , RemapCoords(x, y + bounds.extent.y, z).x + 1);
+		top    = std::min(top   , RemapCoords(x, y, z + bounds.extent.z).y);
+		bottom = std::max(bottom, RemapCoords(x + bounds.extent.x, y + bounds.extent.y, z).y + 1);
 	}
 
 	/* Do not add the sprite to the viewport, if it is outside */
@@ -723,14 +728,14 @@ void AddSortableSpriteToDraw(SpriteID image, PaletteID pal, int x, int y, int w,
 	ps.image = image;
 	ps.pal = pal;
 	ps.sub = sub;
-	ps.xmin = x + bb_offset_x;
-	ps.xmax = x + std::max(bb_offset_x, w) - 1;
+	ps.xmin = x;
+	ps.xmax = x + bounds.extent.x - 1;
 
-	ps.ymin = y + bb_offset_y;
-	ps.ymax = y + std::max(bb_offset_y, h) - 1;
+	ps.ymin = y;
+	ps.ymax = y + bounds.extent.y - 1;
 
-	ps.zmin = z + bb_offset_z;
-	ps.zmax = z + std::max(bb_offset_z, dz) - 1;
+	ps.zmin = z;
+	ps.zmax = z + bounds.extent.z - 1;
 
 	ps.first_child = LAST_CHILD_NONE;
 
@@ -1005,7 +1010,9 @@ enum TileHighlightType : uint8_t {
 };
 
 const Station *_viewport_highlight_station; ///< Currently selected station for coverage area highlight
+const Station *_viewport_highlight_station_rect; ///< Currently selected station for rectangle highlight
 const Waypoint *_viewport_highlight_waypoint; ///< Currently selected waypoint for coverage area highlight
+const Waypoint *_viewport_highlight_waypoint_rect; ///< Currently selected waypoint for rectangle highlight
 const Town *_viewport_highlight_town; ///< Currently selected town for coverage area highlight
 
 /**
@@ -1019,8 +1026,21 @@ static TileHighlightType GetTileHighlightType(TileIndex t)
 		if (IsTileType(t, MP_STATION) && GetStationIndex(t) == _viewport_highlight_station->index) return THT_WHITE;
 		if (_viewport_highlight_station->TileIsInCatchment(t)) return THT_BLUE;
 	}
+
+	if (_viewport_highlight_station_rect != nullptr) {
+		if (IsTileType(t, MP_STATION) && GetStationIndex(t) == _viewport_highlight_station_rect->index) return THT_WHITE;
+		const StationRect *r = &_viewport_highlight_station_rect->rect;
+		if (r->PtInExtendedRect(TileX(t), TileY(t))) return THT_BLUE;
+	}
+
 	if (_viewport_highlight_waypoint != nullptr) {
 		if (IsTileType(t, MP_STATION) && GetStationIndex(t) == _viewport_highlight_waypoint->index) return THT_BLUE;
+	}
+
+	if (_viewport_highlight_waypoint_rect != nullptr) {
+		if (IsTileType(t, MP_STATION) && GetStationIndex(t) == _viewport_highlight_waypoint_rect->index) return THT_WHITE;
+		const StationRect *r = &_viewport_highlight_waypoint_rect->rect;
+		if (r->PtInExtendedRect(TileX(t), TileY(t))) return THT_BLUE;
 	}
 
 	if (_viewport_highlight_town != nullptr) {
@@ -1061,7 +1081,7 @@ static void DrawTileHighlightType(const TileInfo *ti, TileHighlightType tht)
 }
 
 /**
- * Highlights tiles insede local authority of selected towns.
+ * Highlights tiles inside local authority of selected towns.
  * @param *ti TileInfo Tile that is being drawn
  */
 static void HighlightTownLocalAuthorityTiles(const TileInfo *ti)
@@ -1100,7 +1120,7 @@ static void HighlightTownLocalAuthorityTiles(const TileInfo *ti)
  */
 static void DrawTileSelection(const TileInfo *ti)
 {
-	/* Highlight tiles insede local authority of selected towns. */
+	/* Highlight tiles inside local authority of selected towns. */
 	HighlightTownLocalAuthorityTiles(ti);
 
 	/* Draw a red error square? */
@@ -1353,14 +1373,23 @@ static Rect ExpandRectWithViewportSignMargins(Rect r, ZoomLevel zoom)
 static void ViewportAddTownStrings(DrawPixelInfo *dpi, const std::vector<const Town *> &towns, bool small)
 {
 	ViewportStringFlags flags{};
-	if (small) flags.Set(ViewportStringFlag::Small).Set(ViewportStringFlag::Shadow);
+	if (small) flags.Set({ViewportStringFlag::Small, ViewportStringFlag::Shadow});
 
-	StringID stringid = !small && _settings_client.gui.population_in_label ? STR_VIEWPORT_TOWN_POP : STR_TOWN_NAME;
+	StringID stringid_town = !small && _settings_client.gui.population_in_label ? STR_VIEWPORT_TOWN_POP : STR_TOWN_NAME;
+	StringID stringid_town_city = stringid_town;
+	if (!small) {
+		stringid_town_city = _settings_client.gui.population_in_label ? STR_VIEWPORT_TOWN_CITY_POP : STR_VIEWPORT_TOWN_CITY;
+	}
+
 	for (const Town *t : towns) {
 		std::string *str = ViewportAddString(dpi, &t->cache.sign, flags, INVALID_COLOUR);
 		if (str == nullptr) continue;
 
-		*str = GetString(stringid, t->index, t->cache.population);
+		if (t->larger_town) {
+			*str = GetString(stringid_town_city, t->index, t->cache.population);
+		} else {
+			*str = GetString(stringid_town, t->index, t->cache.population);
+		}
 	}
 }
 
@@ -1436,7 +1465,7 @@ static void ViewportAddKdtreeSigns(DrawPixelInfo *dpi)
 
 				/* If no facilities are present the station is a ghost station. */
 				StationFacilities facilities = st->facilities;
-				if (facilities == StationFacilities{}) facilities = STATION_FACILITY_GHOST;
+				if (facilities.None()) facilities = STATION_FACILITY_GHOST;
 
 				if (!facilities.Any(_facility_display_opt)) break;
 
@@ -1482,7 +1511,7 @@ static void ViewportAddKdtreeSigns(DrawPixelInfo *dpi)
 	});
 
 	/* Small versions of signs are used zoom level 4X and higher. */
-	bool small = dpi->zoom >= ZOOM_LVL_OUT_4X;
+	bool small = dpi->zoom >= ZoomLevel::Out4x;
 
 	/* Layering order (bottom to top): Town names, signs, stations */
 	ViewportAddTownStrings(dpi, towns, small);
@@ -1526,17 +1555,17 @@ void ViewportSign::UpdatePosition(int center, int top, std::string_view str, std
  */
 void ViewportSign::MarkDirty(ZoomLevel maxzoom) const
 {
-	Rect zoomlevels[ZOOM_LVL_END];
+	Rect zoomlevels[to_underlying(ZoomLevel::End)];
 
 	/* We don't know which size will be drawn, so mark the largest area dirty. */
 	const uint half_width = std::max(this->width_normal, this->width_small) / 2 + 1;
 	const uint height = WidgetDimensions::scaled.fullbevel.top + std::max(GetCharacterHeight(FS_NORMAL), GetCharacterHeight(FS_SMALL)) + WidgetDimensions::scaled.fullbevel.bottom + 1;
 
-	for (ZoomLevel zoom = ZOOM_LVL_BEGIN; zoom != ZOOM_LVL_END; zoom++) {
-		zoomlevels[zoom].left   = this->center - ScaleByZoom(half_width, zoom);
-		zoomlevels[zoom].top    = this->top    - ScaleByZoom(1, zoom);
-		zoomlevels[zoom].right  = this->center + ScaleByZoom(half_width, zoom);
-		zoomlevels[zoom].bottom = this->top    + ScaleByZoom(height, zoom);
+	for (ZoomLevel zoom = ZoomLevel::Begin; zoom != ZoomLevel::End; zoom++) {
+		zoomlevels[to_underlying(zoom)].left = this->center - ScaleByZoom(half_width, zoom);
+		zoomlevels[to_underlying(zoom)].top = this->top - ScaleByZoom(1, zoom);
+		zoomlevels[to_underlying(zoom)].right = this->center + ScaleByZoom(half_width, zoom);
+		zoomlevels[to_underlying(zoom)].bottom = this->top + ScaleByZoom(height, zoom);
 	}
 
 	for (const Window *w : Window::Iterate()) {
@@ -1545,7 +1574,7 @@ void ViewportSign::MarkDirty(ZoomLevel maxzoom) const
 		Viewport &vp = *w->viewport;
 		if (vp.zoom <= maxzoom) {
 			assert(vp.width != 0);
-			Rect &zl = zoomlevels[vp.zoom];
+			Rect &zl = zoomlevels[to_underlying(vp.zoom)];
 			MarkViewportDirty(vp, zl.left, zl.top, zl.right, zl.bottom);
 		}
 	}
@@ -1577,7 +1606,7 @@ static void ViewportSortParentSprites(ParentSpriteToSortVector *psdv)
 	 * adding extra fields to ParentSpriteToDraw structure.
 	 */
 	const uint32_t ORDER_COMPARED = UINT32_MAX; // Sprite was compared but we still need to compare the ones preceding it
-	const uint32_t ORDER_RETURNED = UINT32_MAX - 1; // Makr sorted sprite in case there are other occurrences of it in the stack
+	const uint32_t ORDER_RETURNED = UINT32_MAX - 1; // Mark sorted sprite in case there are other occurrences of it in the stack
 	std::stack<ParentSpriteToDraw *> sprite_order;
 	uint32_t next_order = 0;
 
@@ -1624,8 +1653,8 @@ static void ViewportSortParentSprites(ParentSpriteToSortVector *psdv)
 		auto ssum = std::max(s->xmax, s->xmin) + std::max(s->ymax, s->ymin);
 		auto prev = sprite_list.before_begin();
 		auto x = sprite_list.begin();
-		while (x != sprite_list.end() && ((*x).first <= ssum)) {
-			auto p = (*x).second;
+		while (x != sprite_list.end() && x->first <= ssum) {
+			auto p = x->second;
 			if (p == s) {
 				/* We found the current sprite, remove it and move on. */
 				x = sprite_list.erase_after(prev);
@@ -1733,13 +1762,13 @@ static void ViewportDrawDirtyBlocks()
 	int right =  UnScaleByZoom(dpi->width,  dpi->zoom);
 	int bottom = UnScaleByZoom(dpi->height, dpi->zoom);
 
-	int colour = _string_colourmap[_dirty_block_colour & 0xF];
+	PixelColour colour = _string_colourmap[_dirty_block_colour & 0xF];
 
 	dst = dpi->dst_ptr;
 
 	uint8_t bo = UnScaleByZoom(dpi->left + dpi->top, dpi->zoom) & 1;
 	do {
-		for (int i = (bo ^= 1); i < right; i += 2) blitter->SetPixel(dst, i, 0, (uint8_t)colour);
+		for (int i = (bo ^= 1); i < right; i += 2) blitter->SetPixel(dst, i, 0, colour);
 		dst = blitter->MoveTo(dst, 0, 1);
 	} while (--bottom > 0);
 }
@@ -1762,7 +1791,7 @@ static void ViewportDrawStrings(ZoomLevel zoom, const StringSpriteToDrawVector *
 		}
 
 		if (ss.flags.Test(ViewportStringFlag::TextColour)) {
-			if (ss.colour != INVALID_COLOUR) colour = static_cast<TextColour>(GetColourGradient(ss.colour, SHADE_LIGHTER) | TC_IS_PALETTE_COLOUR);
+			if (ss.colour != INVALID_COLOUR) colour = GetColourGradient(ss.colour, SHADE_LIGHTER).ToTextColour();
 		}
 
 		int left = x + WidgetDimensions::scaled.fullbevel.left;
@@ -1821,7 +1850,7 @@ void ViewportDoDraw(const Viewport &vp, int left, int top, int right, int bottom
 
 	DrawPixelInfo dp = _vd.dpi;
 	ZoomLevel zoom = _vd.dpi.zoom;
-	dp.zoom = ZOOM_LVL_MIN;
+	dp.zoom = ZoomLevel::Min;
 	dp.width = UnScaleByZoom(dp.width, zoom);
 	dp.height = UnScaleByZoom(dp.height, zoom);
 	AutoRestoreBackup cur_dpi(_cur_dpi, &dp);
@@ -2027,8 +2056,8 @@ void UpdateViewportPosition(Window *w, uint32_t delta_ms)
 static bool MarkViewportDirty(const Viewport &vp, int left, int top, int right, int bottom)
 {
 	/* Rounding wrt. zoom-out level */
-	right  += (1 << vp.zoom) - 1;
-	bottom += (1 << vp.zoom) - 1;
+	right += (1 << to_underlying(vp.zoom)) - 1;
+	bottom += (1 << to_underlying(vp.zoom)) - 1;
 
 	right -= vp.virtual_left;
 	if (right <= 0) return false;
@@ -2056,10 +2085,10 @@ static bool MarkViewportDirty(const Viewport &vp, int left, int top, int right, 
 
 /**
  * Mark all viewports that display an area as dirty (in need of repaint).
- * @param left   Left   edge of area to repaint. (viewport coordinates, that is wrt. #ZOOM_LVL_MIN)
- * @param top    Top    edge of area to repaint. (viewport coordinates, that is wrt. #ZOOM_LVL_MIN)
- * @param right  Right  edge of area to repaint. (viewport coordinates, that is wrt. #ZOOM_LVL_MIN)
- * @param bottom Bottom edge of area to repaint. (viewport coordinates, that is wrt. #ZOOM_LVL_MIN)
+ * @param left   Left   edge of area to repaint. (viewport coordinates, that is wrt. #ZoomLevel::Min)
+ * @param top    Top    edge of area to repaint. (viewport coordinates, that is wrt. #ZoomLevel::Min)
+ * @param right  Right  edge of area to repaint. (viewport coordinates, that is wrt. #ZoomLevel::Min)
+ * @param bottom Bottom edge of area to repaint. (viewport coordinates, that is wrt. #ZoomLevel::Min)
  * @return true if at least one viewport has a dirty block
  * @ingroup dirty
  */
@@ -2082,7 +2111,7 @@ void ConstrainAllViewportsZoom()
 	for (Window *w : Window::Iterate()) {
 		if (w->viewport == nullptr) continue;
 
-		ZoomLevel zoom = static_cast<ZoomLevel>(Clamp(w->viewport->zoom, _settings_client.gui.zoom_min, _settings_client.gui.zoom_max));
+		ZoomLevel zoom = Clamp(w->viewport->zoom, _settings_client.gui.zoom_min, _settings_client.gui.zoom_max);
 		if (zoom != w->viewport->zoom) {
 			while (w->viewport->zoom < zoom) DoZoomInOutWindow(ZOOM_OUT, w);
 			while (w->viewport->zoom > zoom) DoZoomInOutWindow(ZOOM_IN, w);
@@ -2241,7 +2270,7 @@ void SetSelectionRed(bool b)
  */
 static bool CheckClickOnViewportSign(const Viewport &vp, int x, int y, const ViewportSign *sign)
 {
-	bool small = (vp.zoom >= ZOOM_LVL_OUT_4X);
+	bool small = (vp.zoom >= ZoomLevel::Out4x);
 	int sign_half_width = ScaleByZoom((small ? sign->width_small : sign->width_normal) / 2, vp.zoom);
 	int sign_height = ScaleByZoom(WidgetDimensions::scaled.fullbevel.top + GetCharacterHeight(small ? FS_SMALL : FS_NORMAL) + WidgetDimensions::scaled.fullbevel.bottom, vp.zoom);
 
@@ -2281,12 +2310,18 @@ static bool CheckClickOnViewportSign(const Viewport &vp, int x, int y)
 	/* See ViewportAddKdtreeSigns() for details on the search logic */
 	_viewport_sign_kdtree.FindContained(search_rect.left, search_rect.top, search_rect.right, search_rect.bottom, [&](const ViewportSignKdtreeItem & item) {
 		switch (item.type) {
-			case ViewportSignKdtreeItem::VKI_STATION:
+			case ViewportSignKdtreeItem::VKI_STATION: {
 				if (!show_stations) break;
 				st = BaseStation::Get(std::get<StationID>(item.id));
 				if (!show_competitors && _local_company != st->owner && st->owner != OWNER_NONE) break;
+
+				StationFacilities facilities = st->facilities;
+				if (facilities.None()) facilities = STATION_FACILITY_GHOST;
+				if (!facilities.Any(_facility_display_opt)) break;
+
 				if (CheckClickOnViewportSign(vp, x, y, &st->sign)) last_st = st;
 				break;
+			}
 
 			case ViewportSignKdtreeItem::VKI_WAYPOINT:
 				if (!show_waypoints) break;
@@ -3623,7 +3658,7 @@ struct ViewportSSCSS {
 };
 
 /** List of sorters ordered from best to worst. */
-static ViewportSSCSS _vp_sprite_sorters[] = {
+static const ViewportSSCSS _vp_sprite_sorters[] = {
 #ifdef WITH_SSE
 	{ &ViewportSortParentSpritesSSE41Checker, &ViewportSortParentSpritesSSE41 },
 #endif
@@ -3679,6 +3714,7 @@ void MarkCatchmentTilesDirty()
 		MarkWholeScreenDirty();
 		return;
 	}
+
 	if (_viewport_highlight_station != nullptr) {
 		if (_viewport_highlight_station->catchment_tiles.tile == INVALID_TILE) {
 			MarkWholeScreenDirty();
@@ -3690,9 +3726,24 @@ void MarkCatchmentTilesDirty()
 			}
 		}
 	}
+
+	if (_viewport_highlight_station_rect != nullptr) {
+		if (!_viewport_highlight_station_rect->IsInUse()) {
+			_viewport_highlight_station_rect = nullptr;
+		}
+		MarkWholeScreenDirty();
+	}
+
 	if (_viewport_highlight_waypoint != nullptr) {
 		if (!_viewport_highlight_waypoint->IsInUse()) {
 			_viewport_highlight_waypoint = nullptr;
+		}
+		MarkWholeScreenDirty();
+	}
+
+	if (_viewport_highlight_waypoint_rect != nullptr) {
+		if (!_viewport_highlight_waypoint_rect->IsInUse()) {
+			_viewport_highlight_waypoint_rect = nullptr;
 		}
 		MarkWholeScreenDirty();
 	}
@@ -3701,7 +3752,9 @@ void MarkCatchmentTilesDirty()
 static void SetWindowDirtyForViewportCatchment()
 {
 	if (_viewport_highlight_station != nullptr) SetWindowDirty(WC_STATION_VIEW, _viewport_highlight_station->index);
+	if (_viewport_highlight_station_rect != nullptr) SetWindowDirty(WC_STATION_VIEW, _viewport_highlight_station_rect->index);
 	if (_viewport_highlight_waypoint != nullptr) SetWindowDirty(WC_WAYPOINT_VIEW, _viewport_highlight_waypoint->index);
+	if (_viewport_highlight_waypoint_rect != nullptr) SetWindowDirty(WC_WAYPOINT_VIEW, _viewport_highlight_waypoint_rect->index);
 	if (_viewport_highlight_town != nullptr) SetWindowDirty(WC_TOWN_VIEW, _viewport_highlight_town->index);
 }
 
@@ -3709,7 +3762,9 @@ static void ClearViewportCatchment()
 {
 	MarkCatchmentTilesDirty();
 	_viewport_highlight_station = nullptr;
+	_viewport_highlight_station_rect = nullptr;
 	_viewport_highlight_waypoint = nullptr;
+	_viewport_highlight_waypoint_rect = nullptr;
 	_viewport_highlight_town = nullptr;
 }
 
@@ -3722,15 +3777,41 @@ static void ClearViewportCatchment()
 void SetViewportCatchmentStation(const Station *st, bool sel)
 {
 	SetWindowDirtyForViewportCatchment();
+	/* Mark tiles dirty for redrawing and update selected station if a different station is already highlighted. */
 	if (sel && _viewport_highlight_station != st) {
 		ClearViewportCatchment();
 		_viewport_highlight_station = st;
 		MarkCatchmentTilesDirty();
+	/* Mark tiles dirty for redrawing and clear station selection if deselecting highlight. */
 	} else if (!sel && _viewport_highlight_station == st) {
 		MarkCatchmentTilesDirty();
 		_viewport_highlight_station = nullptr;
 	}
+	/* Redraw the currently selected station window */
 	if (_viewport_highlight_station != nullptr) SetWindowDirty(WC_STATION_VIEW, _viewport_highlight_station->index);
+}
+
+/**
+ * Select or deselect station for rectangle area highlight.
+ * Selecting a station will deselect a town.
+ * @param *st Station in question
+ * @param sel Select or deselect given station
+ */
+void SetViewportStationRect(const Station *st, bool sel)
+{
+	SetWindowDirtyForViewportCatchment();
+	/* Mark tiles dirty for redrawing and update selected station if a different station is already highlighted. */
+	if (sel && _viewport_highlight_station_rect != st) {
+		ClearViewportCatchment();
+		_viewport_highlight_station_rect = st;
+		MarkCatchmentTilesDirty();
+	/* Mark tiles dirty for redrawing and clear station selection if deselecting highlight. */
+	} else if (!sel && _viewport_highlight_station_rect == st) {
+		MarkCatchmentTilesDirty();
+		_viewport_highlight_station_rect = nullptr;
+	}
+	/* Redraw the currently selected station window */
+	if (_viewport_highlight_station_rect != nullptr) SetWindowDirty(WC_STATION_VIEW, _viewport_highlight_station_rect->index);
 }
 
 /**
@@ -3742,15 +3823,41 @@ void SetViewportCatchmentStation(const Station *st, bool sel)
 void SetViewportCatchmentWaypoint(const Waypoint *wp, bool sel)
 {
 	SetWindowDirtyForViewportCatchment();
+	/* Mark tiles dirty for redrawing and update selected waypoint if a different waypoint is already highlighted. */
 	if (sel && _viewport_highlight_waypoint != wp) {
 		ClearViewportCatchment();
 		_viewport_highlight_waypoint = wp;
 		MarkCatchmentTilesDirty();
+	/* Mark tiles dirty for redrawing and clear waypoint selection if deselecting highlight. */
 	} else if (!sel && _viewport_highlight_waypoint == wp) {
 		MarkCatchmentTilesDirty();
 		_viewport_highlight_waypoint = nullptr;
 	}
+	/* Redraw the currently selected waypoint window */
 	if (_viewport_highlight_waypoint != nullptr) SetWindowDirty(WC_WAYPOINT_VIEW, _viewport_highlight_waypoint->index);
+}
+
+/**
+ * Select or deselect waypoint for rectangle area highlight.
+ * Selecting a waypoint will deselect a town.
+ * @param *wp Waypoint in question
+ * @param sel Select or deselect given waypoint
+ */
+void SetViewportWaypointRect(const Waypoint *wp, bool sel)
+{
+	SetWindowDirtyForViewportCatchment();
+	/* Mark tiles dirty for redrawing and update selected waypoint if a different waypoint is already highlighted. */
+	if (sel && _viewport_highlight_waypoint_rect != wp) {
+		ClearViewportCatchment();
+		_viewport_highlight_waypoint_rect = wp;
+		MarkCatchmentTilesDirty();
+	/* Mark tiles dirty for redrawing and clear waypoint selection if deselecting highlight. */
+	} else if (!sel && _viewport_highlight_waypoint_rect == wp) {
+		MarkCatchmentTilesDirty();
+		_viewport_highlight_waypoint_rect = nullptr;
+	}
+	/* Redraw the currently selected waypoint window */
+	if (_viewport_highlight_waypoint_rect != nullptr) SetWindowDirty(WC_WAYPOINT_VIEW, _viewport_highlight_waypoint_rect->index);
 }
 
 /**
@@ -3762,14 +3869,17 @@ void SetViewportCatchmentWaypoint(const Waypoint *wp, bool sel)
 void SetViewportCatchmentTown(const Town *t, bool sel)
 {
 	SetWindowDirtyForViewportCatchment();
+	/* Mark tiles dirty for redrawing and update selected town if a different town is already highlighted. */
 	if (sel && _viewport_highlight_town != t) {
 		ClearViewportCatchment();
 		_viewport_highlight_town = t;
 		MarkWholeScreenDirty();
+	/* Mark tiles dirty for redrawing and clear town selection if deselecting highlight. */
 	} else if (!sel && _viewport_highlight_town == t) {
 		_viewport_highlight_town = nullptr;
 		MarkWholeScreenDirty();
 	}
+	/* Redraw the currently selected town window */
 	if (_viewport_highlight_town != nullptr) SetWindowDirty(WC_TOWN_VIEW, _viewport_highlight_town->index);
 }
 

@@ -2,14 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_error.cpp Implementation of ScriptError. */
 
 #include "../../stdafx.h"
 #include "script_error.hpp"
-#include "../../core/bitmath_func.hpp"
 #include "../../string_func.h"
 #include "../../strings_func.h"
 
@@ -27,7 +26,7 @@ ScriptError::ScriptErrorMapString ScriptError::error_map_string = ScriptError::S
 {
 	auto it = ScriptError::error_map_string.find(ScriptError::GetLastError());
 	assert(it != ScriptError::error_map_string.end());
-	return it->second;
+	return std::string{it->second};
 }
 
 /* static */ ScriptErrorType ScriptError::StringToError(StringID internal_string_id)
@@ -54,7 +53,7 @@ ScriptError::ScriptErrorMapString ScriptError::error_map_string = ScriptError::S
 
 	ScriptErrorMap::iterator it = error_map.find(internal_string_id);
 	if (it == error_map.end()) return ERR_UNKNOWN;
-	return (*it).second;
+	return it->second;
 }
 
 /* static */ void ScriptError::RegisterErrorMap(StringID internal_string_id, ScriptErrorType ai_error_msg)
@@ -62,7 +61,7 @@ ScriptError::ScriptErrorMapString ScriptError::error_map_string = ScriptError::S
 	error_map[internal_string_id] = ai_error_msg;
 }
 
-/* static */ void ScriptError::RegisterErrorMapString(ScriptErrorType ai_error_msg, const char *message)
+/* static */ void ScriptError::RegisterErrorMapString(ScriptErrorType ai_error_msg, std::string_view message)
 {
 	error_map_string[ai_error_msg] = message;
 }

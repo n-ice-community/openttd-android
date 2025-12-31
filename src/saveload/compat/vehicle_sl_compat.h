@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file vehicle_sl_compat.h Loading of vehicle chunks before table headers were added. */
@@ -100,7 +100,7 @@ const SaveLoadCompat _vehicle_train_sl_compat[] = {
 	SLC_VAR("common"),
 	SLC_VAR("crash_anim_pos"),
 	SLC_VAR("force_proceed"),
-	SLC_VAR("railtype"),
+	SLC_NULL(1, SL_MIN_VERSION, SLV_ENGINE_MULTI_RAILTYPE),
 	SLC_VAR("track"),
 	SLC_VAR("flags"),
 	SLC_NULL(2, SLV_2, SLV_60),

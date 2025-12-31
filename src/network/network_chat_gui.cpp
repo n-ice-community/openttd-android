@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_chat_gui.cpp GUI for handling chat messages. */
@@ -17,7 +17,6 @@
 #include "../town.h"
 #include "../window_func.h"
 #include "../toolbar_gui.h"
-#include "../core/geometry_func.hpp"
 #include "../zoom_func.h"
 #include "../timer/timer.h"
 #include "../timer/timer_window.h"
@@ -165,7 +164,7 @@ void NetworkUndrawChatMessage()
 }
 
 /** Check if a message is expired on a regular interval. */
-static IntervalTimer<TimerWindow> network_message_expired_interval(std::chrono::seconds(1), [](auto) {
+static const IntervalTimer<TimerWindow> network_message_expired_interval(std::chrono::seconds(1), [](auto) {
 	auto now = std::chrono::steady_clock::now();
 	for (auto &cmsg : _chatmsg_list) {
 		/* Message has expired, remove from the list */
@@ -251,7 +250,7 @@ void NetworkDrawChatMessage()
  * @param type The type of destination.
  * @param dest The actual destination index.
  */
-static void SendChat(const std::string &buf, DestType type, int dest)
+static void SendChat(std::string_view buf, DestType type, int dest)
 {
 	if (buf.empty()) return;
 	if (!_network_server) {
@@ -330,9 +329,9 @@ struct NetworkChatWindow : public Window {
 		this->Window::Close();
 	}
 
-	void FindWindowPlacementAndResize([[maybe_unused]] int def_width, [[maybe_unused]] int def_height) override
+	void FindWindowPlacementAndResize(int, int def_height, bool allow_resize) override
 	{
-		Window::FindWindowPlacementAndResize(_toolbar_width, def_height);
+		Window::FindWindowPlacementAndResize(_toolbar_width, def_height, allow_resize);
 	}
 
 	/**
@@ -411,7 +410,7 @@ struct NetworkChatWindow : public Window {
 };
 
 /** The widgets of the chat window. */
-static constexpr NWidgetPart _nested_chat_window_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_chat_window_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY, WID_NC_CLOSE),
 		NWidget(WWT_PANEL, COLOUR_GREY, WID_NC_BACKGROUND),
@@ -427,7 +426,7 @@ static constexpr NWidgetPart _nested_chat_window_widgets[] = {
 
 /** The description of the chat window. */
 static WindowDesc _chat_window_desc(
-	WDP_MANUAL, nullptr, 0, 0,
+	WDP_MANUAL, {}, 0, 0,
 	WC_SEND_NETWORK_MSG, WC_NONE,
 	{},
 	_nested_chat_window_widgets

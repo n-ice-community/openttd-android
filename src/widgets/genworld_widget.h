@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file genworld_widget.h Types related to the genworld widgets. */
@@ -54,7 +54,7 @@ enum GenerateLandscapeWidgets : WidgetID {
 	WID_GL_SMOOTHNESS_PULLDOWN,         ///< Dropdown 'Smoothness'.
 	WID_GL_VARIETY_PULLDOWN,            ///< Dropdown 'Variety distribution'.
 
-	WID_GL_BORDERS_RANDOM,              ///< 'Random'/'Manual' borders.
+	WID_GL_BORDERS_PULLDOWN,            ///< Dropdown 'Map edges'.
 	WID_GL_WATER_NW,                    ///< NW 'Water'/'Freeform'.
 	WID_GL_WATER_NE,                    ///< NE 'Water'/'Freeform'.
 	WID_GL_WATER_SE,                    ///< SE 'Water'/'Freeform'.

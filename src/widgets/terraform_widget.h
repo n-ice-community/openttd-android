@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file terraform_widget.h Types related to the terraform widgets. */
@@ -22,8 +22,6 @@ enum TerraformToolbarWidgets : WidgetID {
 	WID_TT_PLANT_TREES,                       ///< Plant trees button (note: opens separate window, no place-push-button).
 	WID_TT_PLACE_SIGN,                        ///< Place sign button.
 	WID_TT_PLACE_OBJECT,                      ///< Place object button.
-
-	INVALID_WID_TT = -1,
 };
 
 /** Widgets of the #ScenarioEditorLandscapeGenerationWindow class. */
@@ -44,8 +42,6 @@ enum EditorTerraformToolbarWidgets : WidgetID {
 	WID_ETT_DECREASE_SIZE,                       ///< Downwards arrow button to decrease terraforming size.
 	WID_ETT_NEW_SCENARIO,                        ///< Button for generating a new scenario.
 	WID_ETT_RESET_LANDSCAPE,                     ///< Button for removing all company-owned property.
-
-	INVALID_WID_ETT = -1,
 };
 
 #endif /* WIDGETS_TERRAFORM_WIDGET_H */

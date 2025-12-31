@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file fluidsynth.cpp Playing music via the fluidsynth library. */
@@ -16,6 +16,7 @@
 #include <fluidsynth.h>
 #include "../mixer.h"
 #include <mutex>
+#include "../safeguards.h"
 
 static struct {
 	fluid_settings_t *settings;    ///< FluidSynth settings handle
@@ -62,10 +63,10 @@ std::optional<std::string_view> MusicDriver_FluidSynth::Start(const StringList &
 {
 	std::lock_guard<std::mutex> lock{ _midi.synth_mutex };
 
-	const char *sfont_name = GetDriverParam(param, "soundfont");
+	auto sfont_name = GetDriverParam(param, "soundfont");
 	int sfont_id;
 
-	Debug(driver, 1, "Fluidsynth: sf {}", sfont_name != nullptr ? sfont_name : "(null)");
+	Debug(driver, 1, "Fluidsynth: sf {}", sfont_name.has_value() ? *sfont_name : "(null)");
 
 	/* Create the settings. */
 	_midi.settings = new_fluid_settings();
@@ -84,7 +85,7 @@ std::optional<std::string_view> MusicDriver_FluidSynth::Start(const StringList &
 
 	/* Load a SoundFont and reset presets (so that new instruments
 	 * get used from the SoundFont) */
-	if (sfont_name == nullptr) {
+	if (!sfont_name.has_value()) {
 		sfont_id = FLUID_FAILED;
 
 		/* Try loading the default soundfont registered with FluidSynth. */
@@ -104,7 +105,8 @@ std::optional<std::string_view> MusicDriver_FluidSynth::Start(const StringList &
 		}
 		if (sfont_id == FLUID_FAILED) return "Could not open any sound font";
 	} else {
-		sfont_id = fluid_synth_sfload(_midi.synth, sfont_name, 1);
+		std::string name{sfont_name.value()};
+		sfont_id = fluid_synth_sfload(_midi.synth, name.c_str(), 1);
 		if (sfont_id == FLUID_FAILED) return "Could not open sound font";
 	}
 

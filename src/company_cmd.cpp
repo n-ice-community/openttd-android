@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file company_cmd.cpp Handling of companies. */
@@ -28,6 +28,7 @@
 #include "sound_func.h"
 #include "rail.h"
 #include "core/pool_func.hpp"
+#include "core/string_consumer.hpp"
 #include "settings_func.h"
 #include "vehicle_base.h"
 #include "vehicle_func.h"
@@ -39,10 +40,12 @@
 #include "timer/timer.h"
 #include "timer/timer_game_economy.h"
 #include "timer/timer_game_tick.h"
+#include "timer/timer_window.h"
 
 #include "widgets/statusbar_widget.h"
 
 #include "table/strings.h"
+#include "table/company_face.h"
 
 #include "safeguards.h"
 
@@ -51,8 +54,8 @@ void UpdateObjectColours(const Company *c);
 
 CompanyID _local_company;   ///< Company controlled by the human player at this client. Can also be #COMPANY_SPECTATOR.
 CompanyID _current_company; ///< Company currently doing an action.
-ReferenceThroughBaseContainer<std::array<Colours, MAX_COMPANIES>> _company_colours; ///< NOSAVE: can be determined from company structs.
-CompanyManagerFace _company_manager_face; ///< for company manager face storage in openttd.cfg
+TypedIndexContainer<std::array<Colours, MAX_COMPANIES>, CompanyID> _company_colours; ///< NOSAVE: can be determined from company structs.
+std::string _company_manager_face; ///< for company manager face storage in openttd.cfg
 uint _cur_company_tick_index;             ///< used to generate a name for one company that doesn't have a name yet per tick
 
 CompanyPool _company_pool("Company"); ///< Pool of companies.
@@ -138,6 +141,8 @@ void SetLocalCompany(CompanyID new_company)
 	MarkWholeScreenDirty();
 	InvalidateWindowClassesData(WC_SIGN_LIST, -1);
 	InvalidateWindowClassesData(WC_GOALS_LIST);
+	InvalidateWindowClassesData(WC_COMPANY_COLOUR, -1);
+	ResetVehicleColourMap();
 }
 
 /**
@@ -147,8 +152,18 @@ void SetLocalCompany(CompanyID new_company)
  */
 TextColour GetDrawStringCompanyColour(CompanyID company)
 {
-	if (!Company::IsValidID(company)) return (TextColour)GetColourGradient(COLOUR_WHITE, SHADE_NORMAL) | TC_IS_PALETTE_COLOUR;
-	return (TextColour)GetColourGradient(_company_colours[company], SHADE_NORMAL) | TC_IS_PALETTE_COLOUR;
+	if (!Company::IsValidID(company)) return GetColourGradient(COLOUR_WHITE, SHADE_NORMAL).ToTextColour();
+	return GetColourGradient(_company_colours[company], SHADE_NORMAL).ToTextColour();
+}
+
+/**
+ * Get the palette for recolouring with a company colour.
+ * @param company Company to get the colour of.
+ * @return Palette for recolouring.
+ */
+PaletteID GetCompanyPalette(CompanyID company)
+{
+	return GetColourPalette(_company_colours[company]);
 }
 
 /**
@@ -159,7 +174,7 @@ TextColour GetDrawStringCompanyColour(CompanyID company)
  */
 void DrawCompanyIcon(CompanyID c, int x, int y)
 {
-	DrawSprite(SPR_COMPANY_ICON, COMPANY_SPRITE_COLOUR(c), x, y);
+	DrawSprite(SPR_COMPANY_ICON, GetCompanyPalette(c), x, y);
 }
 
 /**
@@ -170,40 +185,48 @@ void DrawCompanyIcon(CompanyID c, int x, int y)
  */
 static bool IsValidCompanyManagerFace(CompanyManagerFace cmf)
 {
-	if (!AreCompanyManagerFaceBitsValid(cmf, CMFV_GEN_ETHN, GE_WM)) return false;
+	if (cmf.style >= GetNumCompanyManagerFaceStyles()) return false;
 
-	GenderEthnicity ge   = (GenderEthnicity)GetCompanyManagerFaceBits(cmf, CMFV_GEN_ETHN, GE_WM);
-	bool has_moustache   = !HasBit(ge, GENDER_FEMALE) && GetCompanyManagerFaceBits(cmf, CMFV_HAS_MOUSTACHE,   ge) != 0;
-	bool has_tie_earring = !HasBit(ge, GENDER_FEMALE) || GetCompanyManagerFaceBits(cmf, CMFV_HAS_TIE_EARRING, ge) != 0;
-	bool has_glasses     = GetCompanyManagerFaceBits(cmf, CMFV_HAS_GLASSES, ge) != 0;
-
-	if (!AreCompanyManagerFaceBitsValid(cmf, CMFV_EYE_COLOUR, ge)) return false;
-	for (CompanyManagerFaceVariable cmfv = CMFV_CHEEKS; cmfv < CMFV_END; cmfv++) {
-		switch (cmfv) {
-			case CMFV_MOUSTACHE:   if (!has_moustache)   continue; break;
-			case CMFV_LIPS:
-			case CMFV_NOSE:        if (has_moustache)    continue; break;
-			case CMFV_TIE_EARRING: if (!has_tie_earring) continue; break;
-			case CMFV_GLASSES:     if (!has_glasses)     continue; break;
-			default: break;
-		}
-		if (!AreCompanyManagerFaceBitsValid(cmf, cmfv, ge)) return false;
+	/* Test if each enabled part is valid. */
+	FaceVars vars = GetCompanyManagerFaceVars(cmf.style);
+	for (uint var : SetBitIterator(GetActiveFaceVars(cmf, vars))) {
+		if (!vars[var].IsValid(cmf)) return false;
 	}
 
 	return true;
 }
 
+static CompanyMask _dirty_company_finances{}; ///< Bitmask of company finances that should be marked dirty.
+
 /**
- * Refresh all windows owned by a company.
+ * Mark all finance windows owned by a company as needing a refresh.
+ * The actual refresh is deferred until the end of the gameloop to reduce duplicated work.
  * @param company Company that changed, and needs its windows refreshed.
  */
 void InvalidateCompanyWindows(const Company *company)
 {
 	CompanyID cid = company->index;
-
-	if (cid == _local_company) SetWindowWidgetDirty(WC_STATUS_BAR, 0, WID_S_RIGHT);
-	SetWindowDirty(WC_FINANCES, cid);
+	_dirty_company_finances.Set(cid);
 }
+
+/**
+ * Refresh all company finance windows previously marked dirty.
+ */
+static const IntervalTimer<TimerWindow> invalidate_company_windows_interval(std::chrono::milliseconds(1), [](auto) {
+	for (CompanyID cid : _dirty_company_finances) {
+		if (cid == _local_company) SetWindowWidgetDirty(WC_STATUS_BAR, 0, WID_S_RIGHT);
+		Window *w = FindWindowById(WC_FINANCES, cid);
+		if (w != nullptr) {
+			w->SetWidgetDirty(WID_CF_EXPS_PRICE3);
+			w->SetWidgetDirty(WID_CF_OWN_VALUE);
+			w->SetWidgetDirty(WID_CF_LOAN_VALUE);
+			w->SetWidgetDirty(WID_CF_BALANCE_VALUE);
+			w->SetWidgetDirty(WID_CF_MAXLOAN_VALUE);
+		}
+		SetWindowWidgetDirty(WC_COMPANY, cid, WID_C_DESC_COMPANY_VALUE);
+	}
+	_dirty_company_finances.Reset();
+});
 
 /**
  * Get the amount of money that a company has available, or INT64_MAX
@@ -551,14 +574,14 @@ restart:;
 void ResetCompanyLivery(Company *c)
 {
 	for (LiveryScheme scheme = LS_BEGIN; scheme < LS_END; scheme++) {
-		c->livery[scheme].in_use  = 0;
+		c->livery[scheme].in_use.Reset();
 		c->livery[scheme].colour1 = c->colour;
 		c->livery[scheme].colour2 = c->colour;
 	}
 
 	for (Group *g : Group::Iterate()) {
 		if (g->owner == c->index) {
-			g->livery.in_use  = 0;
+			g->livery.in_use.Reset();
 			g->livery.colour1 = c->colour;
 			g->livery.colour2 = c->colour;
 		}
@@ -600,13 +623,17 @@ Company *DoStartupNewCompany(bool is_ai, CompanyID company = CompanyID::Invalid(
 	c->inaugurated_year = TimerGameEconomy::year;
 	c->inaugurated_year_calendar = TimerGameCalendar::year;
 
-	/* If starting a player company in singleplayer and a favorite company manager face is selected, choose it. Otherwise, use a random face.
-	 * In a network game, we'll choose the favorite face later in CmdCompanyCtrl to sync it to all clients. */
-	if (_company_manager_face != 0 && !is_ai && !_networking) {
-		c->face = _company_manager_face;
-	} else {
-		RandomCompanyManagerFaceBits(c->face, (GenderEthnicity)Random(), false, _random);
+	/* If starting a player company in singleplayer and a favourite company manager face is selected, choose it. Otherwise, use a random face.
+	 * In a network game, we'll choose the favourite face later in CmdCompanyCtrl to sync it to all clients. */
+	bool randomise_face = true;
+	if (!_company_manager_face.empty() && !is_ai && !_networking) {
+		auto cmf = ParseCompanyManagerFaceCode(_company_manager_face);
+		if (cmf.has_value()) {
+			randomise_face = false;
+			c->face = std::move(*cmf);
+		}
 	}
+	if (randomise_face) RandomiseCompanyManagerFace(c->face, _random);
 
 	SetDefaultCompanySettings(c->index);
 	ClearEnginesHiddenFlagOfCompany(c->index);
@@ -781,7 +808,7 @@ void OnTick_Companies()
  * A year has passed, update the economic data of all companies, and perhaps show the
  * financial overview window of the local company.
  */
-static IntervalTimer<TimerGameEconomy> _economy_companies_yearly({TimerGameEconomy::YEAR, TimerGameEconomy::Priority::COMPANY}, [](auto)
+static const IntervalTimer<TimerGameEconomy> _economy_companies_yearly({TimerGameEconomy::YEAR, TimerGameEconomy::Priority::COMPANY}, [](auto)
 {
 	/* Copy statistics */
 	for (Company *c : Company::Iterate()) {
@@ -890,12 +917,17 @@ CommandCost CmdCompanyCtrl(DoCommandFlags flags, CompanyCtrlAction cca, CompanyI
 				SetLocalCompany(c->index);
 
 				/*
-				 * If a favorite company manager face is selected, choose it. Otherwise, use a random face.
+				 * If a favourite company manager face is selected, choose it. Otherwise, use a random face.
 				 * Because this needs to be synchronised over the network, only the client knows
 				 * its configuration and we are currently in the execution of a command, we have
 				 * to circumvent the normal ::Post logic for commands and just send the command.
 				 */
-				if (_company_manager_face != 0) Command<CMD_SET_COMPANY_MANAGER_FACE>::SendNet(STR_NULL, c->index, _company_manager_face);
+				if (!_company_manager_face.empty()) {
+					auto cmf = ParseCompanyManagerFaceCode(_company_manager_face);
+					if (cmf.has_value()) {
+						Command<CMD_SET_COMPANY_MANAGER_FACE>::SendNet(STR_NULL, c->index, cmf->style, cmf->bits);
+					}
+				}
 
 				/* Now that we have a new company, broadcast our company settings to
 				 * all clients so everything is in sync */
@@ -1018,15 +1050,20 @@ CommandCost CmdCompanyAllowListCtrl(DoCommandFlags flags, CompanyAllowListCtrlAc
 /**
  * Change the company manager's face.
  * @param flags operation to perform
- * @param cmf face bitmasked
+ * @param style The style of the company manager face.
+ * @param bits The bits of company manager face.
  * @return the cost of this operation or an error
  */
-CommandCost CmdSetCompanyManagerFace(DoCommandFlags flags, CompanyManagerFace cmf)
+CommandCost CmdSetCompanyManagerFace(DoCommandFlags flags, uint style, uint32_t bits)
 {
-	if (!IsValidCompanyManagerFace(cmf)) return CMD_ERROR;
+	CompanyManagerFace tmp_face{style, bits, {}};
+	if (!IsValidCompanyManagerFace(tmp_face)) return CMD_ERROR;
 
 	if (flags.Test(DoCommandFlag::Execute)) {
-		Company::Get(_current_company)->face = cmf;
+		CompanyManagerFace &cmf = Company::Get(_current_company)->face;
+		SetCompanyManagerFaceStyle(cmf, style);
+		cmf.bits = tmp_face.bits;
+
 		MarkWholeScreenDirty();
 	}
 	return CommandCost();
@@ -1040,8 +1077,8 @@ CommandCost CmdSetCompanyManagerFace(DoCommandFlags flags, CompanyManagerFace cm
 void UpdateCompanyLiveries(Company *c)
 {
 	for (int i = 1; i < LS_END; i++) {
-		if (!HasBit(c->livery[i].in_use, 0)) c->livery[i].colour1 = c->livery[LS_DEFAULT].colour1;
-		if (!HasBit(c->livery[i].in_use, 1)) c->livery[i].colour2 = c->livery[LS_DEFAULT].colour2;
+		if (!c->livery[i].in_use.Test(Livery::Flag::Primary)) c->livery[i].colour1 = c->livery[LS_DEFAULT].colour1;
+		if (!c->livery[i].in_use.Test(Livery::Flag::Secondary)) c->livery[i].colour2 = c->livery[LS_DEFAULT].colour2;
 	}
 	UpdateCompanyGroupLiveries(c);
 }
@@ -1072,7 +1109,7 @@ CommandCost CmdSetCompanyColour(DoCommandFlags flags, LiveryScheme scheme, bool 
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		if (primary) {
-			if (scheme != LS_DEFAULT) AssignBit(c->livery[scheme].in_use, 0, colour != INVALID_COLOUR);
+			if (scheme != LS_DEFAULT) c->livery[scheme].in_use.Set(Livery::Flag::Primary, colour != INVALID_COLOUR);
 			if (colour == INVALID_COLOUR) colour = c->livery[LS_DEFAULT].colour1;
 			c->livery[scheme].colour1 = colour;
 
@@ -1085,7 +1122,7 @@ CommandCost CmdSetCompanyColour(DoCommandFlags flags, LiveryScheme scheme, bool 
 				CompanyAdminUpdate(c);
 			}
 		} else {
-			if (scheme != LS_DEFAULT) AssignBit(c->livery[scheme].in_use, 1, colour != INVALID_COLOUR);
+			if (scheme != LS_DEFAULT) c->livery[scheme].in_use.Set(Livery::Flag::Secondary, colour != INVALID_COLOUR);
 			if (colour == INVALID_COLOUR) colour = c->livery[LS_DEFAULT].colour2;
 			c->livery[scheme].colour2 = colour;
 
@@ -1094,16 +1131,16 @@ CommandCost CmdSetCompanyColour(DoCommandFlags flags, LiveryScheme scheme, bool 
 			}
 		}
 
-		if (c->livery[scheme].in_use != 0) {
+		if (c->livery[scheme].in_use.Any({Livery::Flag::Primary, Livery::Flag::Secondary})) {
 			/* If enabling a scheme, set the default scheme to be in use too */
-			c->livery[LS_DEFAULT].in_use = 1;
+			c->livery[LS_DEFAULT].in_use.Set(Livery::Flag::Primary);
 		} else {
 			/* Else loop through all schemes to see if any are left enabled.
 			 * If not, disable the default scheme too. */
-			c->livery[LS_DEFAULT].in_use = 0;
+			c->livery[LS_DEFAULT].in_use.Reset({Livery::Flag::Primary, Livery::Flag::Secondary});
 			for (scheme = LS_DEFAULT; scheme < LS_END; scheme++) {
-				if (c->livery[scheme].in_use != 0) {
-					c->livery[LS_DEFAULT].in_use = 1;
+				if (c->livery[scheme].in_use.Any({Livery::Flag::Primary, Livery::Flag::Secondary})) {
+					c->livery[LS_DEFAULT].in_use.Set(Livery::Flag::Primary);
 					break;
 				}
 			}
@@ -1254,26 +1291,14 @@ int CompanyServiceInterval(const Company *c, VehicleType type)
 
 /**
  * Get total sum of all owned road bits.
+ * @param rtt RoadTramType to get total for.
  * @return Combined total road road bits.
  */
-uint32_t CompanyInfrastructure::GetRoadTotal() const
+uint32_t CompanyInfrastructure::GetRoadTramTotal(RoadTramType rtt) const
 {
 	uint32_t total = 0;
-	for (RoadType rt = ROADTYPE_BEGIN; rt != ROADTYPE_END; rt++) {
-		if (RoadTypeIsRoad(rt)) total += this->road[rt];
-	}
-	return total;
-}
-
-/**
- * Get total sum of all owned tram bits.
- * @return Combined total of tram road bits.
- */
-uint32_t CompanyInfrastructure::GetTramTotal() const
-{
-	uint32_t total = 0;
-	for (RoadType rt = ROADTYPE_BEGIN; rt != ROADTYPE_END; rt++) {
-		if (RoadTypeIsTram(rt)) total += this->road[rt];
+	for (RoadType rt : GetMaskForRoadTramType(rtt)) {
+		total += this->road[rt];
 	}
 	return total;
 }
@@ -1343,4 +1368,158 @@ CompanyID GetFirstPlayableCompanyID()
 	}
 
 	return CompanyID::Begin();
+}
+
+static std::vector<FaceSpec> _faces; ///< All company manager face styles.
+
+/**
+ * Reset company manager face styles to default.
+ */
+void ResetFaces()
+{
+	_faces.clear();
+	_faces.assign(std::begin(_original_faces), std::end(_original_faces));
+}
+
+/**
+ * Get the number of company manager face styles.
+ * @return Number of face styles.
+ */
+uint GetNumCompanyManagerFaceStyles()
+{
+	return static_cast<uint>(std::size(_faces));
+}
+
+/**
+ * Get the definition of a company manager face style.
+ * @param style_index Face style to get.
+ * @return Definition of face style.
+ */
+const FaceSpec *GetCompanyManagerFaceSpec(uint style_index)
+{
+	if (style_index < GetNumCompanyManagerFaceStyles()) return &_faces[style_index];
+	return nullptr;
+}
+
+/**
+ * Find a company manager face style by label.
+ * @param label Label to find.
+ * @return Index of face style if label is found, otherwise std::nullopt.
+ */
+std::optional<uint> FindCompanyManagerFaceLabel(std::string_view label)
+{
+	auto it = std::ranges::find(_faces, label, &FaceSpec::label);
+	if (it == std::end(_faces)) return std::nullopt;
+
+	return static_cast<uint>(std::distance(std::begin(_faces), it));
+}
+
+/**
+ * Get the face variables for a face style.
+ * @param style_index Face style to get variables for.
+ * @return Variables for the face style.
+ */
+FaceVars GetCompanyManagerFaceVars(uint style)
+{
+	const FaceSpec *spec = GetCompanyManagerFaceSpec(style);
+	if (spec == nullptr) return {};
+	return spec->GetFaceVars();
+}
+
+/**
+ * Set a company face style.
+ * Changes both the style index and the label.
+ * @param cmf The CompanyManagerFace to change.
+ * @param style The style to set.
+ */
+void SetCompanyManagerFaceStyle(CompanyManagerFace &cmf, uint style)
+{
+	const FaceSpec *spec = GetCompanyManagerFaceSpec(style);
+	assert(spec != nullptr);
+
+	cmf.style = style;
+	cmf.style_label = spec->label;
+}
+
+/**
+ * Completely randomise a company manager face, including style.
+ * @note randomizer should passed be appropriate for server-side or client-side usage.
+ * @param cmf The CompanyManagerFace to randomise.
+ * @param randomizer The randomizer to use.
+ */
+void RandomiseCompanyManagerFace(CompanyManagerFace &cmf, Randomizer &randomizer)
+{
+	SetCompanyManagerFaceStyle(cmf, randomizer.Next(GetNumCompanyManagerFaceStyles()));
+	RandomiseCompanyManagerFaceBits(cmf, GetCompanyManagerFaceVars(cmf.style), randomizer);
+}
+
+/**
+ * Mask company manager face bits to ensure they are all within range.
+ * @note Does not update the CompanyManagerFace itself. Unused bits are cleared.
+ * @param cmf The CompanyManagerFace.
+ * @param style The face variables.
+ * @return The masked face bits.
+ */
+uint32_t MaskCompanyManagerFaceBits(const CompanyManagerFace &cmf, FaceVars vars)
+{
+	CompanyManagerFace face{};
+
+	for (auto var : SetBitIterator(GetActiveFaceVars(cmf, vars))) {
+		vars[var].SetBits(face, vars[var].GetBits(cmf));
+	}
+
+	return face.bits;
+}
+
+/**
+ * Get a face code representation of a company manager face.
+ * @param cmf The company manager face.
+ * @return String containing face code.
+ */
+std::string FormatCompanyManagerFaceCode(const CompanyManagerFace &cmf)
+{
+	uint32_t masked_face_bits = MaskCompanyManagerFaceBits(cmf, GetCompanyManagerFaceVars(cmf.style));
+	return fmt::format("{}:{}", cmf.style_label, masked_face_bits);
+}
+
+/**
+ * Parse a face code into a company manager face.
+ * @param str Face code to parse.
+ * @return Company manager face, or std::nullopt if it could not be parsed.
+ */
+std::optional<CompanyManagerFace> ParseCompanyManagerFaceCode(std::string_view str)
+{
+	if (str.empty()) return std::nullopt;
+
+	CompanyManagerFace cmf;
+	StringConsumer consumer{str};
+	if (consumer.FindChar(':') != StringConsumer::npos) {
+		auto label = consumer.ReadUntilChar(':', StringConsumer::SKIP_ONE_SEPARATOR);
+
+		/* Read numeric part and ensure it's valid. */
+		auto bits = consumer.TryReadIntegerBase<uint32_t>(10, true);
+		if (!bits.has_value() || consumer.AnyBytesLeft()) return std::nullopt;
+
+		/* Ensure style label is valid. */
+		auto style = FindCompanyManagerFaceLabel(label);
+		if (!style.has_value()) return std::nullopt;
+
+		SetCompanyManagerFaceStyle(cmf, *style);
+		cmf.bits = *bits;
+	} else {
+		/* No ':' included, treat as numeric-only. This allows old-style codes to be entered. */
+		auto bits = ParseInteger(str, 10, true);
+		if (!bits.has_value()) return std::nullopt;
+
+		/* Old codes use bits 0..1 to represent face style. These map directly to the default face styles. */
+		SetCompanyManagerFaceStyle(cmf, GB(*bits, 0, 2));
+		cmf.bits = *bits;
+	}
+
+	/* Force the face bits to be valid. */
+	FaceVars vars = GetCompanyManagerFaceVars(cmf.style);
+	ScaleAllCompanyManagerFaceBits(cmf, vars);
+	cmf.bits = MaskCompanyManagerFaceBits(cmf, vars);
+
+	return cmf;
 }

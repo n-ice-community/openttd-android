@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file opengl.h OpenGL video driver support. */
@@ -19,9 +19,11 @@ typedef void (*OGLProc)();
 typedef OGLProc (*GetOGLProcAddressProc)(const char *proc);
 
 bool IsOpenGLVersionAtLeast(uint8_t major, uint8_t minor);
-const char *FindStringInExtensionList(const char *string, const char *substring);
+bool HasStringInExtensionList(std::string_view string, std::string_view substring);
 
 class OpenGLSprite;
+
+using OpenGLSpriteLRUCache = LRUCache<SpriteID, std::unique_ptr<OpenGLSprite>>;
 
 /** Platform-independent back-end class for OpenGL video drivers. */
 class OpenGLBackend : public SpriteEncoder {
@@ -58,7 +60,7 @@ private:
 	GLint  sprite_rgb_loc = 0; ///< Uniform location for RGB mode flag.
 	GLint  sprite_crash_loc = 0; ///< Uniform location for crash remap mode flag.
 
-	LRUCache<SpriteID, OpenGLSprite> cursor_cache; ///< Cache of encoded cursor sprites.
+	OpenGLSpriteLRUCache cursor_cache; ///< Cache of encoded cursor sprites.
 	PaletteID last_sprite_pal = (PaletteID)-1; ///< Last uploaded remap palette.
 	bool clear_cursor_cache = false; ///< A clear of the cursor cache is pending.
 
@@ -74,7 +76,7 @@ private:
 
 	void InternalClearCursorCache();
 
-	void RenderOglSprite(OpenGLSprite *gl_sprite, PaletteID pal, int x, int y, ZoomLevel zoom);
+	void RenderOglSprite(const OpenGLSprite *gl_sprite, PaletteID pal, int x, int y, ZoomLevel zoom);
 
 public:
 	/** Get singleton instance of this class. */
@@ -105,8 +107,8 @@ public:
 	/* SpriteEncoder */
 
 	bool Is32BppSupported() override { return true; }
-	uint GetSpriteAlignment() override { return 1u << (ZOOM_LVL_END - 1); }
-	Sprite *Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override;
+	uint GetSpriteAlignment() override { return 1u << to_underlying(ZoomLevel::Max); }
+	Sprite *Encode(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override;
 };
 
 
@@ -134,10 +136,10 @@ private:
 	static bool Create();
 	static void Destroy();
 
-	bool BindTextures();
+	bool BindTextures() const;
 
 public:
-	OpenGLSprite(const SpriteLoader::SpriteCollection &sprite);
+	OpenGLSprite(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite);
 
 	/* No support for moving/copying the textures is implemented. */
 	OpenGLSprite(const OpenGLSprite&) = delete;

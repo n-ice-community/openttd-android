@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_anim_sse4.cpp Implementation of the SSE4 32 bpp blitter with animation support. */
@@ -190,8 +190,8 @@ bmno_full_transparency:
 					const uint m1 = (uint8_t) (mvX2 >> 16);
 					const uint r1 = remap[m1];
 					if (mvX2 & 0x00FF00FF) {
+						/* Written so the compiler uses CMOV. */
 						#define CMOV_REMAP(m_colour, m_colour_init, m_src, m_m) \
-							/* Written so the compiler uses CMOV. */ \
 							Colour m_colour = m_colour_init; \
 							{ \
 							const Colour srcm = (Colour) (m_src); \

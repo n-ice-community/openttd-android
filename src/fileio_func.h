@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file fileio_func.h Functions for Standard In/Out file operations */
@@ -13,21 +13,21 @@
 #include "core/enum_type.hpp"
 #include "fileio_type.h"
 
-std::optional<FileHandle> FioFOpenFile(const std::string &filename, const char *mode, Subdirectory subdir, size_t *filesize = nullptr);
-bool FioCheckFileExists(const std::string &filename, Subdirectory subdir);
-std::string FioFindFullPath(Subdirectory subdir, const std::string &filename);
+std::optional<FileHandle> FioFOpenFile(std::string_view filename, std::string_view mode, Subdirectory subdir, size_t *filesize = nullptr);
+bool FioCheckFileExists(std::string_view filename, Subdirectory subdir);
+std::string FioFindFullPath(Subdirectory subdir, std::string_view filename);
 std::string FioGetDirectory(Searchpath sp, Subdirectory subdir);
 std::string FioFindDirectory(Subdirectory subdir);
 void FioCreateDirectory(const std::string &name);
 bool FioRemove(const std::string &filename);
 
-const char *FiosGetScreenshotDir();
+std::string_view FiosGetScreenshotDir();
 
 void SanitizeFilename(std::string &filename);
 void AppendPathSeparator(std::string &buf);
-void DeterminePaths(const char *exe, bool only_local_path);
+void DeterminePaths(std::string_view exe, bool only_local_path);
 std::unique_ptr<char[]> ReadFileToMem(const std::string &filename, size_t &lenp, size_t maxsize);
-bool FileExists(const std::string &filename);
+bool FileExists(std::string_view filename);
 bool ExtractTar(const std::string &tar_filename, Subdirectory subdir);
 
 extern std::string _personal_dir; ///< custom directory for personal settings, saves, newgrf, etc.

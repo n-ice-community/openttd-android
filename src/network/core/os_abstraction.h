@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -23,13 +23,13 @@ private:
 	int error;                   ///< The underlying error number from errno or WSAGetLastError.
 	mutable std::string message; ///< The string representation of the error (set on first call to #AsString).
 public:
-	NetworkError(int error, const std::string &message = {});
+	NetworkError(int error, std::string_view message = {});
 
 	bool HasError() const;
 	bool WouldBlock() const;
 	bool IsConnectionReset() const;
 	bool IsConnectInProgress() const;
-	const std::string &AsString() const;
+	std::string_view AsString() const;
 
 	static NetworkError GetLast();
 };
@@ -140,5 +140,23 @@ NetworkError GetSocketError(SOCKET d);
 /* Make sure these structures have the size we expect them to be */
 static_assert(sizeof(in_addr)  ==  4); ///< IPv4 addresses should be 4 bytes.
 static_assert(sizeof(in6_addr) == 16); ///< IPv6 addresses should be 16 bytes.
+
+struct SocketSender {
+	SOCKET sock;
+
+	ssize_t operator()(std::span<const uint8_t> buffer)
+	{
+		return send(this->sock, reinterpret_cast<const char *>(buffer.data()), static_cast<int>(buffer.size()), 0);
+	}
+};
+
+struct SocketReceiver {
+	SOCKET sock;
+
+	ssize_t operator()(std::span<uint8_t> buffer)
+	{
+		return recv(this->sock, reinterpret_cast<char *>(buffer.data()), static_cast<int>(buffer.size()), 0);
+	}
+};
 
 #endif /* NETWORK_CORE_OS_ABSTRACTION_H */

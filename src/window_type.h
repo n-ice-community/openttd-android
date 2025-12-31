@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file window_type.h Types related to windows */
@@ -18,6 +18,9 @@
  * Negative IDs are used for special cases, like denoting 'no widget'.
  */
 using WidgetID = int;
+
+/** An invalid widget index. */
+static constexpr WidgetID INVALID_WIDGET = -1;
 
 /** %Window numbers. */
 enum WindowNumberEnum : uint8_t {
@@ -596,6 +599,12 @@ enum WindowClass : uint16_t {
 	WC_INDUSTRY_PRODUCTION,
 
 	/**
+	 * Town cargo history graph; %Window numbers:
+	 *   - #TownID = #GraphWidgets
+	 */
+	WC_TOWN_CARGO_GRAPH,
+
+	/**
 	 * Company infrastructure overview; %Window numbers:
 	 *   - #CompanyID = #CompanyInfrastructureWidgets
 	 */
@@ -746,7 +755,6 @@ enum GameOptionsInvalidationData : uint8_t {
 	GOID_NEWGRF_CURRENT_LOADED,  ///< The current list of active NewGRF has been loaded.
 	GOID_NEWGRF_LIST_EDITED,     ///< List of active NewGRFs is being edited.
 	GOID_NEWGRF_CHANGES_MADE,    ///< Changes have been made to a given NewGRF either through the palette or its parameters.
-	GOID_NEWGRF_CHANGES_APPLIED, ///< The active NewGRF list changes have been applied.
 };
 
 struct Window;

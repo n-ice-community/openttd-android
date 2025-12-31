@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file osk_gui.cpp The On Screen Keyboard GUI */
@@ -16,6 +16,7 @@
 #include "querystring_gui.h"
 #include "video/video_driver.hpp"
 #include "zoom_func.h"
+#include "core/string_consumer.hpp"
 
 #include "widgets/osk_widget.h"
 
@@ -320,7 +321,7 @@ static std::unique_ptr<NWidgetBase> MakeSpacebarKeys()
 }
 
 
-static constexpr NWidgetPart _nested_osk_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_osk_widgets = {
 	NWidget(WWT_CAPTION, COLOUR_GREY, WID_OSK_CAPTION), SetTextStyle(TC_WHITE),
 	NWidget(WWT_PANEL, COLOUR_GREY),
 		NWidget(WWT_EDITBOX, COLOUR_GREY, WID_OSK_TEXT), SetMinimalSize(252, 0), SetPadding(2, 2, 2, 2),
@@ -338,7 +339,7 @@ static constexpr NWidgetPart _nested_osk_widgets[] = {
 };
 
 static WindowDesc _osk_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_OSK, WC_NONE,
 	{},
 	_nested_osk_widgets
@@ -358,17 +359,10 @@ void GetKeyboardLayout()
 	keyboard[1] = _keyboard_opt[1].empty() ? GetString(STR_OSK_KEYBOARD_LAYOUT_CAPS) : _keyboard_opt[1];
 
 	for (uint j = 0; j < 2; j++) {
-		auto kbd = keyboard[j].begin();
-		bool ended = false;
+		StringConsumer consumer(keyboard[j]);
 		for (uint i = 0; i < OSK_KEYBOARD_ENTRIES; i++) {
-			_keyboard[j][i] = Utf8Consume(kbd);
-
 			/* Be lenient when the last characters are missing (is quite normal) */
-			if (_keyboard[j][i] == '\0' || ended) {
-				ended = true;
-				_keyboard[j][i] = ' ';
-				continue;
-			}
+			_keyboard[j][i] = consumer.AnyBytesLeft() ? consumer.ReadUtf8() : ' ';
 
 			if (IsPrintable(_keyboard[j][i])) {
 				errormark[j] += ' ';

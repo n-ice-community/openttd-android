@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file terraform_gui.cpp GUI related to terraforming the map. */
@@ -155,7 +155,7 @@ void PlaceProc_DemolishArea(TileIndex tile)
 
 /** Terra form toolbar managing class. */
 struct TerraformToolbarWindow : Window {
-	int last_user_action = INVALID_WID_TT; ///< Last started user action.
+	WidgetID last_user_action = INVALID_WIDGET; ///< Last started user action.
 
 	TerraformToolbarWindow(WindowDesc &desc, WindowNumber window_number) : Window(desc)
 	{
@@ -261,7 +261,8 @@ struct TerraformToolbarWindow : Window {
 	Point OnInitialPosition([[maybe_unused]] int16_t sm_width, [[maybe_unused]] int16_t sm_height, [[maybe_unused]] int window_number) override
 	{
 		Point pt = GetToolbarAlignedWindowPosition(sm_width);
-		pt.y += sm_height;
+		if (FindWindowByClass(WC_BUILD_TOOLBAR) != nullptr && !_settings_client.gui.link_terraform_toolbar) pt.y += sm_height;
+
 		return pt;
 	}
 
@@ -300,7 +301,7 @@ struct TerraformToolbarWindow : Window {
 	void SelectLastTool() override
 	{
 		// User misplaced something - activate last selected tool again
-		if (this->last_user_action == INVALID_WID_TT)
+		if (this->last_user_action == INVALID_WIDGET)
 			return;
 		Point dummy = {0, 0};
 		this->RaiseWidget(this->last_user_action);
@@ -332,32 +333,32 @@ struct TerraformToolbarWindow : Window {
 	}, TerraformToolbarGlobalHotkeys};
 };
 
-static constexpr NWidgetPart _nested_terraform_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_terraform_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_LANDSCAPING_TOOLBAR, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 		NWidget(WWT_STICKYBOX, COLOUR_DARK_GREEN),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_LOWER_LAND), SetMinimalSize(22, 22),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_LOWER_LAND), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_TERRAFORM_DOWN, STR_LANDSCAPING_TOOLTIP_LOWER_A_CORNER_OF_LAND),
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_RAISE_LAND), SetMinimalSize(22, 22),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_RAISE_LAND), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_TERRAFORM_UP, STR_LANDSCAPING_TOOLTIP_RAISE_A_CORNER_OF_LAND),
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_LEVEL_LAND), SetMinimalSize(22, 22),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_LEVEL_LAND), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_LEVEL_LAND, STR_LANDSCAPING_LEVEL_LAND_TOOLTIP),
 
-		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetMinimalSize(4, 22), EndContainer(),
+		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetToolbarSpacerMinimalSize(), EndContainer(),
 
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_DEMOLISH), SetMinimalSize(22, 22),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_DEMOLISH), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_BUY_LAND), SetMinimalSize(22, 22),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_BUY_LAND), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_BUY_LAND, STR_LANDSCAPING_TOOLTIP_PURCHASE_LAND),
-		NWidget(WWT_PUSHIMGBTN, COLOUR_DARK_GREEN, WID_TT_PLANT_TREES), SetMinimalSize(22, 22),
+		NWidget(WWT_PUSHIMGBTN, COLOUR_DARK_GREEN, WID_TT_PLANT_TREES), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_PLANTTREES, STR_SCENEDIT_TOOLBAR_PLANT_TREES_TOOLTIP),
-		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_PLACE_SIGN), SetMinimalSize(22, 22),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_TT_PLACE_SIGN), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_SIGN, STR_SCENEDIT_TOOLBAR_PLACE_SIGN_TOOLTIP),
 		NWidget(NWID_SELECTION, INVALID_COLOUR, WID_TT_SHOW_PLACE_OBJECT),
-			NWidget(WWT_PUSHIMGBTN, COLOUR_DARK_GREEN, WID_TT_PLACE_OBJECT), SetMinimalSize(22, 22),
+			NWidget(WWT_PUSHIMGBTN, COLOUR_DARK_GREEN, WID_TT_PLACE_OBJECT), SetToolbarMinimalSize(1),
 								SetFill(0, 1), SetSpriteTip(SPR_IMG_TRANSMITTER, STR_SCENEDIT_TOOLBAR_PLACE_OBJECT_TOOLTIP),
 		EndContainer(),
 	EndContainer(),
@@ -380,19 +381,13 @@ Window *ShowTerraformToolbar(Window *link)
 {
 	if (!Company::IsValidID(_local_company)) return nullptr;
 
-	Window *w;
-	if (link == nullptr) {
-		w = AllocateWindowDescFront<TerraformToolbarWindow>(_terraform_desc, 0);
-		return w;
-	}
-
 	/* Delete the terraform toolbar to place it again. */
 	CloseWindowById(WC_SCEN_LAND_GEN, 0, true);
-	w = AllocateWindowDescFront<TerraformToolbarWindow>(_terraform_desc, 0);
-	/* Align the terraform toolbar under the main toolbar. */
-	w->top -= w->height;
-	w->SetDirty();
-	/* Put the linked toolbar to the left / right of it. */
+
+	if (link == nullptr) return AllocateWindowDescFront<TerraformToolbarWindow>(_terraform_desc, 0);
+
+	Window *w = AllocateWindowDescFront<TerraformToolbarWindow>(_terraform_desc, 0);
+	/* Put the linked toolbar to the left / right of the main toolbar. */
 	link->left = w->left + (_current_text_dir == TD_RTL ? w->width : -link->width);
 	link->top  = w->top;
 	link->SetDirty();
@@ -461,7 +456,7 @@ static const int8_t _multi_terraform_coords[][2] = {
 	{-28,  0}, {-24, -2}, {-20, -4}, {-16, -6}, {-12, -8}, { -8,-10}, { -4,-12}, {  0,-14}, {  4,-12}, {  8,-10}, { 12, -8}, { 16, -6}, { 20, -4}, { 24, -2}, { 28,  0},
 };
 
-static constexpr NWidgetPart _nested_scen_edit_land_gen_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_scen_edit_land_gen_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_TERRAFORM_TOOLBAR_LAND_GENERATION_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -471,21 +466,21 @@ static constexpr NWidgetPart _nested_scen_edit_land_gen_widgets[] = {
 	NWidget(WWT_PANEL, COLOUR_DARK_GREEN),
 		NWidget(NWID_HORIZONTAL), SetPadding(2, 2, 7, 2),
 			NWidget(NWID_SPACER), SetFill(1, 0),
-			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_DEMOLISH), SetMinimalSize(22, 22),
+			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_DEMOLISH), SetToolbarMinimalSize(1),
 										SetFill(0, 1), SetSpriteTip(SPR_IMG_DYNAMITE, STR_TOOLTIP_DEMOLISH_BUILDINGS_ETC),
-			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_LOWER_LAND), SetMinimalSize(22, 22),
+			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_LOWER_LAND), SetToolbarMinimalSize(1),
 										SetFill(0, 1), SetSpriteTip(SPR_IMG_TERRAFORM_DOWN, STR_LANDSCAPING_TOOLTIP_LOWER_A_CORNER_OF_LAND),
-			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_RAISE_LAND), SetMinimalSize(22, 22),
+			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_RAISE_LAND), SetToolbarMinimalSize(1),
 										SetFill(0, 1), SetSpriteTip(SPR_IMG_TERRAFORM_UP, STR_LANDSCAPING_TOOLTIP_RAISE_A_CORNER_OF_LAND),
-			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_LEVEL_LAND), SetMinimalSize(22, 22),
+			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_LEVEL_LAND), SetToolbarMinimalSize(1),
 										SetFill(0, 1), SetSpriteTip(SPR_IMG_LEVEL_LAND, STR_LANDSCAPING_LEVEL_LAND_TOOLTIP),
-			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_PLACE_ROCKS), SetMinimalSize(22, 22),
+			NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_PLACE_ROCKS), SetToolbarMinimalSize(1),
 										SetFill(0, 1), SetSpriteTip(SPR_IMG_ROCKS, STR_TERRAFORM_TOOLTIP_PLACE_ROCKY_AREAS_ON_LANDSCAPE),
 			NWidget(NWID_SELECTION, INVALID_COLOUR, WID_ETT_SHOW_PLACE_DESERT),
-				NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_PLACE_DESERT), SetMinimalSize(22, 22),
+				NWidget(WWT_IMGBTN, COLOUR_GREY, WID_ETT_PLACE_DESERT), SetToolbarMinimalSize(1),
 											SetFill(0, 1), SetSpriteTip(SPR_IMG_DESERT, STR_TERRAFORM_TOOLTIP_DEFINE_DESERT_AREA),
 			EndContainer(),
-			NWidget(WWT_PUSHIMGBTN, COLOUR_GREY, WID_ETT_PLACE_OBJECT), SetMinimalSize(23, 22),
+			NWidget(WWT_PUSHIMGBTN, COLOUR_GREY, WID_ETT_PLACE_OBJECT), SetToolbarMinimalSize(1),
 										SetFill(0, 1), SetSpriteTip(SPR_IMG_TRANSMITTER, STR_SCENEDIT_TOOLBAR_PLACE_OBJECT_TOOLTIP),
 			NWidget(NWID_SPACER), SetFill(1, 0),
 		EndContainer(),
@@ -545,7 +540,7 @@ static void ResetLandscapeConfirmationCallback(Window *, bool confirmed)
 
 /** Landscape generation window handler in the scenario editor. */
 struct ScenarioEditorLandscapeGenerationWindow : Window {
-	int last_user_action = INVALID_WID_ETT; ///< Last started user action.
+	WidgetID last_user_action = INVALID_WIDGET; ///< Last started user action.
 
 	ScenarioEditorLandscapeGenerationWindow(WindowDesc &desc, WindowNumber window_number) : Window(desc)
 	{
@@ -637,7 +632,6 @@ struct ScenarioEditorLandscapeGenerationWindow : Window {
 				if (!IsInsideMM(size, 1, 8 + 1)) return;
 				_terraform_size = size;
 
-				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
 				this->SetDirty();
 				break;
 			}

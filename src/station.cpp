@@ -2,12 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file station.cpp Implementation of the station base class. */
 
 #include "stdafx.h"
+#include "core/flatset_type.hpp"
 #include "company_func.h"
 #include "company_base.h"
 #include "roadveh.h"
@@ -114,7 +115,7 @@ Station::~Station()
 		}
 		lg->RemoveNode(this->goods[cargo].node);
 		if (lg->Size() == 0) {
-			LinkGraphSchedule::instance.Unqueue(lg);
+			LinkGraphSchedule::instance.Dequeue(lg);
 			delete lg;
 		}
 	}
@@ -228,7 +229,7 @@ RoadStop *Station::GetPrimaryRoadStop(const RoadVehicle *v) const
  */
 void Station::AddFacility(StationFacility new_facility_bit, TileIndex facil_xy)
 {
-	if (this->facilities == StationFacilities{}) {
+	if (this->facilities.None()) {
 		this->MoveSign(facil_xy);
 		this->random_bits = Random();
 	}
@@ -387,7 +388,7 @@ Rect Station::GetCatchmentRect() const
  */
 void Station::AddIndustryToDeliver(Industry *ind, TileIndex tile)
 {
-	/* Using DistanceMax to get about the same order as with previously used CircularTileSearch. */
+	/* Using DistanceMax to get about the same order as with previously used SpiralTileSequence. */
 	uint distance = DistanceMax(this->xy, tile);
 
 	/* Don't check further if this industry is already in the list but update the distance if it's closer */
@@ -425,8 +426,8 @@ void Station::RemoveIndustryToDeliver(Industry *ind)
  */
 void Station::RemoveFromAllNearbyLists()
 {
-	std::set<TownID> towns;
-	std::set<IndustryID> industries;
+	FlatSet<TownID> towns;
+	FlatSet<IndustryID> industries;
 
 	for (const auto &tile : this->catchment_tiles) {
 		TileType type = GetTileType(tile);

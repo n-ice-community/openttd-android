@@ -11,6 +11,7 @@ add_files(
     build_industry.h
     cargo_const.h
     clear_land.h
+    company_face.h
     control_codes.h
     elrail_data.h
     engines.h
@@ -27,12 +28,14 @@ add_files(
     road_land.h
     roadtypes.h
     roadveh_movement.h
+    signal_data.h
     sprites.h
     station_land.h
     strgen_tables.h
     string_colours.h
     town_land.h
     townname.h
+    track_data.h
     track_land.h
     train_sprites.h
     tree_land.h

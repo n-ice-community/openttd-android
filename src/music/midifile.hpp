@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /* @file midifile.hpp Parser for standard MIDI files */
@@ -10,7 +10,6 @@
 #ifndef MUSIC_MIDIFILE_HPP
 #define MUSIC_MIDIFILE_HPP
 
-#include "../stdafx.h"
 #include "../fileio_type.h"
 #include "midi.h"
 
@@ -19,7 +18,7 @@ struct MusicSongInfo;
 struct MidiFile {
 	struct DataBlock {
 		uint32_t ticktime; ///< tick number since start of file this block should be triggered at
-		uint32_t realtime = 0; ///< real-time (microseconds) since start of file this block should be triggered at
+		int64_t realtime = 0; ///< real-time (microseconds) since start of file this block should be triggered at
 		std::vector<uint8_t> data; ///< raw midi data contained in block
 		DataBlock(uint32_t _ticktime = 0) : ticktime(_ticktime) { }
 	};

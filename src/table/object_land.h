@@ -2,10 +2,12 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file object_land.h Sprites to use and how to display them for object tiles. */
+
+#include "table/strings.h"
 
 #define TILE_SEQ_LINE(sz, img) { 0, 0, 0, 16, 16, sz, {img, PAL_NONE} },
 
@@ -104,7 +106,7 @@ static const DrawTileSpriteSpan _object_hq[] = {
 #undef TILE_SPRITE_LINE
 #undef TILE_SPRITE_LINE_NOTHING
 
-#define M(name, size, build_cost_multiplier, clear_cost_multiplier, height, climate, gen_amount, flags) {{INVALID_OBJECT_CLASS, 0}, FixedGRFFileProps<2>{}, {0, 0, 0, 0}, name, climate, size, build_cost_multiplier, clear_cost_multiplier, TimerGameCalendar::Date{}, CalendarTime::MAX_DATE + 1, flags, ObjectCallbackMasks{}, height, 1, gen_amount, {}}
+#define M(name, size, build_cost_multiplier, clear_cost_multiplier, height, climate, gen_amount, flags) {{INVALID_OBJECT_CLASS, 0}, StandardGRFFileProps{}, AnimationInfo<ObjectAnimationTriggers>{}, name, climate, size, build_cost_multiplier, clear_cost_multiplier, TimerGameCalendar::Date{}, CalendarTime::MAX_DATE + 1, flags, ObjectCallbackMasks{}, height, 1, gen_amount, {}}
 
 /* Climates
  * T = Temperate

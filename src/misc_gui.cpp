@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file misc_gui.cpp GUIs for a number of misc windows. */
@@ -13,11 +13,14 @@
 #include "error.h"
 #include "gui.h"
 #include "gfx_layout.h"
+#include "tilehighlight_func.h"
 #include "command_func.h"
 #include "company_func.h"
 #include "town.h"
 #include "string_func.h"
 #include "company_base.h"
+#include "station_base.h"
+#include "waypoint_base.h"
 #include "texteff.hpp"
 #include "strings_func.h"
 #include "window_func.h"
@@ -28,6 +31,8 @@
 #include "build_confirmation_func.h"
 #include "viewport_func.h"
 #include "landscape_cmd.h"
+#include "station_cmd.h"
+#include "waypoint_cmd.h"
 #include "rev.h"
 #include "timer/timer.h"
 #include "timer/timer_window.h"
@@ -55,7 +60,7 @@ enum OskActivation : uint8_t {
 static char _android_text_input[512];
 #endif
 
-static constexpr NWidgetPart _nested_land_info_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_land_info_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_LAND_AREA_INFORMATION_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -66,7 +71,7 @@ static constexpr NWidgetPart _nested_land_info_widgets[] = {
 };
 
 static WindowDesc _land_info_desc(
-	WDP_AUTO, nullptr, 0, 0,
+	WDP_AUTO, {}, 0, 0,
 	WC_LAND_INFO, WC_NONE,
 	{},
 	_nested_land_info_widgets
@@ -327,7 +332,7 @@ void ShowLandInfo(TileIndex tile)
 	new LandInfoWindow(tile);
 }
 
-static constexpr NWidgetPart _nested_about_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_about_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY), SetStringTip(STR_ABOUT_OPENTTD, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -344,7 +349,7 @@ static constexpr NWidgetPart _nested_about_widgets[] = {
 };
 
 static WindowDesc _about_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_GAME_OPTIONS, WC_NONE,
 	{},
 	_nested_about_widgets
@@ -473,7 +478,7 @@ struct AboutWindow : public Window {
 	 *
 	 * The interval of 2100ms is chosen to maintain parity: 2100 / GetCharacterHeight(FS_NORMAL) = 150ms.
 	 */
-	IntervalTimer<TimerWindow> scroll_interval = {std::chrono::milliseconds(2100) / GetCharacterHeight(FS_NORMAL), [this](uint count) {
+	const IntervalTimer<TimerWindow> scroll_interval = {std::chrono::milliseconds(2100) / GetCharacterHeight(FS_NORMAL), [this](uint count) {
 		this->text_position -= count;
 		/* If the last text has scrolled start a new from the start */
 		if (this->text_position < (int)(this->GetWidget<NWidgetBase>(WID_A_SCROLLING_TEXT)->pos_y - std::size(_credits) * this->line_height)) {
@@ -598,12 +603,12 @@ void HideFillingPercent(TextEffectID *te_id)
 	*te_id = INVALID_TE_ID;
 }
 
-static constexpr NWidgetPart _nested_tooltips_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_tooltips_widgets = {
 	NWidget(WWT_EMPTY, INVALID_COLOUR, WID_TT_BACKGROUND),
 };
 
 static WindowDesc _tool_tips_desc(
-	WDP_MANUAL, nullptr, 0, 0, // Coordinates and sizes are not used,
+	WDP_MANUAL, {}, 0, 0, // Coordinates and sizes are not used,
 	WC_TOOLTIPS, WC_NONE,
 	{WindowDefaultFlag::NoFocus, WindowDefaultFlag::NoClose},
 	_nested_tooltips_widgets
@@ -764,7 +769,7 @@ void QueryString::DrawEditBox(const Window *w, WidgetID wid) const
 
 	DrawFrameRect(cr, wi->colour, wi->IsLowered() ? FrameFlag::Lowered : FrameFlags{});
 	DrawSpriteIgnorePadding(rtl ? SPR_IMG_DELETE_RIGHT : SPR_IMG_DELETE_LEFT, PAL_NONE, cr, SA_CENTER);
-	if (StrEmpty(this->text.GetText())) GfxFillRect(cr.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(wi->colour, SHADE_DARKER), FILLRECT_CHECKER);
+	if (this->text.GetText().empty()) GfxFillRect(cr.Shrink(WidgetDimensions::scaled.bevel), GetColourGradient(wi->colour, SHADE_DARKER), FILLRECT_CHECKER);
 
 	DrawFrameRect(fr, wi->colour, {FrameFlag::Lowered, FrameFlag::Darkened});
 	GfxFillRect(fr.Shrink(WidgetDimensions::scaled.bevel), PC_BLACK);
@@ -787,14 +792,14 @@ void QueryString::DrawEditBox(const Window *w, WidgetID wid) const
 	/* If we have a marked area, draw a background highlight. */
 	if (tb->marklength != 0) GfxFillRect(fr.left + tb->markxoffs, fr.top, fr.left + tb->markxoffs + tb->marklength - 1, fr.bottom, PC_GREY);
 
-	DrawString(fr.left, fr.right, CenterBounds(fr.top, fr.bottom, GetCharacterHeight(FS_NORMAL)), tb->GetText(), TC_YELLOW);
+	DrawString(fr.left, fr.right, CentreBounds(fr.top, fr.bottom, GetCharacterHeight(FS_NORMAL)), tb->GetText(), TC_YELLOW);
 	bool focussed = w->IsWidgetGloballyFocused(wid) || IsOSKOpenedFor(w, wid);
 	if (focussed && tb->caret) {
 		int caret_width = GetCaretWidth();
 		if (rtl) {
-			DrawString(fr.right - tb->pixels + tb->caretxoffs - caret_width, fr.right - tb->pixels + tb->caretxoffs, CenterBounds(fr.top, fr.bottom, GetCharacterHeight(FS_NORMAL)), "_", TC_WHITE);
+			DrawString(fr.right - tb->pixels + tb->caretxoffs - caret_width, fr.right - tb->pixels + tb->caretxoffs, CentreBounds(fr.top, fr.bottom, GetCharacterHeight(FS_NORMAL)), "_", TC_WHITE);
 		} else {
-			DrawString(fr.left + tb->caretxoffs, fr.left + tb->caretxoffs + caret_width, CenterBounds(fr.top, fr.bottom, GetCharacterHeight(FS_NORMAL)), "_", TC_WHITE);
+			DrawString(fr.left + tb->caretxoffs, fr.left + tb->caretxoffs + caret_width, CentreBounds(fr.top, fr.bottom, GetCharacterHeight(FS_NORMAL)), "_", TC_WHITE);
 		}
 	}
 }
@@ -833,7 +838,7 @@ Point QueryString::GetCaretPosition(const Window *w, WidgetID wid) const
  * @param to End of the string range.
  * @return Rectangle encompassing the string range, relative to the window.
  */
-Rect QueryString::GetBoundingRect(const Window *w, WidgetID wid, const char *from, const char *to) const
+Rect QueryString::GetBoundingRect(const Window *w, WidgetID wid, size_t from, size_t to) const
 {
 	const NWidgetLeaf *wi = w->GetWidget<NWidgetLeaf>(wid);
 
@@ -853,7 +858,7 @@ Rect QueryString::GetBoundingRect(const Window *w, WidgetID wid, const char *fro
 	const auto p1 = GetCharPosInString(tb->GetText(), from, FS_NORMAL);
 	const auto p2 = from != to ? GetCharPosInString(tb->GetText(), to, FS_NORMAL) : p1;
 
-	return { Clamp(r.left + p1.left, r.left, r.right), r.top, Clamp(r.left + p2.right, r.left, r.right), r.bottom };
+	return r.WithX(Clamp(r.left + p1.left, r.left, r.right), Clamp(r.left + p2.right, r.left, r.right));
 }
 
 /**
@@ -897,7 +902,7 @@ void QueryString::ClickEditBox(Window *w, Point pt, WidgetID wid, int click_coun
 	Rect cr = wi->GetCurrentRect().WithWidth(clearbtn_width, !rtl);
 
 	if (IsInsideMM(pt.x, cr.left, cr.right)) {
-		if (!StrEmpty(this->text.GetText())) {
+		if (!this->text.GetText().empty()) {
 			this->text.DeleteAll();
 			w->HandleButtonClick(wid);
 			w->OnEditboxChanged(wid);
@@ -924,6 +929,8 @@ struct QueryStringWindow : public Window
 	QueryString editbox; ///< Editbox.
 	QueryStringFlags flags{}; ///< Flags controlling behaviour of the window.
 
+	WidgetID last_user_action = INVALID_WIDGET; ///< Last started user action.
+
 	QueryStringWindow(std::string_view str, StringID caption, uint max_bytes, uint max_chars, WindowDesc &desc, Window *parent, CharSetFilter afilter, QueryStringFlags flags) :
 			Window(desc), editbox(max_bytes, max_chars)
 	{
@@ -938,21 +945,14 @@ struct QueryStringWindow : public Window
 		this->editbox.text.afilter = afilter;
 		this->flags = flags;
 
-		this->InitNested(WN_QUERY_STRING);
+		this->CreateNestedTree();
+		this->GetWidget<NWidgetStacked>(WID_QS_DEFAULT_SEL)->SetDisplayedPlane((this->flags.Test(QueryStringFlag::EnableDefault)) ? 0 : SZSP_NONE);
+		this->GetWidget<NWidgetStacked>(WID_QS_MOVE_SEL)->SetDisplayedPlane((this->flags.Test(QueryStringFlag::EnableMove)) ? 0 : SZSP_NONE);
+		this->FinishInitNested(WN_QUERY_STRING);
 
 		this->parent = parent;
 
 		this->SetFocusedWidget(WID_QS_TEXT);
-	}
-
-	void UpdateWidgetSize(WidgetID widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize) override
-	{
-		if (widget == WID_QS_DEFAULT && !this->flags.Test(QueryStringFlag::EnableDefault)) {
-			/* We don't want this widget to show! */
-			fill.width = 0;
-			resize.width = 0;
-			size.width = 0;
-		}
 	}
 
 	std::string GetWidgetString(WidgetID widget, StringID stringid) const override
@@ -967,7 +967,7 @@ struct QueryStringWindow : public Window
 		if (!this->editbox.orig.has_value() || this->editbox.text.GetText() != this->editbox.orig) {
 			assert(this->parent != nullptr);
 
-			this->parent->OnQueryTextFinished(this->editbox.text.GetText());
+			this->parent->OnQueryTextFinished(std::string{this->editbox.text.GetText()});
 			this->editbox.handled = true;
 		}
 	}
@@ -986,21 +986,69 @@ struct QueryStringWindow : public Window
 			case WID_QS_CANCEL:
 				this->Close();
 				break;
+
+			case WID_QS_MOVE:
+				this->last_user_action = widget;
+
+				if (Station::IsExpected(Station::Get(this->parent->window_number))) {
+					/* this is a station */
+					SetViewportStationRect(Station::Get(this->parent->window_number), !this->IsWidgetLowered(WID_QS_MOVE));
+				} else {
+					/* this is a waypoint */
+					SetViewportWaypointRect(Waypoint::Get(this->parent->window_number), !this->IsWidgetLowered(WID_QS_MOVE));
+				}
+
+				HandlePlacePushButton(this, WID_QS_MOVE, SPR_CURSOR_SIGN, HT_RECT);
+				break;
 		}
+	}
+
+	void OnPlaceObject([[maybe_unused]] Point pt, TileIndex tile) override
+	{
+		switch (this->last_user_action) {
+			case WID_QS_MOVE: // Move name button
+				if (Station::IsExpected(Station::Get(this->parent->window_number))) {
+					/* this is a station */
+					Command<CMD_MOVE_STATION_NAME>::Post(STR_ERROR_CAN_T_MOVE_STATION_NAME, CcMoveStationName, this->parent->window_number, tile);
+				} else {
+					/* this is a waypoint */
+					Command<CMD_MOVE_WAYPOINT_NAME>::Post(STR_ERROR_CAN_T_MOVE_WAYPOINT_NAME, CcMoveWaypointName, this->parent->window_number, tile);
+				}
+				break;
+
+			default: NOT_REACHED();
+		}
+	}
+
+	void OnPlaceObjectAbort() override
+	{
+		if (Station::IsExpected(Station::Get(this->parent->window_number))) {
+			/* this is a station */
+			SetViewportStationRect(Station::Get(this->parent->window_number), false);
+		} else {
+			/* this is a waypoint */
+			SetViewportWaypointRect(Waypoint::Get(this->parent->window_number), false);
+		}
+
+		this->RaiseButtons();
 	}
 
 	void Close([[maybe_unused]] int data = 0) override
 	{
+		if (this->parent->window_class == WC_STATION_VIEW) SetViewportStationRect(Station::Get(this->parent->window_number), false);
+		if (this->parent->window_class == WC_WAYPOINT_VIEW) SetViewportWaypointRect(Waypoint::Get(this->parent->window_number), false);
+
 		if (!this->editbox.handled && this->parent != nullptr) {
 			Window *parent = this->parent;
 			this->parent = nullptr; // so parent doesn't try to close us again
 			parent->OnQueryTextFinished(std::nullopt);
 		}
+
 		this->Window::Close();
 	}
 };
 
-static constexpr NWidgetPart _nested_query_string_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_query_string_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY, WID_QS_CAPTION), SetTextStyle(TC_WHITE),
@@ -1009,14 +1057,19 @@ static constexpr NWidgetPart _nested_query_string_widgets[] = {
 		NWidget(WWT_EDITBOX, COLOUR_GREY, WID_QS_TEXT), SetMinimalSize(256, 0), SetFill(1, 0), SetPadding(2, 2, 2, 2),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL, NWidContainerFlag::EqualSize),
-		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QS_DEFAULT), SetMinimalSize(87, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_DEFAULT),
-		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QS_CANCEL), SetMinimalSize(86, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_CANCEL),
-		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QS_OK), SetMinimalSize(87, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_OK),
+		NWidget(NWID_SELECTION, INVALID_COLOUR, WID_QS_DEFAULT_SEL),
+			NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QS_DEFAULT), SetMinimalSize(65, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_DEFAULT),
+		EndContainer(),
+		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QS_CANCEL), SetMinimalSize(65, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_CANCEL),
+		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QS_OK), SetMinimalSize(65, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_OK),
+		NWidget(NWID_SELECTION, INVALID_COLOUR, WID_QS_MOVE_SEL),
+			NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_QS_MOVE), SetMinimalSize(65, 12), SetFill(1, 1), SetStringTip(STR_BUTTON_MOVE),
+		EndContainer(),
 	EndContainer(),
 };
 
 static WindowDesc _query_string_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_QUERY_STRING, WC_NONE,
 	{},
 	_nested_query_string_widgets
@@ -1062,7 +1115,7 @@ struct QueryWindow : public Window {
 		this->Window::Close();
 	}
 
-	void FindWindowPlacementAndResize([[maybe_unused]] int def_width, [[maybe_unused]] int def_height) override
+	void FindWindowPlacementAndResize(int, int, bool) override
 	{
 		/* Position query window over the calling window, ensuring it's within screen bounds. */
 		this->left = SoftClamp(parent->left + (parent->width / 2) - (this->width / 2), 0, _screen.width - this->width);
@@ -1138,7 +1191,7 @@ struct QueryWindow : public Window {
 	}
 };
 
-static constexpr NWidgetPart _nested_query_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_query_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_RED),
 		NWidget(WWT_CAPTION, COLOUR_RED, WID_Q_CAPTION),
@@ -1155,7 +1208,7 @@ static constexpr NWidgetPart _nested_query_widgets[] = {
 };
 
 static WindowDesc _query_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_CONFIRM_POPUP_QUERY, WC_NONE,
 	WindowDefaultFlag::Modal,
 	_nested_query_widgets

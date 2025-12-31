@@ -2,14 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_config.cpp Implementation of ScriptConfig. */
 
 #include "../stdafx.h"
 #include "../settings_type.h"
-#include "../core/random_func.hpp"
 #include "script_info.hpp"
 #include "api/script_object.hpp"
 #include "../textfile_gui.h"
@@ -20,10 +19,10 @@
 
 #include "../safeguards.h"
 
-void ScriptConfig::Change(std::optional<std::string> name, int version, bool force_exact_match)
+void ScriptConfig::Change(std::optional<std::string_view> name, int version, bool force_exact_match)
 {
 	if (name.has_value()) {
-		this->name = std::move(name.value());
+		this->name = name.value();
 		this->info = this->FindInfo(this->name, version, force_exact_match);
 	} else {
 		this->info = nullptr;
@@ -85,10 +84,10 @@ int ScriptConfig::GetSetting(const std::string &name) const
 {
 	const auto it = this->settings.find(name);
 	if (it == this->settings.end()) return this->info->GetSettingDefaultValue(name);
-	return (*it).second;
+	return it->second;
 }
 
-void ScriptConfig::SetSetting(const std::string_view name, int value)
+void ScriptConfig::SetSetting(std::string_view name, int value)
 {
 	/* You can only set Script specific settings if an Script is selected. */
 	if (this->info == nullptr) return;
@@ -140,7 +139,7 @@ int ScriptConfig::GetVersion() const
 	return this->version;
 }
 
-void ScriptConfig::StringToSettings(const std::string &value)
+void ScriptConfig::StringToSettings(std::string_view value)
 {
 	std::string_view to_process = value;
 	for (;;) {
@@ -168,7 +167,7 @@ std::string ScriptConfig::SettingsToString() const
 
 	std::string result;
 	for (const auto &item : this->settings) {
-		fmt::format_to(std::back_inserter(result), "{}={},", item.first, item.second);
+		format_append(result, "{}={},", item.first, item.second);
 	}
 
 	/* Remove the last ','. */

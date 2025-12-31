@@ -2,14 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file random_func.cpp Implementation of the pseudo random generator. */
 
 #include "../stdafx.h"
 #include "random_func.hpp"
-#include "bitmath_func.hpp"
 #include "../debug.h"
 
 #ifdef RANDOM_DEBUG
@@ -25,7 +24,7 @@
 #	include <windows.h>
 #	include <bcrypt.h>
 #elif defined(__APPLE__) || defined(__NetBSD__) || defined(__FreeBSD__)
-// No includes required.
+/* No includes required. */
 #elif defined(__GLIBC__) && ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 25)))
 #	include <sys/random.h>
 #elif defined(__EMSCRIPTEN__)

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /**
@@ -74,6 +74,16 @@ public:
 	inline constexpr Timpl &Set(Tvalue_type value, bool set)
 	{
 		return set ? this->Set(value) : this->Reset(value);
+	}
+
+	/**
+	 * Reset all bits.
+	 * @returns The bit set
+	 */
+	inline constexpr Timpl &Reset()
+	{
+		this->data = 0;
+		return static_cast<Timpl &>(*this);
 	}
 
 	/**
@@ -180,12 +190,24 @@ public:
 		return this->data == 0;
 	}
 
-	inline constexpr Timpl operator |(const Timpl &other) const
+	inline constexpr Timpl &operator|=(const Timpl &other)
+	{
+		this->data |= other.data;
+		return static_cast<Timpl &>(*this);
+	}
+
+	inline constexpr Timpl operator|(const Timpl &other) const
 	{
 		return Timpl{static_cast<Tstorage>(this->data | other.data)};
 	}
 
-	inline constexpr Timpl operator &(const Timpl &other) const
+	inline constexpr Timpl &operator&=(const Timpl &other)
+	{
+		this->data &= other.data;
+		return static_cast<Timpl &>(*this);
+	}
+
+	inline constexpr Timpl operator&(const Timpl &other) const
 	{
 		return Timpl{static_cast<Tstorage>(this->data & other.data)};
 	}
@@ -208,8 +230,32 @@ public:
 		return (this->base() & Tmask) == this->base();
 	}
 
-	auto begin() const { return SetBitIterator<Tvalue_type>(this->data).begin(); }
-	auto end() const { return SetBitIterator<Tvalue_type>(this->data).end(); }
+	/**
+	 * Count the number of set bits.
+	 * @return The number of bits set to true.
+	 */
+	inline uint Count() const
+	{
+		return CountBits(this->base());
+	}
+
+	/**
+	 * Get the value of the Nth set bit.
+	 * @param n The Nth set bit from which we want to know the value.
+	 * @return The value of the Nth set bit, or std::nullopt if no Nth bit set.
+	 */
+	std::optional<Tvalue_type> GetNthSetBit(uint n) const
+	{
+		for (auto i : *this) {
+			if (n == 0) return i;
+			--n;
+		}
+
+		return std::nullopt;
+	}
+
+	auto begin() const { return SetBitIterator<Tvalue_type, Tstorage>(this->data).begin(); }
+	auto end() const { return SetBitIterator<Tvalue_type, Tstorage>(this->data).end(); }
 
 private:
 	Tstorage data; ///< Bitmask of values.

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file pool_type.hpp Definition of Pool, structure used to access PoolItems, and PoolItem, base structure for Vehicle, Town, and other indexed items. */
@@ -137,7 +137,7 @@ public:
 	using BitmapStorage = size_t;
 	static constexpr size_t BITMAP_SIZE = std::numeric_limits<BitmapStorage>::digits;
 
-	const char * const name = nullptr; ///< Name of this pool
+	const std::string_view name{}; ///< Name of this pool
 
 	size_t first_free = 0; ///< No item with index lower than this is free (doesn't say anything about this one!)
 	size_t first_unused = 0; ///< This and all higher indexes are free (doesn't say anything about first_unused-1 !)
@@ -150,7 +150,7 @@ public:
 	std::vector<Titem *> data{}; ///< Pointers to Titem
 	std::vector<BitmapStorage> used_bitmap{}; ///< Bitmap of used indices.
 
-	Pool(const char *name) : PoolBase(Tpool_type), name(name) {}
+	Pool(std::string_view name) : PoolBase(Tpool_type), name(name) {}
 	void CleanPool() override;
 
 	/**

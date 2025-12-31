@@ -64,22 +64,19 @@ struct SQRefCounted
 	virtual void Release()=0;
 
 	/* Placement new/delete to prevent memory leaks if constructor throws an exception. */
-	inline void *operator new(size_t size, SQRefCounted *place)
+	inline void *operator new([[maybe_unused]] size_t size, void *ptr, [[maybe_unused]] size_t real_size)
 	{
-		place->size = size;
-		return place;
+		assert(size <= real_size);
+		return ptr;
 	}
 
-	inline void operator delete(void *ptr, SQRefCounted *place)
+	inline void operator delete(void *ptr, void *, size_t real_size)
 	{
-		SQ_FREE(ptr, place->size);
+		SQ_FREE(ptr, real_size);
 	}
 
 	/* Never used but required. */
 	inline void operator delete(void *) { NOT_REACHED(); }
-
-private:
-	size_t size = 0;
 };
 
 struct SQWeakRef : SQRefCounted
@@ -138,7 +135,7 @@ struct SQObjectPtr;
 #define _refcounted(obj) ((obj)._unVal.pRefCounted)
 #define _rawval(obj) ((obj)._unVal.raw)
 
-#define _stringval(obj) (obj)._unVal.pString->_val
+#define _stringval(obj) (obj)._unVal.pString->View()
 #define _userdataval(obj) (obj)._unVal.pUserData->_val
 
 #define tofloat(num) ((type(num)==OT_INTEGER)?(SQFloat)_integer(num):_float(num))
@@ -357,7 +354,7 @@ struct SQObjectPtr : public SQObject
 		return *this;
 	}
 	private:
-		SQObjectPtr(const SQChar *){} //safety
+		SQObjectPtr(const char *) = delete; //safety
 };
 
 inline void _Swap(SQObject &a,SQObject &b)
@@ -449,8 +446,8 @@ struct SQDelegable : public CHAINABLE_OBJ {
 SQUnsignedInteger TranslateIndex(const SQObjectPtr &idx);
 typedef sqvector<SQObjectPtr> SQObjectPtrVec;
 typedef sqvector<SQInteger> SQIntVec;
-const SQChar *GetTypeName(const SQObjectPtr &obj1);
-const SQChar *IdType2Name(SQObjectType type);
+std::string_view GetTypeName(const SQObjectPtr &obj1);
+std::string_view IdType2Name(SQObjectType type);
 
 
 

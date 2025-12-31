@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file viewport_gui.cpp Extra viewport window. */
@@ -23,7 +23,7 @@
 #include "safeguards.h"
 
 /* Extra Viewport Window Stuff */
-static constexpr NWidgetPart _nested_extra_viewport_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_extra_viewport_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY, WID_EV_CAPTION),
@@ -54,7 +54,7 @@ public:
 		this->InitNested(window_number);
 
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_EV_VIEWPORT);
-		nvp->InitializeViewport(this, tile, ScaleZoomGUI(ZOOM_LVL_VIEWPORT));
+		nvp->InitializeViewport(this, tile, ScaleZoomGUI(ZoomLevel::Viewport));
 		if (_settings_client.gui.zoom_min == viewport->zoom) this->DisableWidget(WID_EV_ZOOM_IN);
 	}
 
@@ -121,8 +121,9 @@ public:
 		return widget == WID_EV_VIEWPORT;
 	}
 
-	void OnMouseWheel(int wheel) override
+	void OnMouseWheel(int wheel, WidgetID widget) override
 	{
+		if (widget != WID_EV_VIEWPORT) return;
 		if (_settings_client.gui.scrollwheel_scrolling != SWS_OFF) {
 			ZoomInOrOutToCursorWindow(wheel < 0, this);
 		}

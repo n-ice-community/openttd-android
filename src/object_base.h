@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file object_base.h Base for all objects. */
@@ -45,7 +45,7 @@ struct Object : ObjectPool::PoolItem<&_object_pool> {
 	static inline void IncTypeCount(ObjectType type)
 	{
 		assert(type < NUM_OBJECTS);
-		counts[type]++;
+		Object::counts[type]++;
 	}
 
 	/**
@@ -56,7 +56,7 @@ struct Object : ObjectPool::PoolItem<&_object_pool> {
 	static inline void DecTypeCount(ObjectType type)
 	{
 		assert(type < NUM_OBJECTS);
-		counts[type]--;
+		Object::counts[type]--;
 	}
 
 	/**
@@ -67,17 +67,17 @@ struct Object : ObjectPool::PoolItem<&_object_pool> {
 	static inline uint16_t GetTypeCount(ObjectType type)
 	{
 		assert(type < NUM_OBJECTS);
-		return counts[type];
+		return Object::counts[type];
 	}
 
 	/** Resets object counts. */
 	static inline void ResetTypeCounts()
 	{
-		memset(&counts, 0, sizeof(counts));
+		Object::counts.fill(0);
 	}
 
 protected:
-	static uint16_t counts[NUM_OBJECTS]; ///< Number of objects per type ingame
+	static std::array<uint16_t, NUM_OBJECTS> counts; ///< Number of objects per type ingame
 };
 
 /**

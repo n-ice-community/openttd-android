@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0.cpp NewGRF Action 0x00 handler. */
@@ -19,7 +19,7 @@
 #include "newgrf_bytereader.h"
 #include "newgrf_internal.h"
 
-#include "../table/strings.h"
+#include "table/strings.h"
 
 #include "../safeguards.h"
 
@@ -109,7 +109,7 @@ std::vector<BadgeID> ReadBadgeList(ByteReader &buf, GrfSpecFeature feature)
 	return badges;
 }
 
-bool HandleChangeInfoResult(const char *caller, ChangeInfoResult cir, uint8_t feature, uint8_t property)
+bool HandleChangeInfoResult(std::string_view caller, ChangeInfoResult cir, GrfSpecFeature feature, uint8_t property)
 {
 	switch (cir) {
 		default: NOT_REACHED();
@@ -204,7 +204,7 @@ static void FeatureChangeInfo(ByteReader &buf)
 	}
 
 	/* Mark the feature as used by the grf */
-	SetBit(_cur_gps.grffile->grf_features, feature);
+	_cur_gps.grffile->grf_features.Set(feature);
 
 	while (numprops-- && buf.HasData()) {
 		uint8_t prop = buf.ReadByte();

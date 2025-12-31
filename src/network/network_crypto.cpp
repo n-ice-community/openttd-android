@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_crypto.cpp Implementation of the network specific cryptography helpers. */
@@ -92,7 +92,7 @@ bool X25519DerivedKeys::Exchange(const X25519PublicKey &peer_public_key, X25519K
 }
 
 /**
- * Encryption handler implementation for monocypther encryption after a X25519 key exchange.
+ * Encryption handler implementation for monocypher encryption after a X25519 key exchange.
  */
 class X25519EncryptionHandler : public NetworkEncryptionHandler {
 private:

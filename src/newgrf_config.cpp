@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_config.cpp Finding NewGRFs and configuring them. */
@@ -40,7 +40,7 @@ GRFConfig::GRFConfig(const GRFConfig &config) :
 	name(config.name),
 	info(config.info),
 	url(config.url),
-	error(config.error),
+	errors(config.errors),
 	version(config.version),
 	min_loadable_version(config.min_loadable_version),
 	flags(config.flags),
@@ -155,15 +155,6 @@ GRFConfigList _grfconfig;
 GRFConfigList _grfconfig_newgame;
 GRFConfigList _grfconfig_static;
 uint _missing_extra_graphics = 0;
-
-/**
- * Construct a new GRFError.
- * @param severity The severity of this error.
- * @param message The actual error-string.
- */
-GRFError::GRFError(StringID severity, StringID message) : message(message), severity(severity)
-{
-}
 
 /**
  * Get the value of the given user-changeable parameter.
@@ -472,7 +463,7 @@ compatible_grf:
 				c->ident.md5sum = f->ident.md5sum;
 				c->name = f->name;
 				c->info = f->name;
-				c->error.reset();
+				c->errors.clear();
 				c->version = f->version;
 				c->min_loadable_version = f->min_loadable_version;
 				c->num_valid_params = f->num_valid_params;
@@ -643,7 +634,7 @@ std::string GRFBuildParamList(const GRFConfig &c)
 	std::string result;
 	for (const uint32_t &value : c.param) {
 		if (!result.empty()) result += ' ';
-		result += std::to_string(value);
+		format_append(result, "{}", value);
 	}
 	return result;
 }

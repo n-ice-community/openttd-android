@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_globalvar.cpp NewGRF Action 0x00 handler for global variables. */
@@ -59,7 +59,7 @@ static ChangeInfoResult LoadTranslationTable(uint first, uint last, ByteReader &
 	GRFFile *grf_override = GetCurrentGRFOverride();
 	if (grf_override != nullptr) {
 		/* GRF override is present, copy the translation table to the overridden GRF as well. */
-		GrfMsg(1, "LoadTranslationTable: Copying {} translation table to override GRFID '{}'", name, std::byteswap(grf_override->grfid));
+		GrfMsg(1, "LoadTranslationTable: Copying {} translation table to override GRFID {:08X}", name, std::byteswap(grf_override->grfid));
 		std::vector<T> &override_table = gettable(*grf_override);
 		override_table = translation_table;
 	}
@@ -67,7 +67,7 @@ static ChangeInfoResult LoadTranslationTable(uint first, uint last, ByteReader &
 	return CIR_SUCCESS;
 }
 
-static ChangeInfoResult LoadBadgeTranslationTable(uint first, uint last, ByteReader &buf, std::vector<BadgeID> &translation_table, const char *name)
+static ChangeInfoResult LoadBadgeTranslationTable(uint first, uint last, ByteReader &buf, std::vector<BadgeID> &translation_table, std::string_view name)
 {
 	if (first != 0 && first != std::size(translation_table)) {
 		GrfMsg(1, "LoadBadgeTranslationTable: {} translation table must start at zero or {}", name, std::size(translation_table));
@@ -178,6 +178,7 @@ static ChangeInfoResult GlobalVarChangeInfo(uint first, uint last, int prop, Byt
 				if (curidx < CURRENCY_END) {
 					_currency_specs[curidx].separator.clear();
 					_currency_specs[curidx].separator.push_back(GB(options, 0, 8));
+					StrMakeValidInPlace(_currency_specs[curidx].separator);
 					/* By specifying only one bit, we prevent errors,
 					 * since newgrf specs said that only 0 and 1 can be set for symbol_pos */
 					_currency_specs[curidx].symbol_pos = GB(options, 8, 1);
@@ -472,7 +473,7 @@ bool GetGlobalVariable(uint8_t param, uint32_t *value, const GRFFile *grffile)
 				/* skip elrail multiplier - disabled */
 				SB(*value, 8, 8, GetRailTypeInfo(RAILTYPE_MONO)->cost_multiplier); // monorail
 			} else {
-				SB(*value, 8, 8, GetRailTypeInfo(RAILTYPE_ELECTRIC)->cost_multiplier); // electified railway
+				SB(*value, 8, 8, GetRailTypeInfo(RAILTYPE_ELECTRIC)->cost_multiplier); // electrified railway
 				/* Skip monorail multiplier - no space in result */
 			}
 			SB(*value, 16, 8, GetRailTypeInfo(RAILTYPE_MAGLEV)->cost_multiplier); // maglev

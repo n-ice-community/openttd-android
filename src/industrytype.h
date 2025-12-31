@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file industrytype.h %Industry type specs. */
@@ -119,7 +119,7 @@ struct IndustrySpec {
 	IndustryLifeTypes life_type;                 ///< This is also known as Industry production flag, in newgrf specs
 	LandscapeTypes climate_availability; ///< Bitmask, giving landscape enums as bit position
 	IndustryBehaviours behaviour;                ///< How this industry will behave, and how others entities can use it
-	uint8_t map_colour;                            ///< colour used for the small map
+	PixelColour map_colour; ///< colour used for the small map
 	StringID name;                              ///< Displayed name of the industry
 	StringID new_industry_text;                 ///< Message appearing when the industry is built
 	StringID closure_text;                      ///< Message appearing when the industry closes
@@ -131,7 +131,7 @@ struct IndustrySpec {
 	/* Newgrf data */
 	IndustryCallbackMasks callback_mask;                       ///< Bitmask of industry callbacks that have to be called
 	bool enabled;                               ///< entity still available (by default true).newgrf can disable it, though
-	GRFFileProps grf_prop;                      ///< properties related to the grf file
+	SubstituteGRFFileProps grf_prop; ///< properties related to the grf file
 	std::vector<uint8_t> random_sounds; ///< Random sounds;
 	std::vector<BadgeID> badges;
 
@@ -157,15 +157,15 @@ struct IndustryTileSpec {
 	uint8_t anim_next;                       ///< Next frame in an animation
 	/**
 	 * When true, the tile has to be drawn using the animation
-	 * state instead of the construction state
+	 * state instead of the construction stage
 	 */
 	bool anim_state;
 	/* Newgrf data */
 	IndustryTileCallbackMasks callback_mask;                  ///< Bitmask of industry tile callbacks that have to be called
-	AnimationInfo animation;              ///< Information about the animation (is it looping, how many loops etc)
+	AnimationInfo<IndustryAnimationTriggers> animation; ///< Information about the animation (is it looping, how many loops etc)
 	IndustryTileSpecialFlags special_flags; ///< Bitmask of extra flags used by the tile
 	bool enabled;                         ///< entity still available (by default true).newgrf can disable it, though
-	GRFFileProps grf_prop;                ///< properties related to the grf file
+	SubstituteGRFFileProps grf_prop; ///< properties related to the grf file
 	std::vector<BadgeID> badges;
 
 	std::array<std::variant<CargoLabel, MixedCargoType>, INDUSTRY_ORIGINAL_NUM_INPUTS> accepts_cargo_label; ///< Cargo labels of accepted cargo for default industry tiles.

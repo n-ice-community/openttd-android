@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file spritecache.h Functions to cache sprites in memory. */
@@ -11,30 +11,16 @@
 #define SPRITECACHE_H
 
 #include "gfx_type.h"
+#include "spritecache_type.h"
 #include "spriteloader/spriteloader.hpp"
-
-/** Data structure describing a sprite. */
-struct Sprite {
-	uint16_t height; ///< Height of the sprite.
-	uint16_t width;  ///< Width of the sprite.
-	int16_t x_offs;  ///< Number of pixels to shift the sprite to the right.
-	int16_t y_offs;  ///< Number of pixels to shift the sprite downwards.
-	uint8_t data[];   ///< Sprite data.
-};
-
-enum SpriteCacheCtrlFlags : uint8_t {
-	SCCF_ALLOW_ZOOM_MIN_1X_PAL    = 0, ///< Allow use of sprite min zoom setting at 1x in palette mode.
-	SCCF_ALLOW_ZOOM_MIN_1X_32BPP  = 1, ///< Allow use of sprite min zoom setting at 1x in 32bpp mode.
-	SCCF_ALLOW_ZOOM_MIN_2X_PAL    = 2, ///< Allow use of sprite min zoom setting at 2x in palette mode.
-	SCCF_ALLOW_ZOOM_MIN_2X_32BPP  = 3, ///< Allow use of sprite min zoom setting at 2x in 32bpp mode.
-};
 
 extern uint _sprite_cache_size;
 
 /** SpriteAllocator that allocates memory via a unique_ptr array. */
 class UniquePtrSpriteAllocator : public SpriteAllocator {
 public:
-	std::unique_ptr<uint8_t[]> data;
+	std::unique_ptr<std::byte[]> data;
+	size_t size;
 protected:
 	void *AllocatePtr(size_t size) override;
 };

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file effectvehicle_func.h Functions related to effect vehicles. */
@@ -17,7 +17,7 @@ enum EffectVehicleType : uint8_t {
 	EV_CHIMNEY_SMOKE            =  0, ///< Smoke of power plant (industry).
 	EV_STEAM_SMOKE              =  1, ///< Smoke of steam engines.
 	EV_DIESEL_SMOKE             =  2, ///< Smoke of diesel engines.
-	EV_ELECTRIC_SPARK           =  3, ///< Sparcs of electric engines.
+	EV_ELECTRIC_SPARK           =  3, ///< Sparks of electric engines.
 	EV_CRASH_SMOKE              =  4, ///< Smoke of disasters.
 	EV_EXPLOSION_LARGE          =  5, ///< Various explosions.
 	EV_BREAKDOWN_SMOKE          =  6, ///< Smoke of broken vehicles except aircraft.

@@ -13,7 +13,7 @@
 # This file is part of OpenTTD.
 # OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 # OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+# See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
 
 
 ##id 0x0000
@@ -254,6 +254,7 @@ STR_UNITS_FORCE_SI                                              :{DECIMAL}{NBSP}
 STR_UNITS_HEIGHT_IMPERIAL                                       :{DECIMAL}{NBSP}ft
 STR_UNITS_HEIGHT_METRIC                                         :{DECIMAL}{NBSP}m
 STR_UNITS_HEIGHT_SI                                             :{DECIMAL}{NBSP}m
+STR_UNITS_HEIGHT_GAMEUNITS                                      :{DECIMAL}{NBSP}level{P "" s}
 
 # Time units used in string control characters
 STR_UNITS_DAYS                                                  :{COMMA}{NBSP}day{P "" s}
@@ -267,6 +268,7 @@ STR_UNITS_YEARS                                                 :{NUM}{NBSP}year
 STR_UNITS_PERIODS                                               :{NUM}{NBSP}period{P "" s}
 
 STR_LIST_SEPARATOR                                              :,{SPACE}
+STR_TRUNCATION_ELLIPSIS                                         :...
 
 # Common window strings
 STR_LIST_FILTER_TITLE                                           :{BLACK}Filter:
@@ -285,7 +287,7 @@ STR_TOOLTIP_CLOSE_WINDOW                                        :{BLACK}Close wi
 STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS                              :{BLACK}Window title - drag this to move window
 STR_TOOLTIP_SHADE                                               :{BLACK}Shade window - only show the title bar
 STR_TOOLTIP_DEBUG                                               :{BLACK}Show NewGRF debug information
-STR_TOOLTIP_DEFSIZE                                             :{BLACK}Resize window to default size. Ctrl+Click to store current size as default
+STR_TOOLTIP_DEFSIZE                                             :{BLACK}Resize window to default size. Ctrl+Click to store current size as default. Double Ctrl+Click to reset stored default
 STR_TOOLTIP_STICKY                                              :{BLACK}Mark this window as uncloseable by the 'Close All Windows' key. Ctrl+Click to also save state as default
 STR_TOOLTIP_RESIZE                                              :{BLACK}Click and drag to resize this window
 STR_TOOLTIP_TOGGLE_LARGE_SMALL_WINDOW                           :{BLACK}Toggle large/small window size
@@ -310,6 +312,7 @@ STR_SHOW_HIDDEN_ENGINES_VEHICLE_AIRCRAFT_TOOLTIP                :{BLACK}By enabl
 STR_BUTTON_DEFAULT                                              :{BLACK}Default
 STR_BUTTON_CANCEL                                               :{BLACK}Cancel
 STR_BUTTON_OK                                                   :{BLACK}OK
+STR_BUTTON_MOVE                                                 :{BLACK}Move
 
 # On screen keyboard window
 STR_OSK_KEYBOARD_LAYOUT                                         :`1234567890-= qwertyuiop[]asdfghjkl;'#\zxcvbnm,./ .
@@ -444,7 +447,6 @@ STR_SCENEDIT_TOWN_MENU_PACE_HOUSE                               :Place houses
 
 # Settings menu
 STR_SETTINGS_MENU_GAME_OPTIONS                                  :Game options
-STR_SETTINGS_MENU_CONFIG_SETTINGS_TREE                          :Settings
 STR_SETTINGS_MENU_AI_SETTINGS                                   :AI settings
 STR_SETTINGS_MENU_GAMESCRIPT_SETTINGS                           :Game script settings
 STR_SETTINGS_MENU_NEWGRF_SETTINGS                               :NewGRF settings
@@ -622,6 +624,14 @@ STR_GRAPH_COMPANY_VALUES_CAPTION                                :{WHITE}Company 
 
 STR_GRAPH_LAST_24_MINUTES_TIME_LABEL                            :{TINY_FONT}{BLACK}Last 24 minutes
 STR_GRAPH_LAST_72_MINUTES_TIME_LABEL                            :{TINY_FONT}{BLACK}Last 72 minutes
+STR_GRAPH_LAST_288_MINUTES_TIME_LABEL                           :{TINY_FONT}{BLACK}Last 288 minutes
+
+STR_GRAPH_LAST_24_MONTHS                                        :{TINY_FONT}{BLACK}2 years (monthly)
+STR_GRAPH_LAST_24_QUARTERS                                      :{TINY_FONT}{BLACK}6 years (quarterly)
+STR_GRAPH_LAST_24_YEARS                                         :{TINY_FONT}{BLACK}24 years (yearly)
+
+STR_GRAPH_TOGGLE_RANGE                                          :Toggle graph for this data range
+STR_GRAPH_SELECT_SCALE                                          :Change horizontal scale of graph
 
 STR_GRAPH_CARGO_PAYMENT_RATES_CAPTION                           :{WHITE}Cargo Payment Rates
 STR_GRAPH_CARGO_PAYMENT_RATES_DAYS                              :{TINY_FONT}{BLACK}Days in transit
@@ -629,14 +639,20 @@ STR_GRAPH_CARGO_PAYMENT_RATES_SECONDS                           :{TINY_FONT}{BLA
 STR_GRAPH_CARGO_PAYMENT_RATES_TITLE                             :{TINY_FONT}{BLACK}Payment for delivering 10 units (or 10,000 litres) of cargo a distance of 20 squares
 STR_GRAPH_CARGO_ENABLE_ALL                                      :{TINY_FONT}{BLACK}All
 STR_GRAPH_CARGO_DISABLE_ALL                                     :{TINY_FONT}{BLACK}None
-STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL                              :{BLACK}Display all cargoes on the cargo payment rates graph
-STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL                             :{BLACK}Display no cargoes on the cargo payment rates graph
+STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL                              :{BLACK}Display all cargoes on the graph
+STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL                             :{BLACK}Display no cargoes on the graph
 STR_GRAPH_CARGO_PAYMENT_TOGGLE_CARGO                            :{BLACK}Toggle graph of this cargo type
 STR_GRAPH_CARGO_PAYMENT_CARGO                                   :{TINY_FONT}{BLACK}{STRING}
 
-STR_GRAPH_INDUSTRY_PRODUCTION_CAPTION                           :{WHITE}{INDUSTRY} - Production History
+STR_GRAPH_INDUSTRY_CAPTION                                      :{WHITE}{INDUSTRY} - Cargo History
 STR_GRAPH_INDUSTRY_RANGE_PRODUCED                               :Produced
 STR_GRAPH_INDUSTRY_RANGE_TRANSPORTED                            :Transported
+STR_GRAPH_INDUSTRY_RANGE_DELIVERED                              :Delivered
+STR_GRAPH_INDUSTRY_RANGE_WAITING                                :Waiting
+
+STR_GRAPH_TOWN_CARGO_CAPTION                                    :{WHITE}{TOWN} - Cargo History
+STR_GRAPH_TOWN_RANGE_PRODUCED                                   :Supply
+STR_GRAPH_TOWN_RANGE_TRANSPORTED                                :Transported
 
 STR_GRAPH_PERFORMANCE_DETAIL_TOOLTIP                            :{BLACK}Show detailed performance ratings
 
@@ -959,31 +975,34 @@ STR_EXTRA_VIEW_MOVE_MAIN_TO_VIEW_TOOLTIP                        :{BLACK}Copy the
 STR_GAME_OPTIONS_CAPTION                                        :{WHITE}Game Options
 
 STR_GAME_OPTIONS_TAB_GENERAL                                    :General
-STR_GAME_OPTIONS_TAB_GENERAL_TOOLTIP                            :{BLACK}Choose general settings
-STR_GAME_OPTIONS_TAB_GENERAL_TT                                 :{BLACK}Choose general settings
+STR_GAME_OPTIONS_TAB_GENERAL_TOOLTIP                            :Choose general settings
 STR_GAME_OPTIONS_TAB_INTERFACE                                  :Interface
-STR_GAME_OPTIONS_TAB_INTERFACE_TT                               :{BLACK}Choose interface settings
+STR_GAME_OPTIONS_TAB_INTERFACE_TOOLTIP                          :Choose interface settings
 STR_GAME_OPTIONS_TAB_FONTS                                      :Fonts
-STR_GAME_OPTIONS_TAB_FONTS_TT                                   :{BLACK}Choose font settings
+STR_GAME_OPTIONS_TAB_FONTS_TOOLTIP                              :Choose font settings
 STR_GAME_OPTIONS_TAB_GRAPHICS                                   :Graphics
-STR_GAME_OPTIONS_TAB_GRAPHICS_TOOLTIP                           :{BLACK}Choose graphics settings
+STR_GAME_OPTIONS_TAB_GRAPHICS_TOOLTIP                           :Choose graphics settings
 STR_GAME_OPTIONS_TAB_SOUND                                      :Sound
-STR_GAME_OPTIONS_TAB_SOUND_TOOLTIP                              :{BLACK}Choose sound and music settings
+STR_GAME_OPTIONS_TAB_SOUND_TOOLTIP                              :Choose sound and music settings
 STR_GAME_OPTIONS_TAB_SOCIAL                                     :Social
-STR_GAME_OPTIONS_TAB_SOCIAL_TOOLTIP                             :{BLACK}Choose social integration settings
+STR_GAME_OPTIONS_TAB_SOCIAL_TOOLTIP                             :Choose social integration settings
+STR_GAME_OPTIONS_TAB_ADVANCED                                   :Advanced
+STR_GAME_OPTIONS_TAB_ADVANCED_TOOLTIP                           :Change advanced settings
 
 STR_GAME_OPTIONS_VOLUME                                         :Volume
 STR_GAME_OPTIONS_SFX_VOLUME                                     :Sound effects
 STR_GAME_OPTIONS_MUSIC_VOLUME                                   :Music
 
+STR_GAME_OPTIONS_SETTING                                        :{STRING}: {ORANGE}{STRING}
+
 STR_GAME_OPTIONS_VOLUME_MARK                                    :{NUM}%
 
-STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :{BLACK}Currency units
-STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :{BLACK}Currency units selection
+STR_GAME_OPTIONS_CURRENCY_UNITS_FRAME                           :Currency units
+STR_GAME_OPTIONS_CURRENCY_UNITS_DROPDOWN_TOOLTIP                :Currency units selection
 
 STR_GAME_OPTIONS_CURRENCY_CODE                                  :{STRING} ({RAW_STRING})
 
-###length 45
+###length 46
 STR_GAME_OPTIONS_CURRENCY_GBP                                   :British Pound
 STR_GAME_OPTIONS_CURRENCY_USD                                   :American Dollar
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Euro
@@ -1029,9 +1048,10 @@ STR_GAME_OPTIONS_CURRENCY_MYR                                   :Malaysian Ringg
 STR_GAME_OPTIONS_CURRENCY_LVL                                   :Latvian Lats
 STR_GAME_OPTIONS_CURRENCY_PTE                                   :Portuguese Escudo
 STR_GAME_OPTIONS_CURRENCY_UAH                                   :Ukrainian Hryvnia
+STR_GAME_OPTIONS_CURRENCY_VND                                   :Vietnamese Dong
 
-STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :{BLACK}Autosave
-STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :{BLACK}Select interval between automatic game saves
+STR_GAME_OPTIONS_AUTOSAVE_FRAME                                 :Autosave
+STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_TOOLTIP                      :Select interval between automatic game saves
 
 # Autosave dropdown
 ###length 5
@@ -1041,82 +1061,86 @@ STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_30_MINUTES             :Every 30 minute
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_60_MINUTES             :Every 60 minutes
 STR_GAME_OPTIONS_AUTOSAVE_DROPDOWN_EVERY_120_MINUTES            :Every 120 minutes
 
-STR_GAME_OPTIONS_LANGUAGE                                       :{BLACK}Language
-STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :{BLACK}Select the interface language to use
+STR_GAME_OPTIONS_LANGUAGE                                       :Language
+STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :Select the interface language to use
 STR_GAME_OPTIONS_LANGUAGE_PERCENTAGE                            :{RAW_STRING} ({NUM}% completed)
 
-STR_GAME_OPTIONS_FULLSCREEN                                     :{BLACK}Fullscreen
-STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :{BLACK}Check this box to play OpenTTD fullscreen mode
+STR_GAME_OPTIONS_FULLSCREEN                                     :Fullscreen
+STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :Check this box to play OpenTTD fullscreen mode
 
-STR_GAME_OPTIONS_RESOLUTION                                     :{BLACK}Screen resolution
-STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :{BLACK}Select the screen resolution to use
+STR_GAME_OPTIONS_RESOLUTION                                     :Screen resolution
+STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :Select the screen resolution to use
 STR_GAME_OPTIONS_RESOLUTION_OTHER                               :other
 STR_GAME_OPTIONS_RESOLUTION_ITEM                                :{NUM}x{NUM}
 
-STR_GAME_OPTIONS_VIDEO_ACCELERATION                             :{BLACK}Hardware acceleration
-STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :{BLACK}Check this box to allow OpenTTD to try to use hardware acceleration. A changed setting will only be applied upon game restart
+STR_GAME_OPTIONS_VIDEO_ACCELERATION                             :Hardware acceleration
+STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :Check this box to allow OpenTTD to try to use hardware acceleration. A changed setting will only be applied upon game restart
 STR_GAME_OPTIONS_VIDEO_ACCELERATION_RESTART                     :{WHITE}The setting will only take effect after a game restart
 
-STR_GAME_OPTIONS_VIDEO_VSYNC                                    :{BLACK}VSync
-STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :{BLACK}Check this box to v-sync the screen. A changed setting will only be applied upon game restart. Only works with hardware acceleration enabled
+STR_GAME_OPTIONS_VIDEO_VSYNC                                    :VSync
+STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :Check this box to v-sync the screen. A changed setting will only be applied upon game restart. Only works with hardware acceleration enabled
 
-STR_GAME_OPTIONS_VIDEO_DRIVER_INFO                              :{BLACK}Current driver: {RAW_STRING}
+STR_GAME_OPTIONS_VIDEO_DRIVER_INFO                              :Current driver: {RAW_STRING}
 
-STR_GAME_OPTIONS_GUI_SCALE_FRAME                                :{BLACK}Interface size
-STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP                              :{BLACK}Drag slider to set interface size. Ctrl+Drag for continuous adjustment
-STR_GAME_OPTIONS_GUI_SCALE_AUTO                                 :{BLACK}Auto-detect size
-STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :{BLACK}Check this box to detect interface size automatically
+STR_GAME_OPTIONS_INTERFACE                                      :Interface
 
-STR_GAME_OPTIONS_GUI_SCALE_BEVELS                               :{BLACK}Scale bevels
-STR_GAME_OPTIONS_GUI_SCALE_BEVELS_TOOLTIP                       :{BLACK}Check this box to scale bevels by interface size
+STR_GAME_OPTIONS_GUI_SCALE_FRAME                                :Interface size
+STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP                              :Drag slider to set interface size. Ctrl+Drag for continuous adjustment
+STR_GAME_OPTIONS_GUI_SCALE_AUTO                                 :Auto-detect size
+STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :Check this box to detect interface size automatically
 
-STR_GAME_OPTIONS_GUI_FONT_SPRITE                                :{BLACK}Use traditional sprite font
-STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP                        :{BLACK}Check this box if you prefer to use the traditional fixed-size sprite font
-STR_GAME_OPTIONS_GUI_FONT_AA                                    :{BLACK}Anti-alias fonts
-STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP                            :{BLACK}Check this box to anti-alias resizable fonts
+STR_GAME_OPTIONS_GUI_SCALE_BEVELS                               :Scale bevels
+STR_GAME_OPTIONS_GUI_SCALE_BEVELS_TOOLTIP                       :Check this box to scale bevels by interface size
+
+STR_GAME_OPTIONS_GUI_FONT_SPRITE                                :Use traditional sprite font
+STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP                        :Check this box if you prefer to use the traditional fixed-size sprite font
+STR_GAME_OPTIONS_GUI_FONT_DEFAULT                               :Prefer default font
+STR_GAME_OPTIONS_GUI_FONT_DEFAULT_TOOLTIP                       :Check this box if you prefer to use the default font over discovered fallback fonts
+STR_GAME_OPTIONS_GUI_FONT_AA                                    :Anti-alias fonts
+STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP                            :Check this box to anti-alias resizable fonts
 
 STR_GAME_OPTIONS_GUI_SCALE_MARK                                 :{DECIMAL}x
 
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_FRAME                       :{BLACK}Automated survey
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY                             :{BLACK}Participate in automated survey
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_TOOLTIP                     :{BLACK}When enabled, OpenTTD will transmit a survey when leaving a game
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK                        :{BLACK}About survey and privacy
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK_TOOLTIP                :{BLACK}This opens a browser with more information about the automated survey
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW                     :{BLACK}Preview survey result
-STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW_TOOLTIP             :{BLACK}Show the survey result of the current running game
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_FRAME                       :Automated survey
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY                             :Participate in automated survey
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_TOOLTIP                     :When enabled, OpenTTD will transmit a survey when leaving a game
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK                        :About survey and privacy
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_LINK_TOOLTIP                :This opens a browser with more information about the automated survey
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW                     :Preview survey result
+STR_GAME_OPTIONS_PARTICIPATE_SURVEY_PREVIEW_TOOLTIP             :Show the survey result of the current running game
 
-STR_GAME_OPTIONS_FONT_MONO                                      :{BLACK}Mono font
-STR_GAME_OPTIONS_FONT_SMALL                                     :{BLACK}Small font
-STR_GAME_OPTIONS_FONT_NORMAL                                    :{BLACK}Normal font
-STR_GAME_OPTIONS_FONT_LARGE                                     :{BLACK}Large font
+STR_GAME_OPTIONS_FONT_MONO                                      :Mono font
+STR_GAME_OPTIONS_FONT_SMALL                                     :Small font
+STR_GAME_OPTIONS_FONT_NORMAL                                    :Normal font
+STR_GAME_OPTIONS_FONT_LARGE                                     :Large font
 
-STR_GAME_OPTIONS_GRAPHICS                                       :{BLACK}Graphics
+STR_GAME_OPTIONS_DISPLAY                                        :Display
 
-STR_GAME_OPTIONS_REFRESH_RATE                                   :{BLACK}Display refresh rate
-STR_GAME_OPTIONS_REFRESH_RATE_TOOLTIP                           :{BLACK}Select the screen refresh rate to use
+STR_GAME_OPTIONS_REFRESH_RATE                                   :Display refresh rate
+STR_GAME_OPTIONS_REFRESH_RATE_TOOLTIP                           :Select the screen refresh rate to use
 STR_GAME_OPTIONS_REFRESH_RATE_ITEM                              :{NUM}Hz
 STR_GAME_OPTIONS_REFRESH_RATE_WARNING                           :{WHITE}Refresh rates higher than 60Hz might impact performance.
 
-STR_GAME_OPTIONS_BASE_GRF                                       :{BLACK}Base graphics set
-STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :{BLACK}Select the base graphics set to use (cannot be changed in-game, only from the main menu)
-STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :{BLACK}Additional information about the base graphics set
+STR_GAME_OPTIONS_BASE_GRF                                       :Base graphics set
+STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :Select the base graphics set to use (cannot be changed in-game, only from the main menu)
+STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :Additional information about the base graphics set
 
-STR_GAME_OPTIONS_BASE_SFX                                       :{BLACK}Base sounds set
-STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :{BLACK}Select the base sounds set to use (cannot be changed in-game, only from the main menu)
-STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :{BLACK}Additional information about the base sounds set
+STR_GAME_OPTIONS_BASE_SFX                                       :Base sounds set
+STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :Select the base sounds set to use (cannot be changed in-game, only from the main menu)
+STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :Additional information about the base sounds set
 
-STR_GAME_OPTIONS_BASE_MUSIC                                     :{BLACK}Base music set
-STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :{BLACK}Select the base music set to use
-STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :{BLACK}Additional information about the base music set
+STR_GAME_OPTIONS_BASE_MUSIC                                     :Base music set
+STR_GAME_OPTIONS_BASE_MUSIC_TOOLTIP                             :Select the base music set to use
+STR_GAME_OPTIONS_BASE_MUSIC_DESCRIPTION_TOOLTIP                 :Additional information about the base music set
 
 STR_GAME_OPTIONS_ONLINE_CONTENT                                 :Get Content
 STR_GAME_OPTIONS_ONLINE_CONTENT_TOOLTIP                         :Check for new and updated content to download
 
-STR_GAME_OPTIONS_SOCIAL_PLUGINS_NONE                            :{LTBLUE}(no plugins to integrate with social platforms installed)
+STR_GAME_OPTIONS_SOCIAL_PLUGINS_NONE                            :(no plugins to integrate with social platforms installed)
 
-STR_GAME_OPTIONS_SOCIAL_PLUGIN_TITLE                            :{BLACK}{RAW_STRING} ({RAW_STRING})
-STR_GAME_OPTIONS_SOCIAL_PLUGIN_PLATFORM                         :{BLACK}Platform:
-STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE                            :{BLACK}Plugin state:
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_TITLE                            :{RAW_STRING} ({RAW_STRING})
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_PLATFORM                         :Platform:
+STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE                            :Plugin state:
 
 STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_RUNNING                    :{GREEN}Running
 STR_GAME_OPTIONS_SOCIAL_PLUGIN_STATE_FAILED                     :{RED}Failed to initialize
@@ -1229,12 +1253,11 @@ STR_CITY_APPROVAL_PERMISSIVE                                    :Permissive (no 
 
 STR_WARNING_NO_SUITABLE_AI                                      :{WHITE}No suitable AIs available...{}{}You can download several AIs via the 'Online Content' system
 
-# Settings tree window
-STR_CONFIG_SETTING_TREE_CAPTION                                 :{WHITE}Settings
-STR_CONFIG_SETTING_FILTER_TITLE                                 :{BLACK}Filter:
-STR_CONFIG_SETTING_EXPAND_ALL                                   :{BLACK}Expand all
-STR_CONFIG_SETTING_COLLAPSE_ALL                                 :{BLACK}Collapse all
-STR_CONFIG_SETTING_RESET_ALL                                    :{BLACK}Reset all values
+# Settings tree in the Game Options window
+STR_CONFIG_SETTING_FILTER_TITLE                                 :Filter:
+STR_CONFIG_SETTING_EXPAND_ALL                                   :Expand all
+STR_CONFIG_SETTING_COLLAPSE_ALL                                 :Collapse all
+STR_CONFIG_SETTING_RESET_ALL                                    :Reset all values
 STR_CONFIG_SETTING_NO_EXPLANATION_AVAILABLE_HELPTEXT            :(no explanation available)
 STR_CONFIG_SETTING_VALUE                                        :{PUSH_COLOUR}{ORANGE}{STRING1}{POP_COLOUR}
 STR_CONFIG_SETTING_DEFAULT_VALUE                                :{LTBLUE}Default value: {ORANGE}{STRING1}
@@ -1247,9 +1270,9 @@ STR_CONFIG_SETTING_TYPE_COMPANY_INGAME                          :Company setting
 STR_CONFIG_SETTING_RESET_ALL_CONFIRMATION_DIALOG_CAPTION        :{WHITE}Caution!
 STR_CONFIG_SETTING_RESET_ALL_CONFIRMATION_DIALOG_TEXT           :{WHITE}This action will reset all game settings to their default values.{}Are you sure you want to proceed?
 
-STR_CONFIG_SETTING_RESTRICT_CATEGORY                            :{BLACK}Category:
-STR_CONFIG_SETTING_RESTRICT_TYPE                                :{BLACK}Type:
-STR_CONFIG_SETTING_RESTRICT_DROPDOWN_HELPTEXT                   :{BLACK}Restricts the list below using predefined filters
+STR_CONFIG_SETTING_RESTRICT_CATEGORY                            :Category:
+STR_CONFIG_SETTING_RESTRICT_TYPE                                :Type:
+STR_CONFIG_SETTING_RESTRICT_DROPDOWN_HELPTEXT                   :Restricts the list below using predefined filters
 STR_CONFIG_SETTING_RESTRICT_BASIC                               :Basic (show only important settings)
 STR_CONFIG_SETTING_RESTRICT_ADVANCED                            :Advanced (show most settings)
 STR_CONFIG_SETTING_RESTRICT_ALL                                 :Expert (show all settings, including weird ones)
@@ -1266,9 +1289,9 @@ STR_CONFIG_SETTING_TYPE_DROPDOWN_COMPANY_INGAME                 :Company setting
 
 STR_CONFIG_SETTINGS_NONE                                        :{WHITE}- None -
 ###length 3
-STR_CONFIG_SETTING_CATEGORY_HIDES                               :{BLACK}Show all search results by setting{}{SILVER}Category {BLACK}to {WHITE}{STRING}
-STR_CONFIG_SETTING_TYPE_HIDES                                   :{BLACK}Show all search results by setting{}{SILVER}Type {BLACK}to {WHITE}All setting types
-STR_CONFIG_SETTING_CATEGORY_AND_TYPE_HIDES                      :{BLACK}Show all search results by setting{}{SILVER}Category {BLACK}to {WHITE}{STRING} {BLACK}and {SILVER}Type {BLACK}to {WHITE}All setting types
+STR_CONFIG_SETTING_CATEGORY_HIDES                               :Show all search results by setting{}{PUSH_COLOUR}{SILVER}Category {POP_COLOUR}to {WHITE}{STRING}
+STR_CONFIG_SETTING_TYPE_HIDES                                   :Show all search results by setting{}{PUSH_COLOUR}{SILVER}Type {POP_COLOUR}to {WHITE}All setting types
+STR_CONFIG_SETTING_CATEGORY_AND_TYPE_HIDES                      :Show all search results by setting{}{PUSH_COLOUR}{SILVER}Category {POP_COLOUR}to {PUSH_COLOUR}{WHITE}{STRING} {POP_COLOUR}and {PUSH_COLOUR}{SILVER}Type {POP_COLOUR}to {WHITE}All setting types
 
 ###length 3
 STR_CONFIG_SETTING_OFF                                          :Off
@@ -1306,6 +1329,10 @@ STR_CONFIG_SETTING_INTEREST_RATE_HELPTEXT                       :Loan interest r
 
 STR_CONFIG_SETTING_RUNNING_COSTS                                :Running costs: {STRING2}
 STR_CONFIG_SETTING_RUNNING_COSTS_HELPTEXT                       :Set level of maintenance and running costs of vehicles and infrastructure
+###length 3
+STR_CONFIG_SETTING_RUNNING_COSTS_LOW                            :Low
+STR_CONFIG_SETTING_RUNNING_COSTS_MEDIUM                         :Medium
+STR_CONFIG_SETTING_RUNNING_COSTS_HIGH                           :High
 
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED                           :Construction speed: {STRING2}
 STR_CONFIG_SETTING_CONSTRUCTION_SPEED_HELPTEXT                  :Limit the amount of construction actions for AIs
@@ -1327,6 +1354,10 @@ STR_CONFIG_SETTING_SUBSIDY_DURATION_DISABLED                    :No subsidies
 
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS                           :Construction costs: {STRING2}
 STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HELPTEXT                  :Set level of construction and purchase costs
+###length 3
+STR_CONFIG_SETTING_CONSTRUCTION_COSTS_LOW                       :Low
+STR_CONFIG_SETTING_CONSTRUCTION_COSTS_MEDIUM                    :Medium
+STR_CONFIG_SETTING_CONSTRUCTION_COSTS_HIGH                      :High
 
 STR_CONFIG_SETTING_RECESSIONS                                   :Recessions: {STRING2}
 STR_CONFIG_SETTING_RECESSIONS_HELPTEXT                          :If enabled, recessions may occur periodically. During a recession all production is significantly lower (it returns to previous level when the recession is over)
@@ -1695,6 +1726,9 @@ STR_CONFIG_SETTING_SCROLLMODE_LMB                               :Move map with L
 
 STR_CONFIG_SETTING_SMOOTH_SCROLLING                             :Smooth viewport scrolling: {STRING2}
 STR_CONFIG_SETTING_SMOOTH_SCROLLING_HELPTEXT                    :Control how the main view scrolls to a specific position when clicking on the smallmap or when issuing a command to scroll to a specific object on the map. If enabled, the viewport scrolls smoothly, if disabled it jumps directly to the targeted spot
+
+STR_CONFIG_SETTING_TOOLBAR_DROPDOWN_AUTOSELECT                  :Traditional toolbar menu selection behaviour: {STRING2}
+STR_CONFIG_SETTING_TOOLBAR_DROPDOWN_AUTOSELECT_HELPTEXT         :Choose selection behaviour of toolbar menus. If off, toolbar menus will stay open until a selection is made. If on, toolbar menus will activate when the mouse button is released.
 
 STR_CONFIG_SETTING_MEASURE_TOOLTIP                              :Show a measurement tooltip when using various build-tools: {STRING2}
 STR_CONFIG_SETTING_MEASURE_TOOLTIP_HELPTEXT                     :Display tile-distances and height differences when dragging during construction operations
@@ -2106,9 +2140,9 @@ STR_CONFIG_SETTING_DISTRIBUTION_ARMOURED_HELPTEXT               :The ARMOURED ca
 STR_CONFIG_SETTING_DISTRIBUTION_DEFAULT                         :Distribution mode for other cargo classes: {STRING2}
 STR_CONFIG_SETTING_DISTRIBUTION_DEFAULT_HELPTEXT                :"Asymmetric" means that arbitrary amounts of cargo can be sent in either direction. "Manual" means that no automatic distribution will take place for those cargoes
 ###length 3
-STR_CONFIG_SETTING_DISTRIBUTION_MANUAL                          :manual
-STR_CONFIG_SETTING_DISTRIBUTION_ASYMMETRIC                      :asymmetric
-STR_CONFIG_SETTING_DISTRIBUTION_SYMMETRIC                       :symmetric
+STR_CONFIG_SETTING_DISTRIBUTION_MANUAL                          :Manual
+STR_CONFIG_SETTING_DISTRIBUTION_ASYMMETRIC                      :Asymmetric
+STR_CONFIG_SETTING_DISTRIBUTION_SYMMETRIC                       :Symmetric
 
 STR_CONFIG_SETTING_LINKGRAPH_ACCURACY                           :Distribution accuracy: {STRING2}
 STR_CONFIG_SETTING_LINKGRAPH_ACCURACY_HELPTEXT                  :The higher you set this the more CPU time the calculation of the link graph will take. If it takes too long you may notice lag. If you set it to a low value, however, the distribution will be inaccurate, and you may notice cargo not being sent to the places you expect it to go
@@ -2161,10 +2195,11 @@ STR_CONFIG_SETTING_LOCALISATION_UNITS_FORCE_SI                  :SI (kN)
 
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT                    :Heights units: {STRING2}
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_HELPTEXT           :Whenever a height is shown in the user interface, show it in the selected units
-###length 3
+###length 4
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_IMPERIAL           :Imperial (ft)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_METRIC             :Metric (m)
 STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_SI                 :SI (m)
+STR_CONFIG_SETTING_LOCALISATION_UNITS_HEIGHT_GAMEUNITS          :Game units (levels)
 
 STR_CONFIG_SETTING_LOCALISATION                                 :Localisation
 STR_CONFIG_SETTING_GRAPHICS                                     :Graphics
@@ -2216,8 +2251,6 @@ STR_CONFIG_ERROR_INVALID_SAVEGAME_COMPRESSION_ALGORITHM         :{WHITE}... save
 STR_CONFIG_ERROR_INVALID_BASE_GRAPHICS_NOT_FOUND                :{WHITE}... ignoring Base Graphics set '{RAW_STRING}': not found
 STR_CONFIG_ERROR_INVALID_BASE_SOUNDS_NOT_FOUND                  :{WHITE}... ignoring Base Sounds set '{RAW_STRING}': not found
 STR_CONFIG_ERROR_INVALID_BASE_MUSIC_NOT_FOUND                   :{WHITE}... ignoring Base Music set '{RAW_STRING}': not found
-STR_CONFIG_ERROR_OUT_OF_MEMORY                                  :{WHITE}Out of memory
-STR_CONFIG_ERROR_SPRITECACHE_TOO_BIG                            :{WHITE}Allocating {BYTES} of spritecache failed. The spritecache was reduced to {BYTES}. This will reduce the performance of OpenTTD. To reduce memory requirements you can try to disable 32bpp graphics and/or zoom-in levels
 
 # Video initalization errors
 STR_VIDEO_DRIVER_ERROR                                          :{WHITE}Error with video settings...
@@ -2225,7 +2258,8 @@ STR_VIDEO_DRIVER_ERROR_NO_HARDWARE_ACCELERATION                 :{WHITE}... no c
 STR_VIDEO_DRIVER_ERROR_HARDWARE_ACCELERATION_CRASH              :{WHITE}... GPU driver crashed the game. Hardware acceleration disabled
 
 # Intro window
-STR_INTRO_CAPTION                                               :{WHITE}OpenTTD {REV}
+STR_INTRO_CAPTION                                               :{WHITE}OpenTTD
+STR_INTRO_VERSION                                               :OpenTTD {REV}
 
 STR_INTRO_NEW_GAME                                              :{BLACK}New Game
 STR_INTRO_LOAD_GAME                                             :{BLACK}Load Game
@@ -2237,11 +2271,7 @@ STR_INTRO_MULTIPLAYER                                           :{BLACK}Multipla
 STR_INTRO_GAME_OPTIONS                                          :{BLACK}Game Options
 STR_INTRO_HIGHSCORE                                             :{BLACK}Highscore Table
 STR_INTRO_HELP                                                  :{BLACK}Help & Manuals
-STR_INTRO_CONFIG_SETTINGS_TREE                                  :{BLACK}Settings
-STR_INTRO_NEWGRF_SETTINGS                                       :{BLACK}NewGRF Settings
 STR_INTRO_ONLINE_CONTENT                                        :{BLACK}Online Content
-STR_INTRO_AI_SETTINGS                                           :{BLACK}AI Settings
-STR_INTRO_GAMESCRIPT_SETTINGS                                   :{BLACK}Game Script Settings
 STR_INTRO_QUIT                                                  :{BLACK}Exit
 
 STR_INTRO_TOOLTIP_NEW_GAME                                      :{BLACK}Start a new game. Ctrl+Click skips map configuration
@@ -2259,11 +2289,7 @@ STR_INTRO_TOOLTIP_TOYLAND_LANDSCAPE                             :{BLACK}Select '
 STR_INTRO_TOOLTIP_GAME_OPTIONS                                  :{BLACK}Open game options
 STR_INTRO_TOOLTIP_HIGHSCORE                                     :{BLACK}Open highscore table
 STR_INTRO_TOOLTIP_HELP                                          :{BLACK}Get access to documentation and online resources
-STR_INTRO_TOOLTIP_CONFIG_SETTINGS_TREE                          :{BLACK}Open settings
-STR_INTRO_TOOLTIP_NEWGRF_SETTINGS                               :{BLACK}Open NewGRF settings
 STR_INTRO_TOOLTIP_ONLINE_CONTENT                                :{BLACK}Check for new and updated content to download
-STR_INTRO_TOOLTIP_AI_SETTINGS                                   :{BLACK}Open AI settings
-STR_INTRO_TOOLTIP_GAMESCRIPT_SETTINGS                           :{BLACK}Open Game script settings
 STR_INTRO_TOOLTIP_QUIT                                          :{BLACK}Exit 'OpenTTD'
 
 STR_INTRO_BASESET                                               :{BLACK}The currently selected base graphics set is missing {NUM} sprite{P "" s}. Please check for updates for the baseset.
@@ -2357,12 +2383,7 @@ STR_LIVERY_FREIGHT_TRAM                                         :Freight Tram
 STR_FACE_CAPTION                                                :{WHITE}Face Selection
 STR_FACE_CANCEL_TOOLTIP                                         :{BLACK}Cancel new face selection
 STR_FACE_OK_TOOLTIP                                             :{BLACK}Accept new face selection
-STR_FACE_RANDOM                                                 :{BLACK}Randomise
 
-STR_FACE_MALE_BUTTON                                            :{BLACK}Male
-STR_FACE_MALE_TOOLTIP                                           :{BLACK}Select male faces
-STR_FACE_FEMALE_BUTTON                                          :{BLACK}Female
-STR_FACE_FEMALE_TOOLTIP                                         :{BLACK}Select female faces
 STR_FACE_NEW_FACE_BUTTON                                        :{BLACK}New Face
 STR_FACE_NEW_FACE_TOOLTIP                                       :{BLACK}Generate random new face
 STR_FACE_ADVANCED                                               :{BLACK}Advanced
@@ -2372,44 +2393,31 @@ STR_FACE_SIMPLE_TOOLTIP                                         :{BLACK}Simple f
 STR_FACE_LOAD                                                   :{BLACK}Load
 STR_FACE_LOAD_TOOLTIP                                           :{BLACK}Load favourite face
 STR_FACE_LOAD_DONE                                              :{WHITE}Your favourite face has been loaded from the OpenTTD configuration file
-STR_FACE_FACECODE                                               :{BLACK}Player face no.
-STR_FACE_FACECODE_TOOLTIP                                       :{BLACK}View and/or set face number of the company president
-STR_FACE_FACECODE_CAPTION                                       :{WHITE}View and/or set president face number
-STR_FACE_FACECODE_SET                                           :{WHITE}New face number code has been set
-STR_FACE_FACECODE_ERR                                           :{WHITE}Couldn't set president face number - must be a number between 0 and 4,294,967,295!
+STR_FACE_FACECODE                                               :{BLACK}Player face code
+STR_FACE_FACECODE_TOOLTIP                                       :{BLACK}View and/or set face code of the company president
+STR_FACE_FACECODE_CAPTION                                       :{WHITE}View and/or set president face code
+STR_FACE_FACECODE_SET                                           :{WHITE}New president face has been set
+STR_FACE_FACECODE_ERR                                           :{WHITE}Couldn't set president face code - must be a valid label and number
 STR_FACE_SAVE                                                   :{BLACK}Save
 STR_FACE_SAVE_TOOLTIP                                           :{BLACK}Save favourite face
 STR_FACE_SAVE_DONE                                              :{WHITE}This face will be saved as your favourite in the OpenTTD configuration file
-STR_FACE_EUROPEAN                                               :{BLACK}European
-STR_FACE_EUROPEAN_TOOLTIP                                       :{BLACK}Select European faces
-STR_FACE_AFRICAN                                                :{BLACK}African
-STR_FACE_AFRICAN_TOOLTIP                                        :{BLACK}Select African faces
+STR_FACE_SETTING_TOGGLE                                         :{STRING} {ORANGE}{STRING}
+STR_FACE_SETTING_NUMERIC                                        :{STRING} {ORANGE}{NUM} / {NUM}
 STR_FACE_YES                                                    :Yes
 STR_FACE_NO                                                     :No
-STR_FACE_MOUSTACHE_EARRING_TOOLTIP                              :{BLACK}Enable moustache or earring
+STR_FACE_STYLE                                                  :Style:
 STR_FACE_HAIR                                                   :Hair:
-STR_FACE_HAIR_TOOLTIP                                           :{BLACK}Change hair
 STR_FACE_EYEBROWS                                               :Eyebrows:
-STR_FACE_EYEBROWS_TOOLTIP                                       :{BLACK}Change eyebrows
 STR_FACE_EYECOLOUR                                              :Eye colour:
-STR_FACE_EYECOLOUR_TOOLTIP                                      :{BLACK}Change eye colour
 STR_FACE_GLASSES                                                :Glasses:
-STR_FACE_GLASSES_TOOLTIP                                        :{BLACK}Enable glasses
-STR_FACE_GLASSES_TOOLTIP_2                                      :{BLACK}Change glasses
 STR_FACE_NOSE                                                   :Nose:
-STR_FACE_NOSE_TOOLTIP                                           :{BLACK}Change nose
 STR_FACE_LIPS                                                   :Lips:
 STR_FACE_MOUSTACHE                                              :Moustache:
-STR_FACE_LIPS_MOUSTACHE_TOOLTIP                                 :{BLACK}Change lips or moustache
 STR_FACE_CHIN                                                   :Chin:
-STR_FACE_CHIN_TOOLTIP                                           :{BLACK}Change chin
 STR_FACE_JACKET                                                 :Jacket:
-STR_FACE_JACKET_TOOLTIP                                         :{BLACK}Change jacket
 STR_FACE_COLLAR                                                 :Collar:
-STR_FACE_COLLAR_TOOLTIP                                         :{BLACK}Change collar
 STR_FACE_TIE                                                    :Tie:
 STR_FACE_EARRING                                                :Earring:
-STR_FACE_TIE_EARRING_TOOLTIP                                    :{BLACK}Change tie or earring
 
 # Matches ServerGameType
 ###length 3
@@ -2815,10 +2823,10 @@ STR_STATION_BUILD_INFRASTRUCTURE_COST_PERIOD                    :{BLACK}Maintena
 
 # Join station window
 STR_JOIN_STATION_CAPTION                                        :{WHITE}Join station
-STR_JOIN_STATION_CREATE_SPLITTED_STATION                        :{YELLOW}Build a separate station
+STR_JOIN_STATION_CREATE_SPLIT_STATION                           :{YELLOW}Build a separate station
 
 STR_JOIN_WAYPOINT_CAPTION                                       :{WHITE}Join waypoint
-STR_JOIN_WAYPOINT_CREATE_SPLITTED_WAYPOINT                      :{YELLOW}Build a separate waypoint
+STR_JOIN_WAYPOINT_CREATE_SPLIT_WAYPOINT                         :{YELLOW}Build a separate waypoint
 
 # Generic toolbar
 STR_TOOLBAR_DISABLED_NO_VEHICLE_AVAILABLE                       :{BLACK}Disabled as currently no vehicles are available for this infrastructure
@@ -2870,6 +2878,11 @@ STR_PICKER_MODE_USED_TOOLTIP                                    :Toggle showing 
 STR_PICKER_MODE_SAVED                                           :Saved
 STR_PICKER_MODE_SAVED_TOOLTIP                                   :Toggle showing only saved items
 
+STR_PICKER_PREVIEW_SHRINK                                       :-
+STR_PICKER_PREVIEW_SHRINK_TOOLTIP                               :Reduce the height of preview images. Ctrl+Click to reduce to minimum
+STR_PICKER_PREVIEW_EXPAND                                       :+
+STR_PICKER_PREVIEW_EXPAND_TOOLTIP                               :Increase the height of preview images. Ctrl+Click to increase to maximum
+
 STR_PICKER_STATION_CLASS_TOOLTIP                                :Select a station class to display
 STR_PICKER_STATION_TYPE_TOOLTIP                                 :Select a station type to build. Ctrl+Click to add or remove in saved items
 STR_PICKER_WAYPOINT_CLASS_TOOLTIP                               :Select a waypoint class to display
@@ -2884,15 +2897,15 @@ STR_PICKER_HOUSE_CLASS_TOOLTIP                                  :Select a town z
 STR_PICKER_HOUSE_TYPE_TOOLTIP                                   :Select a house type to build. Ctrl+Click to add or remove in saved items
 
 STR_HOUSE_PICKER_CAPTION                                        :House Selection
-STR_HOUSE_PICKER_NAME                                           :{BLACK}Name: {ORANGE}{STRING}
-STR_HOUSE_PICKER_POPULATION                                     :{BLACK}Population: {ORANGE}{NUM}
-STR_HOUSE_PICKER_YEARS                                          :{BLACK}Years: {ORANGE}{NUM}-{NUM}
-STR_HOUSE_PICKER_YEARS_ANY                                      :{BLACK}Years: {ORANGE}Any
-STR_HOUSE_PICKER_YEARS_FROM                                     :{BLACK}Years: {ORANGE}From {NUM}
-STR_HOUSE_PICKER_YEARS_UNTIL                                    :{BLACK}Years: {ORANGE}Until {NUM}
-STR_HOUSE_PICKER_SIZE                                           :{BLACK}Size: {ORANGE}{NUM}x{NUM} tiles
-STR_HOUSE_PICKER_CARGO_ACCEPTED                                 :{BLACK}Cargo accepted: {ORANGE}
-STR_HOUSE_PICKER_CARGO_PRODUCED                                 :{BLACK}Cargo produced: {ORANGE}{CARGO_LIST}
+STR_HOUSE_PICKER_NAME                                           :{BLACK}Name: {GOLD}{STRING}
+STR_HOUSE_PICKER_POPULATION                                     :{BLACK}Population: {GOLD}{NUM}
+STR_HOUSE_PICKER_YEARS                                          :{BLACK}Years: {GOLD}{NUM}-{NUM}
+STR_HOUSE_PICKER_YEARS_ANY                                      :{BLACK}Years: {GOLD}Any
+STR_HOUSE_PICKER_YEARS_FROM                                     :{BLACK}Years: {GOLD}From {NUM}
+STR_HOUSE_PICKER_YEARS_UNTIL                                    :{BLACK}Years: {GOLD}Until {NUM}
+STR_HOUSE_PICKER_SIZE                                           :{BLACK}Size: {GOLD}{NUM}x{NUM} tiles
+STR_HOUSE_PICKER_CARGO_ACCEPTED                                 :{BLACK}Cargo accepted: {GOLD}
+STR_HOUSE_PICKER_CARGO_PRODUCED                                 :{BLACK}Cargo produced: {GOLD}{CARGO_LIST}
 
 STR_HOUSE_PICKER_CLASS_ZONE1                                    :Edge
 STR_HOUSE_PICKER_CLASS_ZONE2                                    :Outskirts
@@ -2900,10 +2913,11 @@ STR_HOUSE_PICKER_CLASS_ZONE3                                    :Outer Suburbs
 STR_HOUSE_PICKER_CLASS_ZONE4                                    :Inner Suburbs
 STR_HOUSE_PICKER_CLASS_ZONE5                                    :Town centre
 
-STR_HOUSE_PICKER_PROTECT_TITLE                                  :Prevent upgrades
+STR_HOUSE_PICKER_PROTECT                                        :Prevent upgrades
 STR_HOUSE_PICKER_PROTECT_TOOLTIP                                :Choose whether this house will be protected from replacement as the town grows
-STR_HOUSE_PICKER_PROTECT_OFF                                    :Off
-STR_HOUSE_PICKER_PROTECT_ON                                     :On
+
+STR_HOUSE_PICKER_REPLACE                                        :Replace existing
+STR_HOUSE_PICKER_REPLACE_TOOLTIP                                :Choose whether to automatically remove an existing house on the tile where this house is placed
 
 STR_STATION_CLASS_DFLT                                          :Default
 STR_STATION_CLASS_DFLT_STATION                                  :Default station
@@ -2913,7 +2927,6 @@ STR_STATION_CLASS_WAYP_WAYPOINT                                 :Default waypoin
 
 # Signal window
 STR_BUILD_SIGNAL_CAPTION                                        :{WHITE}Signal Selection
-STR_BUILD_SIGNAL_TOGGLE_ADVANCED_SIGNAL_TOOLTIP                 :{BLACK}Toggle showing advanced signal types
 STR_BUILD_SIGNAL_SEMAPHORE_NORM_TOOLTIP                         :{BLACK}Block Signal (semaphore){}This is the most basic type of signal, allowing only one train to be in the same block at the same time
 STR_BUILD_SIGNAL_SEMAPHORE_ENTRY_TOOLTIP                        :{BLACK}Entry Signal (semaphore){}Green as long as there is one or more green exit-signal from the following section of track. Otherwise it shows red
 STR_BUILD_SIGNAL_SEMAPHORE_EXIT_TOOLTIP                         :{BLACK}Exit Signal (semaphore){}Behaves in the same way as a block signal but is necessary to trigger the correct colour on entry & combo pre-signals
@@ -3116,6 +3129,12 @@ STR_FOUND_TOWN_SIZE_RANDOM                                      :{BLACK}Random
 STR_FOUND_TOWN_INITIAL_SIZE_TOOLTIP                             :{BLACK}Select town size
 STR_FOUND_TOWN_CITY                                             :{BLACK}City
 STR_FOUND_TOWN_CITY_TOOLTIP                                     :{BLACK}Cities grow faster than regular towns{}Depending on settings, they are bigger when founded
+
+STR_FOUND_TOWN_EXPAND_MODE                                      :{YELLOW}Town expansion:
+STR_FOUND_TOWN_EXPAND_BUILDINGS                                 :Buildings
+STR_FOUND_TOWN_EXPAND_BUILDINGS_TOOLTIP                         :Increase buildings of towns
+STR_FOUND_TOWN_EXPAND_ROADS                                     :Roads
+STR_FOUND_TOWN_EXPAND_ROADS_TOOLTIP                             :Increase roads of towns
 
 STR_FOUND_TOWN_ROAD_LAYOUT                                      :{YELLOW}Town road layout:
 STR_FOUND_TOWN_SELECT_LAYOUT_TOOLTIP                            :{BLACK}Select road layout used for this town
@@ -3387,6 +3406,8 @@ STR_SAVELOAD_DETAIL_GRFSTATUS                                   :{SILVER}NewGRF:
 STR_SAVELOAD_FILTER_TITLE                                       :{BLACK}Filter:
 STR_SAVELOAD_OVERWRITE_TITLE                                    :{WHITE}Overwrite File
 STR_SAVELOAD_OVERWRITE_WARNING                                  :{YELLOW}Are you sure you want to overwrite the existing file?
+STR_SAVELOAD_DELETE_TITLE                                       :{WHITE}Delete File
+STR_SAVELOAD_DELETE_WARNING                                     :{YELLOW}Are you sure you want to delete the file?
 STR_SAVELOAD_DIRECTORY                                          :{RAW_STRING} (Directory)
 STR_SAVELOAD_PARENT_DIRECTORY                                   :{RAW_STRING} (Parent directory)
 
@@ -3462,11 +3483,18 @@ STR_MAPGEN_NORTHWEST                                            :{BLACK}Northwes
 STR_MAPGEN_NORTHEAST                                            :{BLACK}Northeast
 STR_MAPGEN_SOUTHEAST                                            :{BLACK}Southeast
 STR_MAPGEN_SOUTHWEST                                            :{BLACK}Southwest
+STR_MAPGEN_NORTHWEST_TOOLTIP                                    :Toggle water or freeform edge on the northwest map edge
+STR_MAPGEN_NORTHEAST_TOOLTIP                                    :Toggle water or freeform edge on the northeast map edge
+STR_MAPGEN_SOUTHEAST_TOOLTIP                                    :Toggle water or freeform edge on the southeast map edge
+STR_MAPGEN_SOUTHWEST_TOOLTIP                                    :Toggle water or freeform edge on the southwest map edge
 STR_MAPGEN_BORDER_FREEFORM                                      :{BLACK}Freeform
 STR_MAPGEN_BORDER_WATER                                         :{BLACK}Water
 STR_MAPGEN_BORDER_RANDOM                                        :{BLACK}Random
-STR_MAPGEN_BORDER_RANDOMIZE                                     :{BLACK}Random
-STR_MAPGEN_BORDER_MANUAL                                        :{BLACK}Manual
+
+###length 3
+STR_MAPGEN_BORDER_RANDOMIZE                                     :Random
+STR_MAPGEN_BORDER_MANUAL                                        :Manual
+STR_MAPGEN_BORDER_INFINITE_WATER                                :Infinite Water
 
 STR_MAPGEN_HEIGHTMAP_ROTATION                                   :{BLACK}Heightmap rotation:
 STR_MAPGEN_HEIGHTMAP_NAME                                       :{BLACK}Heightmap name:
@@ -3505,7 +3533,8 @@ STR_GENERATION_LANDSCAPE_GENERATION                             :{BLACK}Landscap
 STR_GENERATION_RIVER_GENERATION                                 :{BLACK}River generation
 STR_GENERATION_CLEARING_TILES                                   :{BLACK}Rough and rocky area generation
 STR_GENERATION_TOWN_GENERATION                                  :{BLACK}Town generation
-STR_GENERATION_INDUSTRY_GENERATION                              :{BLACK}Industry generation
+STR_GENERATION_LAND_INDUSTRY_GENERATION                         :{BLACK}Land industry generation
+STR_GENERATION_WATER_INDUSTRY_GENERATION                        :{BLACK}Water industry generation
 STR_GENERATION_OBJECT_GENERATION                                :{BLACK}Object generation
 STR_GENERATION_TREE_GENERATION                                  :{BLACK}Tree generation
 STR_GENERATION_SETTINGUP_GAME                                   :{BLACK}Setting up game
@@ -3578,15 +3607,12 @@ STR_SAVE_PRESET_CAPTION                                         :{WHITE}Save pre
 STR_SAVE_PRESET_LIST_TOOLTIP                                    :{BLACK}List of available presets, select one to copy it to the save name below
 STR_SAVE_PRESET_TITLE                                           :{BLACK}Enter a name for the preset
 STR_SAVE_PRESET_EDITBOX_TOOLTIP                                 :{BLACK}Currently selected name for the preset to save
-STR_SAVE_PRESET_CANCEL                                          :{BLACK}Cancel
-STR_SAVE_PRESET_CANCEL_TOOLTIP                                  :{BLACK}Don't change the preset
 STR_SAVE_PRESET_SAVE                                            :{BLACK}Save
 STR_SAVE_PRESET_SAVE_TOOLTIP                                    :{BLACK}Save the preset to the current selected name
 
 # NewGRF parameters window
 STR_BASEGRF_PARAMETERS_CAPTION                                  :{WHITE}Change base graphics parameters
 STR_NEWGRF_PARAMETERS_CAPTION                                   :{WHITE}Change NewGRF parameters
-STR_NEWGRF_PARAMETERS_CLOSE                                     :{BLACK}Close
 STR_NEWGRF_PARAMETERS_RESET                                     :{BLACK}Reset
 STR_NEWGRF_PARAMETERS_RESET_TOOLTIP                             :{BLACK}Set all parameters to their default value
 STR_NEWGRF_PARAMETERS_DEFAULT_NAME                              :Parameter {NUM}
@@ -3717,7 +3743,7 @@ STR_SIGN_LIST_MATCH_CASE                                        :{BLACK}Match ca
 STR_SIGN_LIST_MATCH_CASE_TOOLTIP                                :{BLACK}Toggle matching case when comparing sign names against the filter string
 
 # Sign window
-STR_EDIT_SIGN_CAPTION                                           :{WHITE}Edit sign text
+STR_EDIT_SIGN_CAPTION                                           :{WHITE}Edit sign
 STR_EDIT_SIGN_LOCATION_TOOLTIP                                  :{BLACK}Centre the main view on sign location. Ctrl+Click to open a new viewport on sign location
 STR_EDIT_SIGN_NEXT_SIGN_TOOLTIP                                 :{BLACK}Go to next sign
 STR_EDIT_SIGN_PREVIOUS_SIGN_TOOLTIP                             :{BLACK}Go to previous sign
@@ -3728,7 +3754,7 @@ STR_EDIT_SIGN_SIGN_OSKTITLE                                     :{BLACK}Enter a 
 STR_TOWN_DIRECTORY_CAPTION                                      :{WHITE}Towns ({COMMA} of {COMMA})
 STR_TOWN_DIRECTORY_NONE                                         :{ORANGE}- None -
 STR_TOWN_DIRECTORY_TOWN                                         :{ORANGE}{TOWN}{BLACK} ({COMMA})
-STR_TOWN_DIRECTORY_CITY                                         :{ORANGE}{TOWN}{YELLOW} (City){BLACK} ({COMMA})
+STR_TOWN_DIRECTORY_CITY                                         :{ORANGE}{TOWN}{BLACK} ({COMMA}) {YELLOW}{CITY_ICON}
 STR_TOWN_DIRECTORY_LIST_TOOLTIP                                 :{BLACK}Town names - click on name to centre main view on town. Ctrl+Click to open a new viewport on town location
 STR_TOWN_POPULATION                                             :{BLACK}World population: {COMMA}
 
@@ -3752,9 +3778,15 @@ STR_TOWN_VIEW_CENTER_TOOLTIP                                    :{BLACK}Centre t
 STR_TOWN_VIEW_LOCAL_AUTHORITY_BUTTON                            :{BLACK}Local Authority
 STR_TOWN_VIEW_LOCAL_AUTHORITY_TOOLTIP                           :{BLACK}Show information on local authority
 STR_TOWN_VIEW_RENAME_TOOLTIP                                    :{BLACK}Change town name
+STR_TOWN_VIEW_CARGO_GRAPH                                       :Cargo Graph
+STR_TOWN_VIEW_CARGO_GRAPH_TOOLTIP                               :Show graph of town's cargo history
 
 STR_TOWN_VIEW_EXPAND_BUTTON                                     :{BLACK}Expand
 STR_TOWN_VIEW_EXPAND_TOOLTIP                                    :{BLACK}Increase size of town
+STR_TOWN_VIEW_EXPAND_BUILDINGS_BUTTON                           :{BLACK}Expand buildings
+STR_TOWN_VIEW_EXPAND_BUILDINGS_TOOLTIP                          :{BLACK}Increase buildings of town
+STR_TOWN_VIEW_EXPAND_ROADS_BUTTON                               :{BLACK}Expand roads
+STR_TOWN_VIEW_EXPAND_ROADS_TOOLTIP                              :{BLACK}Increase roads of town
 STR_TOWN_VIEW_DELETE_BUTTON                                     :{BLACK}Delete
 STR_TOWN_VIEW_DELETE_TOOLTIP                                    :{BLACK}Delete this town completely
 
@@ -3928,14 +3960,14 @@ STR_CARGO_RATING_EXCELLENT                                      :Excellent
 STR_CARGO_RATING_OUTSTANDING                                    :Outstanding
 
 STR_STATION_VIEW_CENTER_TOOLTIP                                 :{BLACK}Centre main view on station location. Ctrl+Click to open a new viewport on station location
-STR_STATION_VIEW_RENAME_TOOLTIP                                 :{BLACK}Change name of station
+STR_STATION_VIEW_EDIT_TOOLTIP                                   :{BLACK}Rename station or move sign
 
 STR_STATION_VIEW_SCHEDULED_TRAINS_TOOLTIP                       :{BLACK}Show all trains which have this station on their schedule
 STR_STATION_VIEW_SCHEDULED_ROAD_VEHICLES_TOOLTIP                :{BLACK}Show all road vehicles which have this station on their schedule
 STR_STATION_VIEW_SCHEDULED_AIRCRAFT_TOOLTIP                     :{BLACK}Show all aircraft which have this station on their schedule
 STR_STATION_VIEW_SCHEDULED_SHIPS_TOOLTIP                        :{BLACK}Show all ships which have this station on their schedule
 
-STR_STATION_VIEW_RENAME_STATION_CAPTION                         :Rename station/loading area
+STR_STATION_VIEW_EDIT_STATION_SIGN                              :{WHITE}Edit station sign
 
 STR_STATION_VIEW_CLOSE_AIRPORT                                  :{BLACK}Close airport
 STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Prevent aircraft from landing on this airport
@@ -3943,11 +3975,11 @@ STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Prevent 
 # Waypoint/buoy view window
 STR_WAYPOINT_VIEW_CAPTION                                       :{WHITE}{WAYPOINT}
 STR_WAYPOINT_VIEW_CENTER_TOOLTIP                                :{BLACK}Centre main view on waypoint location. Ctrl+Click to open a new viewport on waypoint location
-STR_WAYPOINT_VIEW_CHANGE_WAYPOINT_NAME                          :{BLACK}Change waypoint name
+STR_WAYPOINT_VIEW_EDIT_TOOLTIP                                  :{BLACK}Rename waypoint or move sign
 STR_BUOY_VIEW_CENTER_TOOLTIP                                    :{BLACK}Centre main view on buoy location. Ctrl+Click to open a new viewport on buoy location
 STR_BUOY_VIEW_RENAME_TOOLTIP                                    :{BLACK}Change buoy name
 
-STR_EDIT_WAYPOINT_NAME                                          :{WHITE}Edit waypoint name
+STR_WAYPOINT_VIEW_EDIT_WAYPOINT_SIGN                            :{WHITE}Edit waypoint sign
 
 # Finances window
 STR_FINANCES_CAPTION                                            :{WHITE}{COMPANY} Finances {BLACK}{COMPANY_NUM}
@@ -4080,8 +4112,8 @@ STR_INDUSTRY_VIEW_PRODUCTION_LAST_MONTH_TITLE                   :{BLACK}Producti
 STR_INDUSTRY_VIEW_PRODUCTION_LAST_MINUTE_TITLE                  :{BLACK}Production last minute:
 STR_INDUSTRY_VIEW_TRANSPORTED                                   :{YELLOW}{CARGO_LONG}{RAW_STRING}{BLACK} ({COMMA}% transported)
 STR_INDUSTRY_VIEW_LOCATION_TOOLTIP                              :{BLACK}Centre the main view on industry location. Ctrl+Click to open a new viewport on industry location
-STR_INDUSTRY_VIEW_PRODUCTION_GRAPH                              :{BLACK}Production Graph
-STR_INDUSTRY_VIEW_PRODUCTION_GRAPH_TOOLTIP                      :{BLACK}Shows the graph of industry production history
+STR_INDUSTRY_VIEW_CARGO_GRAPH                                   :{BLACK}Cargo Graph
+STR_INDUSTRY_VIEW_CARGO_GRAPH_TOOLTIP                           :{BLACK}Shows the graph of industry cargo history
 STR_INDUSTRY_VIEW_PRODUCTION_LEVEL                              :{BLACK}Production level: {YELLOW}{COMMA}%
 STR_INDUSTRY_VIEW_INDUSTRY_ANNOUNCED_CLOSURE                    :{YELLOW}The industry has announced imminent closure!
 
@@ -4219,6 +4251,7 @@ STR_PURCHASE_INFO_ALL_BUT                                       :All but {CARGO_
 STR_PURCHASE_INFO_MAX_TE                                        :{BLACK}Max. Tractive Effort: {GOLD}{FORCE}
 STR_PURCHASE_INFO_AIRCRAFT_RANGE                                :{BLACK}Range: {GOLD}{COMMA} tiles
 STR_PURCHASE_INFO_AIRCRAFT_TYPE                                 :{BLACK}Aircraft type: {GOLD}{STRING}
+STR_PURCHASE_INFO_RAILTYPES                                     :{BLACK}Rail types: {GOLD}{RAW_STRING}
 
 ###length 3
 STR_CARGO_TYPE_FILTER_ALL                                       :All cargo types
@@ -4402,6 +4435,7 @@ STR_ENGINE_PREVIEW_RUNCOST_YEAR                                 :Running Cost: {
 STR_ENGINE_PREVIEW_RUNCOST_PERIOD                               :Running Cost: {CURRENCY_LONG}/period
 STR_ENGINE_PREVIEW_CAPACITY                                     :Capacity: {CARGO_LONG}
 STR_ENGINE_PREVIEW_CAPACITY_2                                   :Capacity: {CARGO_LONG}, {CARGO_LONG}
+STR_ENGINE_PREVIEW_RAILTYPES                                    :Rail types: {RAW_STRING}
 
 # Autoreplace window
 STR_REPLACE_VEHICLES_WHITE                                      :{WHITE}Replace {STRING} - {STRING1}
@@ -4493,10 +4527,10 @@ STR_VEHICLE_VIEW_SHIP_ORDERS_TOOLTIP                            :{BLACK}Show shi
 STR_VEHICLE_VIEW_AIRCRAFT_ORDERS_TOOLTIP                        :{BLACK}Show aircraft's orders. Ctrl+Click to show aircraft's timetable
 
 ###length VEHICLE_TYPES
-STR_VEHICLE_VIEW_TRAIN_SHOW_DETAILS_TOOLTIP                     :{BLACK}Show train details
-STR_VEHICLE_VIEW_ROAD_VEHICLE_SHOW_DETAILS_TOOLTIP              :{BLACK}Show road vehicle details
-STR_VEHICLE_VIEW_SHIP_SHOW_DETAILS_TOOLTIP                      :{BLACK}Show ship details
-STR_VEHICLE_VIEW_AIRCRAFT_SHOW_DETAILS_TOOLTIP                  :{BLACK}Show aircraft details
+STR_VEHICLE_VIEW_TRAIN_SHOW_DETAILS_TOOLTIP                     :{BLACK}Show train details. Ctrl+Click to show train's group
+STR_VEHICLE_VIEW_ROAD_VEHICLE_SHOW_DETAILS_TOOLTIP              :{BLACK}Show vehicle details. Ctrl+Click to show vehicle's group
+STR_VEHICLE_VIEW_SHIP_SHOW_DETAILS_TOOLTIP                      :{BLACK}Show ship details. Ctrl+Click to show ship's group
+STR_VEHICLE_VIEW_AIRCRAFT_SHOW_DETAILS_TOOLTIP                  :{BLACK}Show aircraft details. Ctrl+Click to show aircraft's group
 
 ###length VEHICLE_TYPES
 STR_VEHICLE_VIEW_TRAIN_STATUS_START_STOP_TOOLTIP                :{BLACK}Current train action - click to stop/start train
@@ -4820,15 +4854,15 @@ STR_TIMETABLE_TOOLTIP                                           :{BLACK}Timetabl
 STR_TIMETABLE_NO_TRAVEL                                         :No travel
 STR_TIMETABLE_NOT_TIMETABLEABLE                                 :Travel (automatic; timetabled by next manual order)
 STR_TIMETABLE_TRAVEL_NOT_TIMETABLED                             :Travel (not timetabled)
-STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Travel (not timetabled) with at most {2:VELOCITY}
+STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Travel (not timetabled) with at most {VELOCITY}
 STR_TIMETABLE_TRAVEL_FOR                                        :Travel for {STRING1}
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :Travel for {STRING1} with at most {VELOCITY}
 STR_TIMETABLE_TRAVEL_FOR_ESTIMATED                              :Travel (for {STRING1}, not timetabled)
 STR_TIMETABLE_TRAVEL_FOR_SPEED_ESTIMATED                        :Travel (for {STRING1}, not timetabled) with at most {VELOCITY}
 STR_TIMETABLE_STAY_FOR_ESTIMATED                                :{SPACE}(stay for {STRING1}, not timetabled)
 STR_TIMETABLE_AND_TRAVEL_FOR_ESTIMATED                          :{SPACE}(travel for {STRING1}, not timetabled)
-STR_TIMETABLE_STAY_FOR                                          :and stay for {STRING1}
-STR_TIMETABLE_AND_TRAVEL_FOR                                    :and travel for {STRING1}
+STR_TIMETABLE_STAY_FOR                                          :{SPACE}and stay for {STRING1}
+STR_TIMETABLE_AND_TRAVEL_FOR                                    :{SPACE}and travel for {STRING1}
 
 STR_TIMETABLE_APPROX_TIME                                       :{BLACK}This timetable will take approximately {STRING1} to complete
 STR_TIMETABLE_TOTAL_TIME                                        :{BLACK}This timetable will take {STRING1} to complete
@@ -4947,8 +4981,6 @@ STR_AI_LIST_URL                                                 :{LTBLUE}URL: {O
 
 STR_AI_LIST_ACCEPT                                              :{BLACK}Accept
 STR_AI_LIST_ACCEPT_TOOLTIP                                      :{BLACK}Select highlighted script
-STR_AI_LIST_CANCEL                                              :{BLACK}Cancel
-STR_AI_LIST_CANCEL_TOOLTIP                                      :{BLACK}Don't change the script
 
 STR_SCREENSHOT_CAPTION                                          :{WHITE}Take a screenshot
 STR_SCREENSHOT_SCREENSHOT                                       :{BLACK}Normal screenshot
@@ -4961,7 +4993,6 @@ STR_SCREENSHOT_MINIMAP_SCREENSHOT                               :{BLACK}Minimap 
 # Script Parameters
 STR_AI_SETTINGS_CAPTION_AI                                      :{WHITE}AI Parameters
 STR_AI_SETTINGS_CAPTION_GAMESCRIPT                              :{WHITE}Game Script Parameters
-STR_AI_SETTINGS_CLOSE                                           :{BLACK}Close
 STR_AI_SETTINGS_RESET                                           :{BLACK}Reset
 STR_AI_SETTINGS_SETTING                                         :{RAW_STRING}: {ORANGE}{STRING1}
 
@@ -5060,6 +5091,7 @@ STR_ERROR_FLAT_LAND_REQUIRED                                    :{WHITE}Flat lan
 STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION                        :{WHITE}Land sloped in wrong direction
 STR_ERROR_CAN_T_DO_THIS                                         :{WHITE}Can't do this...
 STR_ERROR_BUILDING_MUST_BE_DEMOLISHED                           :{WHITE}Building must be demolished first
+STR_ERROR_BUILDING_IS_PROTECTED                                 :{WHITE}... building is protected
 STR_ERROR_CAN_T_CLEAR_THIS_AREA                                 :{WHITE}Can't clear this area...
 STR_ERROR_SITE_UNSUITABLE                                       :{WHITE}... site unsuitable
 STR_ERROR_ALREADY_BUILT                                         :{WHITE}... already built
@@ -5094,7 +5126,7 @@ STR_ERROR_CAN_T_CHANGE_PRESIDENT                                :{WHITE}Can't ch
 
 STR_ERROR_MAXIMUM_PERMITTED_LOAN                                :{WHITE}... maximum permitted loan size is {CURRENCY_LONG}
 STR_ERROR_CAN_T_BORROW_ANY_MORE_MONEY                           :{WHITE}Can't borrow any more money...
-STR_ERROR_LOAN_ALREADY_REPAYED                                  :{WHITE}... no loan to repay
+STR_ERROR_LOAN_ALREADY_REPAID                                   :{WHITE}... no loan to repay
 STR_ERROR_CURRENCY_REQUIRED                                     :{WHITE}... {CURRENCY_LONG} required
 STR_ERROR_CAN_T_REPAY_LOAN                                      :{WHITE}Can't repay loan...
 STR_ERROR_INSUFFICIENT_FUNDS                                    :{WHITE}Can't give away money that is loaned from the bank...
@@ -5161,6 +5193,7 @@ STR_ERROR_TOO_MANY_TRUCK_STOPS                                  :{WHITE}Too many
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_DOCK                             :{WHITE}Too close to another dock
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_AIRPORT                          :{WHITE}Too close to another airport
 STR_ERROR_CAN_T_RENAME_STATION                                  :{WHITE}Can't rename station...
+STR_ERROR_CAN_T_MOVE_STATION_NAME                               :{WHITE}Can't move station sign...
 STR_ERROR_DRIVE_THROUGH_ON_TOWN_ROAD                            :{WHITE}... road owned by a town
 STR_ERROR_DRIVE_THROUGH_DIRECTION                               :{WHITE}... road facing in the wrong direction
 STR_ERROR_DRIVE_THROUGH_CORNER                                  :{WHITE}... drive through stops can't have corners
@@ -5188,12 +5221,13 @@ STR_ERROR_MUST_DEMOLISH_AIRPORT_FIRST                           :{WHITE}Must dem
 STR_ERROR_WAYPOINT_ADJOINS_MORE_THAN_ONE_EXISTING               :{WHITE}Adjoins more than one existing waypoint
 STR_ERROR_TOO_CLOSE_TO_ANOTHER_WAYPOINT                         :{WHITE}Too close to another waypoint
 
-STR_ERROR_CAN_T_BUILD_TRAIN_WAYPOINT                            :{WHITE}Can't build train waypoint here...
+STR_ERROR_CAN_T_BUILD_RAIL_WAYPOINT                             :{WHITE}Can't build rail waypoint here...
 STR_ERROR_CAN_T_BUILD_ROAD_WAYPOINT                             :{WHITE}Can't build road waypoint here...
 STR_ERROR_CAN_T_POSITION_BUOY_HERE                              :{WHITE}Can't place buoy here...
 STR_ERROR_CAN_T_CHANGE_WAYPOINT_NAME                            :{WHITE}Can't change waypoint name...
+STR_ERROR_CAN_T_MOVE_WAYPOINT_NAME                              :{WHITE}Can't move waypoint sign...
 
-STR_ERROR_CAN_T_REMOVE_TRAIN_WAYPOINT                           :{WHITE}Can't remove train waypoint here...
+STR_ERROR_CAN_T_REMOVE_RAIL_WAYPOINT                            :{WHITE}Can't remove rail waypoint here...
 STR_ERROR_CAN_T_REMOVE_ROAD_WAYPOINT                            :{WHITE}Can't remove road waypoint here...
 STR_ERROR_MUST_REMOVE_RAILWAYPOINT_FIRST                        :{WHITE}Must remove rail waypoint first
 STR_ERROR_MUST_REMOVE_ROADWAYPOINT_FIRST                        :{WHITE}Must remove road waypoint first
@@ -5300,6 +5334,13 @@ STR_ERROR_START_AND_END_MUST_BE_IN                              :{WHITE}Start an
 STR_ERROR_ENDS_OF_BRIDGE_MUST_BOTH                              :{WHITE}... ends of bridge must both be on land
 STR_ERROR_BRIDGE_TOO_LONG                                       :{WHITE}... bridge too long
 STR_ERROR_BRIDGE_THROUGH_MAP_BORDER                             :{WHITE}Bridge would end out of the map
+STR_ERROR_BRIDGE_TOO_LOW_FOR_STATION                            :{WHITE}Bridge is {HEIGHT} too low for station
+STR_ERROR_BRIDGE_TOO_LOW_FOR_ROADSTOP                           :{WHITE}Bridge is {HEIGHT} too low for road stop
+STR_ERROR_BRIDGE_TOO_LOW_FOR_DOCK                               :{WHITE}Bridge is {HEIGHT} too low for dock
+STR_ERROR_BRIDGE_TOO_LOW_FOR_BUOY                               :{WHITE}Bridge is {HEIGHT} too low for buoy
+STR_ERROR_BRIDGE_TOO_LOW_FOR_RAIL_WAYPOINT                      :{WHITE}Bridge is {HEIGHT} too low for rail waypoint
+STR_ERROR_BRIDGE_TOO_LOW_FOR_ROAD_WAYPOINT                      :{WHITE}Bridge is {HEIGHT} too low for road waypoint
+STR_ERROR_BRIDGE_TOO_LOW_FOR_LOCK                               :{WHITE}Bridge is {HEIGHT} too low for lock
 
 # Tunnel related errors
 STR_ERROR_CAN_T_BUILD_TUNNEL_HERE                               :{WHITE}Can't build tunnel here...
@@ -5455,7 +5496,7 @@ STR_ERROR_NO_STOP_COMPATIBLE_TRAM_TYPE                          :{WHITE}There ar
 STR_ERROR_NO_STOP_ARTICULATED_VEHICLE                           :{WHITE}There are no stops which are suitable for articulated road vehicles.{}Articulated road vehicles require a drive-through stop, not a bay stop
 STR_ERROR_AIRPORT_NO_PLANES                                     :{WHITE}This plane cannot land at this heliport
 STR_ERROR_AIRPORT_NO_HELICOPTERS                                :{WHITE}This helicopter cannot land at this airport
-STR_ERROR_NO_RAIL_WAYPOINT                                      :{WHITE}There is no railway waypoint
+STR_ERROR_NO_RAIL_WAYPOINT                                      :{WHITE}There is no rail waypoint
 STR_ERROR_NO_ROAD_WAYPOINT                                      :{WHITE}There is no road waypoint
 STR_ERROR_NO_BUOY                                               :{WHITE}There is no buoy
 
@@ -5916,6 +5957,8 @@ STR_SAVEGAME_NAME_SPECTATOR                                     :Spectator, {1:S
 
 # Viewport strings
 STR_VIEWPORT_TOWN_POP                                           :{TOWN} ({COMMA})
+STR_VIEWPORT_TOWN_CITY                                          :{TOWN} {CITY_ICON}
+STR_VIEWPORT_TOWN_CITY_POP                                      :{TOWN} ({COMMA}) {CITY_ICON}
 STR_VIEWPORT_STATION                                            :{STATION} {STATION_FEATURES}
 
 # Simple strings to get specific types of data
@@ -5939,6 +5982,7 @@ STR_CURRENCY_SHORT_GIGA                                         :{NBSP}bn
 STR_CURRENCY_SHORT_TERA                                         :{NBSP}tn
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
+STR_JUST_LEFT_ARROW                                             :{LEFT_ARROW}
 STR_JUST_RIGHT_ARROW                                            :{RIGHT_ARROW}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}
 STR_JUST_COMMA                                                  :{COMMA}
@@ -5978,3 +6022,11 @@ STR_SHIP                                                        :{BLACK}{SHIP}
 STR_TOOLBAR_RAILTYPE_VELOCITY                                   :{STRING} ({VELOCITY})
 
 STR_BADGE_NAME_LIST                                             :{STRING}: {GOLD}{RAW_STRING}
+STR_BADGE_CONFIG_MENU_TOOLTIP                                   :Open badge configuration
+STR_BADGE_CONFIG_RESET                                          :Reset
+STR_BADGE_CONFIG_ICONS                                          :{WHITE}Badge Icons
+STR_BADGE_CONFIG_FILTERS                                        :{WHITE}Badge Filters
+STR_BADGE_CONFIG_PREVIEW                                        :Preview Image
+STR_BADGE_CONFIG_NAME                                           :Name
+STR_BADGE_FILTER_ANY_LABEL                                      :Any {STRING}
+STR_BADGE_FILTER_IS_LABEL                                       :{STRING} is {STRING}

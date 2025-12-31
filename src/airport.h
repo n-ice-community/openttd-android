@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file airport.h Various declarations for airports */
@@ -44,7 +44,7 @@ enum AirportTypes : uint8_t {
 };
 
 /** Flags for airport movement data. */
-enum AirportMovingDataFlag : uint8_t {
+enum class AirportMovingDataFlag : uint8_t {
 	NoSpeedClamp, ///< No speed restrictions.
 	Takeoff, ///< Takeoff movement.
 	SlowTurn, ///< Turn slowly (mostly used in the air).
@@ -127,6 +127,7 @@ enum class AirportBlock : uint8_t {
 	/* end of new blocks */
 
 	Nothing          = 30,
+	Zeppeliner       = 62, ///< Block for the zeppeliner disaster vehicle.
 	AirportClosed    = 63, ///< Dummy block for indicating a closed airport.
 };
 using AirportBlocks = EnumBitSet<AirportBlock, uint64_t>;

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file sortlist_type.h Base types for having sorted lists in GUIs. */
@@ -39,7 +39,7 @@ struct Filtering {
  * @tparam P Tyoe of data passed as additional parameter to the sort function.
  * @tparam F Type of data fed as additional value to the filter function. @see FilterFunction
  */
-template <typename T, typename P = std::nullptr_t, typename F = const char*>
+template <typename T, typename P = std::nullptr_t, typename F = std::string_view>
 class GUIList : public std::vector<T> {
 public:
 	using SortFunction = std::conditional_t<std::is_same_v<P, std::nullptr_t>, bool (const T&, const T&), bool (const T&, const T&, const P)>; ///< Signature of sort function.

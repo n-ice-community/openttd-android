@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_rail.hpp Everything to query and build rails. */
@@ -44,9 +44,8 @@ public:
 	/**
 	 * Types of rail known to the game.
 	 */
-	enum RailType : uint8_t {
-		/* Note: these values represent part of the in-game static values */
-		RAILTYPE_INVALID  = ::INVALID_RAILTYPE, ///< Invalid RailType.
+	enum RailType {
+		RAILTYPE_INVALID = -1, ///< Invalid RailType.
 	};
 
 	/**
@@ -262,6 +261,8 @@ public:
 	 * @exception ScriptStation::ERR_STATION_TOO_CLOSE_TO_ANOTHER_STATION
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS_IN_TOWN
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the station has been/can be build or not.
 	 */
 	static bool BuildRailStation(TileIndex tile, RailTrack direction, SQInteger num_platforms, SQInteger platform_length, StationID station_id);
@@ -299,6 +300,8 @@ public:
 	 * @exception ScriptStation::ERR_STATION_TOO_CLOSE_TO_ANOTHER_STATION
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS
 	 * @exception ScriptStation::ERR_STATION_TOO_MANY_STATIONS_IN_TOWN
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the station has been/can be build or not.
 	 */
 	static bool BuildNewGRFRailStation(TileIndex tile, RailTrack direction, SQInteger num_platforms, SQInteger platform_length, StationID station_id, CargoType cargo_type, IndustryType source_industry, IndustryType goal_industry, SQInteger distance, bool source_station);
@@ -312,6 +315,8 @@ public:
 	 * @pre IsRailTypeAvailable(GetCurrentRailType()).
 	 * @game @pre ScriptCompanyMode::IsValid().
 	 * @exception ScriptError::ERR_FLAT_LAND_REQUIRED
+	 * @exception ScriptError::ERR_BRIDGE_TOO_LOW
+	 * @exception ScriptError::ERR_STATION_TOO_SPREAD_OUT
 	 * @return Whether the rail waypoint has been/can be build or not.
 	 */
 	static bool BuildRailWaypoint(TileIndex tile);

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_widget.h Types related to the script widgets. */
@@ -19,7 +19,6 @@ enum ScriptListWidgets : WidgetID {
 	WID_SCRL_SCROLLBAR, ///< Scrollbar next to the Script list.
 	WID_SCRL_INFO_BG,   ///< Panel to draw some Script information on.
 	WID_SCRL_ACCEPT,    ///< Accept button.
-	WID_SCRL_CANCEL,    ///< Cancel button.
 };
 
 /** Widgets of the #ScriptSettingsWindow class. */
@@ -27,10 +26,9 @@ enum ScriptSettingsWidgets : WidgetID {
 	WID_SCRS_CAPTION,    ///< Caption of the window.
 	WID_SCRS_BACKGROUND, ///< Panel to draw the settings on.
 	WID_SCRS_SCROLLBAR,  ///< Scrollbar to scroll through all settings.
-	WID_SCRS_ACCEPT,     ///< Accept button.
 	WID_SCRS_RESET,      ///< Reset button.
 
-	WID_SCRS_SETTING_DROPDOWN = -1, ///< Dynamically created dropdown for changing setting value.
+	WID_SCRS_SETTING_DROPDOWN = INVALID_WIDGET, ///< Dynamically created dropdown for changing setting value.
 };
 
 /** Widgets of the #ScriptDebugWindow class. */

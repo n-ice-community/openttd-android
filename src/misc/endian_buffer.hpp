@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file endian_buffer.hpp Endian-aware buffer. */
@@ -31,7 +31,6 @@ public:
 
 	EndianBufferWriter &operator <<(const std::string &data) { return *this << std::string_view{ data }; }
 	EndianBufferWriter &operator <<(const EncodedString &data) { return *this << data.string; }
-	EndianBufferWriter &operator <<(const char *data) { return *this << std::string_view{ data }; }
 	EndianBufferWriter &operator <<(std::string_view data) { this->Write(data); return *this; }
 	EndianBufferWriter &operator <<(bool data) { return *this << static_cast<uint8_t>(data ? 1 : 0); }
 

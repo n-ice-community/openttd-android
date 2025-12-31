@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_roadtypes.cpp NewGRF Action 0x00 handler for roadtypes. */
@@ -30,10 +30,10 @@ static ChangeInfoResult RoadTypeChangeInfo(uint first, uint last, int prop, Byte
 	ChangeInfoResult ret = CIR_SUCCESS;
 
 	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
-	std::array<RoadType, ROADTYPE_END> &type_map = (rtt == RTT_TRAM) ? _cur_gps.grffile->tramtype_map : _cur_gps.grffile->roadtype_map;
+	const auto &type_map = (rtt == RTT_TRAM) ? _cur_gps.grffile->tramtype_map : _cur_gps.grffile->roadtype_map;
 
-	if (last > ROADTYPE_END) {
-		GrfMsg(1, "RoadTypeChangeInfo: Road type {} is invalid, max {}, ignoring", last, ROADTYPE_END);
+	if (last > std::size(type_map)) {
+		GrfMsg(1, "RoadTypeChangeInfo: Road type {} is invalid, max {}, ignoring", last, std::size(type_map));
 		return CIR_INVALID_ID;
 	}
 
@@ -109,7 +109,7 @@ static ChangeInfoResult RoadTypeChangeInfo(uint first, uint last, int prop, Byte
 				break;
 
 			case 0x16: // Map colour
-				rti->map_colour = buf.ReadByte();
+				rti->map_colour = PixelColour{buf.ReadByte()};
 				break;
 
 			case 0x17: // Introduction date
@@ -151,10 +151,10 @@ static ChangeInfoResult RoadTypeReserveInfo(uint first, uint last, int prop, Byt
 	ChangeInfoResult ret = CIR_SUCCESS;
 
 	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
-	std::array<RoadType, ROADTYPE_END> &type_map = (rtt == RTT_TRAM) ? _cur_gps.grffile->tramtype_map : _cur_gps.grffile->roadtype_map;
+	auto &type_map = (rtt == RTT_TRAM) ? _cur_gps.grffile->tramtype_map : _cur_gps.grffile->roadtype_map;
 
-	if (last > ROADTYPE_END) {
-		GrfMsg(1, "RoadTypeReserveInfo: Road type {} is invalid, max {}, ignoring", last, ROADTYPE_END);
+	if (last > std::size(type_map)) {
+		GrfMsg(1, "RoadTypeReserveInfo: Road type {} is invalid, max {}, ignoring", last, std::size(type_map));
 		return CIR_INVALID_ID;
 	}
 
@@ -192,7 +192,7 @@ static ChangeInfoResult RoadTypeReserveInfo(uint first, uint last, int prop, Byt
 				if (type_map[id] != INVALID_ROADTYPE) {
 					int n = buf.ReadByte();
 					for (int j = 0; j != n; j++) {
-						_roadtypes[type_map[id]].alternate_labels.push_back(std::byteswap(buf.ReadDWord()));
+						_roadtypes[type_map[id]].alternate_labels.insert(std::byteswap(buf.ReadDWord()));
 					}
 					break;
 				}

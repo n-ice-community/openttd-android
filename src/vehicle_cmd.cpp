@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file vehicle_cmd.cpp Commands for vehicles. */
@@ -122,10 +122,10 @@ std::tuple<CommandCost, VehicleID, uint, uint16_t, CargoArray> CmdBuildVehicle(D
 	/* Check whether the number of vehicles we need to build can be built according to pool space. */
 	uint num_vehicles;
 	switch (type) {
-		case VEH_TRAIN:    num_vehicles = (e->u.rail.railveh_type == RAILVEH_MULTIHEAD ? 2 : 1) + CountArticulatedParts(eid, false); break;
+		case VEH_TRAIN:    num_vehicles = (e->VehInfo<RailVehicleInfo>().railveh_type == RAILVEH_MULTIHEAD ? 2 : 1) + CountArticulatedParts(eid, false); break;
 		case VEH_ROAD:     num_vehicles = 1 + CountArticulatedParts(eid, false); break;
 		case VEH_SHIP:     num_vehicles = 1; break;
-		case VEH_AIRCRAFT: num_vehicles = e->u.air.subtype & AIR_CTOL ? 2 : 3; break;
+		case VEH_AIRCRAFT: num_vehicles = e->VehInfo<AircraftVehicleInfo>().subtype & AIR_CTOL ? 2 : 3; break;
 		default: NOT_REACHED(); // Safe due to IsDepotTile()
 	}
 	if (!Vehicle::CanAllocateItem(num_vehicles)) return { CommandCost(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME), VehicleID::Invalid(), 0, 0, {} };
@@ -133,13 +133,13 @@ std::tuple<CommandCost, VehicleID, uint, uint16_t, CargoArray> CmdBuildVehicle(D
 	/* Check whether we can allocate a unit number. Autoreplace does not allocate
 	 * an unit number as it will (always) reuse the one of the replaced vehicle
 	 * and (train) wagons don't have an unit number in any scenario. */
-	UnitID unit_num = (flags.Test(DoCommandFlag::QueryCost) || flags.Test(DoCommandFlag::AutoReplace) || (type == VEH_TRAIN && e->u.rail.railveh_type == RAILVEH_WAGON)) ? 0 : GetFreeUnitNumber(type);
+	UnitID unit_num = (flags.Test(DoCommandFlag::QueryCost) || flags.Test(DoCommandFlag::AutoReplace) || (type == VEH_TRAIN && e->VehInfo<RailVehicleInfo>().railveh_type == RAILVEH_WAGON)) ? 0 : GetFreeUnitNumber(type);
 	if (unit_num == UINT16_MAX) return { CommandCost(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME), VehicleID::Invalid(), 0, 0, {} };
 
 	/* If we are refitting we need to temporarily purchase the vehicle to be able to
 	 * test it. */
 	DoCommandFlags subflags = flags;
-	if (refitting && !flags.Test(DoCommandFlag::Execute)) subflags.Set(DoCommandFlag::Execute).Set(DoCommandFlag::AutoReplace);
+	if (refitting && !flags.Test(DoCommandFlag::Execute)) subflags.Set({DoCommandFlag::Execute, DoCommandFlag::AutoReplace});
 
 	/* Vehicle construction needs random bits, so we have to save the random
 	 * seeds to prevent desyncs. */
@@ -247,16 +247,6 @@ CommandCost CmdSellVehicle(DoCommandFlags flags, VehicleID v_id, bool sell_chain
 
 	if (!front->IsStoppedInDepot()) return CommandCost(STR_ERROR_TRAIN_MUST_BE_STOPPED_INSIDE_DEPOT + front->type);
 
-	/* Can we actually make the order backup, i.e. are there enough orders? */
-	if (backup_order &&
-			front->orders != nullptr &&
-			!front->orders->IsShared() &&
-			!Order::CanAllocateItem(front->orders->GetNumOrders())) {
-		/* Only happens in exceptional cases when there aren't enough orders anyhow.
-		 * Thus it should be safe to just drop the orders in that case. */
-		backup_order = false;
-	}
-
 	if (v->type == VEH_TRAIN) {
 		ret = CmdSellRailWagon(flags, v, sell_chain, backup_order, client_id);
 	} else {
@@ -335,7 +325,7 @@ static CommandCost GetRefitCost(const Vehicle *v, EngineID engine_type, CargoTyp
 			break;
 
 		case VEH_TRAIN:
-			base_price = (e->u.rail.railveh_type == RAILVEH_WAGON) ? PR_BUILD_VEHICLE_WAGON : PR_BUILD_VEHICLE_TRAIN;
+			base_price = (e->VehInfo<RailVehicleInfo>().railveh_type == RAILVEH_WAGON) ? PR_BUILD_VEHICLE_WAGON : PR_BUILD_VEHICLE_TRAIN;
 			cost_factor <<= 1;
 			expense_type = EXPENSES_TRAIN_RUN;
 			break;
@@ -367,7 +357,7 @@ struct RefitResult {
  * @param new_subtype  Cargo subtype to refit to. 0xFF means to try keeping the same subtype according to GetBestFittingSubType().
  * @param flags        Command flags
  * @param auto_refit   Refitting is done as automatic refitting outside a depot.
- * @return Refit cost + refittet capacity + mail capacity (aircraft).
+ * @return Refit cost + refitted capacity + mail capacity (aircraft).
  */
 static std::tuple<CommandCost, uint, uint16_t, CargoArray> RefitVehicle(Vehicle *v, bool only_this, uint8_t num_vehicles, CargoType new_cargo_type, uint8_t new_subtype, DoCommandFlags flags, bool auto_refit)
 {
@@ -617,7 +607,8 @@ CommandCost CmdStartStopVehicle(DoCommandFlags flags, VehicleID veh_id, bool eva
 
 	if (evaluate_startstop_cb) {
 		/* Check if this vehicle can be started/stopped. Failure means 'allow'. */
-		uint16_t callback = GetVehicleCallback(CBID_VEHICLE_START_STOP_CHECK, 0, 0, v->engine_type, v);
+		std::array<int32_t, 1> regs100;
+		uint16_t callback = GetVehicleCallback(CBID_VEHICLE_START_STOP_CHECK, 0, 0, v->engine_type, v, regs100);
 		StringID error = STR_NULL;
 		if (callback != CALLBACK_FAILED) {
 			if (v->GetGRF()->grf_version < 8) {
@@ -629,6 +620,10 @@ CommandCost CmdStartStopVehicle(DoCommandFlags flags, VehicleID veh_id, bool eva
 				} else {
 					switch (callback) {
 						case 0x400: // allow
+							break;
+
+						case 0x40F:
+							error = GetGRFStringID(v->GetGRFID(), static_cast<GRFStringID>(regs100[0]));
 							break;
 
 						default: // unknown reason -> disallow
@@ -854,7 +849,8 @@ std::tuple<CommandCost, VehicleID> CmdCloneVehicle(DoCommandFlags flags, TileInd
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return { ret, VehicleID::Invalid() };
 
-	if (v->type == VEH_TRAIN && (!v->IsFrontEngine() || Train::From(v)->crash_anim_pos >= 4400)) return { CMD_ERROR, VehicleID::Invalid() };
+	/* Crashed trains can only be cloned before cleanup begins. */
+	if (v->type == VEH_TRAIN && (!v->IsFrontEngine() || Train::From(v)->crash_anim_pos >= 4400)) return { CommandCost(STR_ERROR_VEHICLE_IS_DESTROYED), VehicleID::Invalid() };
 
 	/* check that we can allocate enough vehicles */
 	if (!flags.Test(DoCommandFlag::Execute)) {
@@ -900,8 +896,12 @@ std::tuple<CommandCost, VehicleID> CmdCloneVehicle(DoCommandFlags flags, TileInd
 		if (flags.Test(DoCommandFlag::Execute)) {
 			w = Vehicle::Get(new_veh_id);
 
-			if (v->type == VEH_TRAIN && HasBit(Train::From(v)->flags, VRF_REVERSE_DIRECTION)) {
-				SetBit(Train::From(w)->flags, VRF_REVERSE_DIRECTION);
+			if (v->type == VEH_TRAIN && Train::From(v)->flags.Test(VehicleRailFlag::Flipped)) {
+				/* Only copy the reverse state if neither old or new vehicle implements reverse-on-build probability callback. */
+				if (!TestVehicleBuildProbability(v, v->engine_type, BuildProbabilityType::Reversed).has_value() &&
+					!TestVehicleBuildProbability(w, w->engine_type, BuildProbabilityType::Reversed).has_value()) {
+					Train::From(w)->flags.Set(VehicleRailFlag::Flipped);
+				}
 			}
 
 			if (v->type == VEH_TRAIN && !v->IsFrontEngine()) {

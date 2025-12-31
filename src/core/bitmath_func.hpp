@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file bitmath_func.hpp Functions related to bit mathematics. */
@@ -29,7 +29,7 @@
  * @return The selected bits, aligned to a LSB.
  */
 template <typename T>
-debug_inline constexpr static uint GB(const T x, const uint8_t s, const uint8_t n)
+[[debug_inline]] inline constexpr static uint GB(const T x, const uint8_t s, const uint8_t n)
 {
 	return (x >> s) & (((T)1U << n) - 1);
 }
@@ -100,7 +100,7 @@ constexpr T AB(T &x, const uint8_t s, const uint8_t n, const U i)
  * @return True if the bit is set, false else.
  */
 template <typename T>
-debug_inline constexpr bool HasBit(const T x, const uint8_t y)
+[[debug_inline]] inline constexpr bool HasBit(const T x, const uint8_t y)
 {
 	return (x & ((T)1U << y)) != 0;
 }
@@ -140,18 +140,6 @@ constexpr T ClrBit(T &x, const uint8_t y)
 {
 	return x = (T)(x & ~((T)1U << y));
 }
-
-/**
- * Clears several bits in a variable.
- *
- * This macro clears several bits in a variable. The bits to clear are
- * provided by a value. The new value is also returned.
- *
- * @param x The variable to clear some bits
- * @param y The value with set bits for clearing them in the variable
- * @return The new value of x
- */
-#define CLRBITS(x, y) ((x) &= ~(y))
 
 /**
  * Toggles a bit in a variable.

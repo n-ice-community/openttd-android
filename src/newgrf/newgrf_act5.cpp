@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act5.cpp NewGRF Action 0x05 handler. */
@@ -27,7 +27,7 @@
  * @param name        Used for error warnings.
  * @return The number of sprites that is going to be skipped.
  */
-static uint16_t SanitizeSpriteOffset(uint16_t &num, uint16_t offset, int max_sprites, const std::string_view name)
+static uint16_t SanitizeSpriteOffset(uint16_t &num, uint16_t offset, int max_sprites, std::string_view name)
 {
 
 	if (offset >= max_sprites) {
@@ -78,6 +78,7 @@ static constexpr auto _action5_types = std::to_array<Action5Type>({
 	/* 0x18 */ { A5BLOCK_ALLOW_OFFSET, SPR_PALETTE_BASE,             1, PALETTE_SPRITE_COUNT,                        "Palette"                  },
 	/* 0x19 */ { A5BLOCK_ALLOW_OFFSET, SPR_ROAD_WAYPOINTS_BASE,      1, ROAD_WAYPOINTS_SPRITE_COUNT,                 "Road waypoints"           },
 	/* 0x1A */ { A5BLOCK_ALLOW_OFFSET, SPR_OVERLAY_ROCKS_BASE,       1, OVERLAY_ROCKS_SPRITE_COUNT,                  "Overlay rocks"            },
+	/* 0x1B */ { A5BLOCK_ALLOW_OFFSET, SPR_BRIDGE_DECKS_BASE,        1, BRIDGE_DECKS_SPRITE_COUNT,                   "Bridge decks"             },
 });
 
 /**

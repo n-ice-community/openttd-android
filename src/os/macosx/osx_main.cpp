@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file unix_main.cpp Main entry for Mac OSX. */
@@ -26,13 +26,16 @@ void CocoaReleaseAutoreleasePool();
 int CDECL main(int argc, char *argv[])
 {
 	/* Make sure our arguments contain only valid UTF-8 characters. */
-	for (int i = 0; i < argc; i++) StrMakeValidInPlace(argv[i]);
+	std::vector<std::string_view> params;
+	for (int i = 0; i < argc; ++i) {
+		StrMakeValidInPlace(argv[i]);
+		params.emplace_back(argv[i]);
+	}
 
 	CocoaSetupAutoreleasePool();
 	/* This is passed if we are launched by double-clicking */
-	if (argc >= 2 && strncmp(argv[1], "-psn", 4) == 0) {
-		argv[1] = nullptr;
-		argc = 1;
+	if (params.size() >= 2 && params[1].starts_with("-psn")) {
+		params.resize(1);
 	}
 
 	CrashLog::InitialiseCrashLog();
@@ -41,7 +44,7 @@ int CDECL main(int argc, char *argv[])
 
 	signal(SIGPIPE, SIG_IGN);
 
-	int ret = openttd_main(std::span(argv, argc));
+	int ret = openttd_main(params);
 
 	CocoaReleaseAutoreleasePool();
 

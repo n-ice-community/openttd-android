@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file spritecache_internal.h Internal functions to cache sprites in memory. */
@@ -10,32 +10,27 @@
 #ifndef SPRITECACHE_INTERNAL_H
 #define SPRITECACHE_INTERNAL_H
 
-#include "stdafx.h"
-
 #include "core/math_func.hpp"
 #include "gfx_type.h"
-#include "spriteloader/spriteloader.hpp"
+#include "spritecache_type.h"
+#include "spriteloader/sprite_file_type.hpp"
 
 #include "table/sprites.h"
 
 /* These declarations are internal to spritecache but need to be exposed for unit-tests. */
 
 struct SpriteCache {
-	void *ptr;
-	size_t file_pos;
-	SpriteFile *file;    ///< The file the sprite in this entry can be found in.
+	std::unique_ptr<std::byte[]> ptr;
+	size_t file_pos = 0;
+	SpriteFile *file = nullptr; ///< The file the sprite in this entry can be found in.
 	uint32_t length; ///< Length of sprite data.
-	uint32_t id;
-	int16_t lru;
-	SpriteType type;     ///< In some cases a single sprite is misused by two NewGRFs. Once as real sprite and once as recolour sprite. If the recolour sprite gets into the cache it might be drawn as real sprite which causes enormous trouble.
-	bool warned;         ///< True iff the user has been warned about incorrect use of this sprite
-	uint8_t control_flags;  ///< Control flags, see SpriteCacheCtrlFlags
-};
+	uint32_t id = 0;
+	uint32_t lru = 0;
+	SpriteType type = SpriteType::Invalid; ///< In some cases a single sprite is misused by two NewGRFs. Once as real sprite and once as recolour sprite. If the recolour sprite gets into the cache it might be drawn as real sprite which causes enormous trouble.
+	bool warned = false; ///< True iff the user has been warned about incorrect use of this sprite
+	SpriteCacheCtrlFlags control_flags{}; ///< Control flags, see SpriteCacheCtrlFlags
 
-/** SpriteAllocator that allocates memory from the sprite cache. */
-class CacheSpriteAllocator : public SpriteAllocator {
-protected:
-	void *AllocatePtr(size_t size) override;
+	void ClearSpriteData();
 };
 
 inline bool IsMapgenSpriteID(SpriteID sprite)

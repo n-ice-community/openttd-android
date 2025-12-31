@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_industries.cpp NewGRF Action 0x00 handler for industries and industrytiles. */
@@ -152,7 +152,7 @@ static ChangeInfoResult IndustrytilesChangeInfo(uint first, uint last, int prop,
 
 			case 0x0F: // Animation information
 				tsp->animation.frames = buf.ReadByte();
-				tsp->animation.status = buf.ReadByte();
+				tsp->animation.status = static_cast<AnimationStatus>(buf.ReadByte());
 				break;
 
 			case 0x10: // Animation speed
@@ -160,7 +160,7 @@ static ChangeInfoResult IndustrytilesChangeInfo(uint first, uint last, int prop,
 				break;
 
 			case 0x11: // Triggers for callback 25
-				tsp->animation.triggers = buf.ReadByte();
+				tsp->animation.triggers = static_cast<IndustryAnimationTriggers>(buf.ReadByte());
 				break;
 
 			case 0x12: // Special flags
@@ -418,7 +418,7 @@ static ChangeInfoResult IndustriesChangeInfo(uint first, uint last, int prop, By
 
 						IndustryTileLayoutTile &it = layout.emplace_back();
 
-						it.ti.x = buf.ReadByte(); // Offsets from northermost tile
+						it.ti.x = buf.ReadByte(); // Offsets from northernmost tile
 						++bytes_read;
 
 						if (it.ti.x == 0xFE && k == 0) {
@@ -565,7 +565,7 @@ static ChangeInfoResult IndustriesChangeInfo(uint first, uint last, int prop, By
 				break;
 
 			case 0x19: // Map colour
-				indsp->map_colour = buf.ReadByte();
+				indsp->map_colour = PixelColour{buf.ReadByte()};
 				break;
 
 			case 0x1A: // Special industry flags to define special behavior

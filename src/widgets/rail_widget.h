@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file rail_widget.h Types related to the rail widgets. */
@@ -28,8 +28,6 @@ enum RailToolbarWidgets : WidgetID {
 	WID_RAT_BUILD_TUNNEL,   ///< Build a tunnel.
 	WID_RAT_REMOVE,         ///< Bulldozer to remove rail.
 	WID_RAT_CONVERT_RAIL,   ///< Convert other rail to this type.
-
-	INVALID_WID_RAT = -1,
 };
 
 /** Widgets of the #BuildRailStationWindow class. */
@@ -68,7 +66,6 @@ enum BuildRailStationWidgets : WidgetID {
 /** Widgets of the #BuildSignalWindow class. */
 enum BuildSignalWidgets : WidgetID {
 	WID_BS_CAPTION,            ///< Caption for the Signal Selection window.
-	WID_BS_TOGGLE_SIZE,        ///< Toggle showing advanced signal types.
 	WID_BS_SEMAPHORE_NORM,     ///< Build a semaphore normal block signal.
 	WID_BS_SEMAPHORE_ENTRY,    ///< Build a semaphore entry block signal.
 	WID_BS_SEMAPHORE_EXIT,     ///< Build a semaphore exit block signal.

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_anim_sse4.hpp A SSE4 32 bpp blitter with animation support. */
@@ -39,8 +39,10 @@ public:
 	template <BlitterMode mode, Blitter_32bppSSE_Base::ReadMode read_mode, Blitter_32bppSSE_Base::BlockType bt_last, bool translucent, bool animated>
 	void Draw(const Blitter::BlitterParams *bp, ZoomLevel zoom);
 	void Draw(Blitter::BlitterParams *bp, BlitterMode mode, ZoomLevel zoom) override;
-	Sprite *Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override {
-		return Blitter_32bppSSE_Base::Encode(sprite, allocator);
+
+	Sprite *Encode(SpriteType sprite_type, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator) override
+	{
+		return Blitter_32bppSSE_Base::Encode(sprite_type, sprite, allocator);
 	}
 	std::string_view GetName() override { return "32bpp-sse4-anim"; }
 	using Blitter_32bppSSE2_Anim::LookupColourInPalette;

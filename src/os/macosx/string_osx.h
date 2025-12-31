@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file string_osx.h Functions related to localized text support on OSX. */
@@ -82,10 +82,10 @@ public:
 };
 
 void MacOSResetScriptCache(FontSize size);
-void MacOSSetCurrentLocaleName(const char *iso_code);
+void MacOSSetCurrentLocaleName(std::string_view iso_code);
 int MacOSStringCompare(std::string_view s1, std::string_view s2);
-int MacOSStringContains(const std::string_view str, const std::string_view value, bool case_insensitive);
+int MacOSStringContains(std::string_view str, std::string_view value, bool case_insensitive);
 
-void MacOSRegisterExternalFont(const char *file_path);
+void MacOSRegisterExternalFont(std::string_view file_path);
 
 #endif /* STRING_OSX_H */

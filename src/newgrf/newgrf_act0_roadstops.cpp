@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_roadstops.cpp NewGRF Action 0x00 handler for roadstops. */
@@ -47,6 +47,11 @@ static ChangeInfoResult IgnoreRoadStopProperty(uint prop, ByteReader &buf)
 		case 0x0D:
 		case 0x12:
 			buf.ReadDWord();
+			break;
+
+		case 0x13:
+		case 0x14:
+			buf.Skip(buf.ReadExtendedByte());
 			break;
 
 		case 0x16: // Badge list
@@ -105,8 +110,8 @@ static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, Byte
 				AddStringForMapping(GRFStringID{buf.ReadWord()}, [rs = rs.get()](StringID str) { RoadStopClass::Get(rs->class_index)->name = str; });
 				break;
 
-			case 0x0C: // The draw mode
-				rs->draw_mode = static_cast<RoadStopDrawMode>(buf.ReadByte());
+			case 0x0C: // The draw modes
+				rs->draw_mode = static_cast<RoadStopDrawModes>(buf.ReadByte());
 				break;
 
 			case 0x0D: // Cargo types for random triggers
@@ -115,7 +120,7 @@ static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, Byte
 
 			case 0x0E: // Animation info
 				rs->animation.frames = buf.ReadByte();
-				rs->animation.status = buf.ReadByte();
+				rs->animation.status = static_cast<AnimationStatus>(buf.ReadByte());
 				break;
 
 			case 0x0F: // Animation speed
@@ -123,7 +128,7 @@ static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, Byte
 				break;
 
 			case 0x10: // Animation triggers
-				rs->animation.triggers = buf.ReadWord();
+				rs->animation.triggers = static_cast<StationAnimationTriggers>(buf.ReadWord());
 				break;
 
 			case 0x11: // Callback mask
@@ -133,6 +138,30 @@ static ChangeInfoResult RoadStopChangeInfo(uint first, uint last, int prop, Byte
 			case 0x12: // General flags
 				rs->flags = static_cast<RoadStopSpecFlags>(buf.ReadDWord()); // Future-proofing, size this as 4 bytes, but we only need two byte's worth of flags at present
 				break;
+
+			case 0x13: { // Minimum bridge height for each of the roadstop's tile layouts.
+				uint16_t tiles = buf.ReadExtendedByte();
+				for (uint j = 0; j != tiles; ++j) {
+					if (j < std::size(rs->bridgeable_info)) {
+						rs->bridgeable_info[j].height = buf.ReadByte();
+					} else {
+						buf.ReadByte();
+					}
+				}
+				break;
+			}
+
+			case 0x14: { // Disallowed pillars for each of the roadstop's tile layouts.
+				uint16_t tiles = buf.ReadExtendedByte();
+				for (uint j = 0; j != tiles; ++j) {
+					if (j < std::size(rs->bridgeable_info)) {
+						rs->bridgeable_info[j].disallowed_pillars = BridgePillarFlags{buf.ReadByte()};
+					} else {
+						buf.ReadByte();
+					}
+				}
+				break;
+			}
 
 			case 0x15: // Cost multipliers
 				rs->build_cost_multiplier = buf.ReadByte();

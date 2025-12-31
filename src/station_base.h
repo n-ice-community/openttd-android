@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file station_base.h Base classes/functions for stations. */
@@ -10,6 +10,7 @@
 #ifndef STATION_BASE_H
 #define STATION_BASE_H
 
+#include "core/flatset_type.hpp"
 #include "core/random_func.hpp"
 #include "base_station_base.h"
 #include "newgrf_airport.h"
@@ -154,7 +155,7 @@ public:
 
 	void AddFlow(StationID origin, StationID via, uint amount);
 	void PassOnFlow(StationID origin, StationID via, uint amount);
-	StationIDStack DeleteFlows(StationID via);
+	std::vector<StationID> DeleteFlows(StationID via);
 	void RestrictFlows(StationID via);
 	void ReleaseFlows(StationID via);
 	void FinalizeLocalConsumption(StationID self);
@@ -301,7 +302,7 @@ struct GoodsEntry {
 	 * Test if this goods entry has optional cargo packet/flow data.
 	 * @returns true iff optional data is present.
 	 */
-	debug_inline bool HasData() const { return this->data != nullptr; }
+	[[debug_inline]] inline bool HasData() const { return this->data != nullptr; }
 
 	/**
 	 * Clear optional cargo packet/flow data.
@@ -313,7 +314,7 @@ struct GoodsEntry {
 	 * @pre HasData()
 	 * @returns cargo packet/flow data.
 	 */
-	debug_inline const GoodsEntryData &GetData() const
+	[[debug_inline]] inline const GoodsEntryData &GetData() const
 	{
 		assert(this->HasData());
 		return *this->data;
@@ -324,7 +325,7 @@ struct GoodsEntry {
 	 * @pre HasData()
 	 * @returns non-const cargo packet/flow data.
 	 */
-	debug_inline GoodsEntryData &GetData()
+	[[debug_inline]] inline GoodsEntryData &GetData()
 	{
 		assert(this->HasData());
 		return *this->data;
@@ -578,7 +579,7 @@ public:
 
 	uint32_t GetNewGRFVariable(const ResolverObject &object, uint8_t variable, uint8_t parameter, bool &available) const override;
 
-	void GetTileArea(TileArea *ta, StationType type) const override;
+	TileArea GetTileArea(StationType type) const override;
 };
 
 /** Iterator to iterate over all tiles belonging to an airport. */
@@ -598,9 +599,9 @@ public:
 
 	inline TileIterator& operator ++() override
 	{
-		(*this).OrthogonalTileIterator::operator++();
+		this->OrthogonalTileIterator::operator++();
 		while (this->tile != INVALID_TILE && !st->TileBelongsToAirport(this->tile)) {
-			(*this).OrthogonalTileIterator::operator++();
+			this->OrthogonalTileIterator::operator++();
 		}
 		return *this;
 	}
@@ -627,14 +628,15 @@ void ForAllStationsAroundTiles(const TileArea &ta, Func func)
 	if (Station::GetNumItems() == 0) return;
 
 	/* Not using, or don't have a nearby stations list, so we need to scan. */
-	std::set<StationID> seen_stations;
+	FlatSet<StationID> seen_stations;
 
 	/* Scan an area around the building covering the maximum possible station
 	 * to find the possible nearby stations. */
 	uint max_c = _settings_game.station.modified_catchment ? MAX_CATCHMENT : CA_UNMODIFIED;
 	TileArea ta_ext = TileArea(ta).Expand(max_c);
 	for (TileIndex tile : ta_ext) {
-		if (IsTileType(tile, MP_STATION)) seen_stations.insert(GetStationIndex(tile));
+		if (!IsTileType(tile, MP_STATION)) continue;
+		seen_stations.insert(GetStationIndex(tile));
 	}
 
 	for (StationID stationid : seen_stations) {

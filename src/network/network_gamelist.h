@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_gamelist.h Handling of the list of games. */
@@ -25,7 +25,7 @@ enum NetworkGameStatus : uint8_t {
 
 /** Structure with information shown in the game list (GUI) */
 struct NetworkGame {
-	NetworkGame(const std::string &connection_string) : connection_string(connection_string) {}
+	NetworkGame(std::string_view connection_string) : connection_string(connection_string) {}
 
 	NetworkGameInfo info{};                  ///< The game information of this server.
 	std::string connection_string;           ///< Address of the server.
@@ -38,7 +38,7 @@ struct NetworkGame {
 extern std::vector<std::unique_ptr<NetworkGame>> _network_game_list;
 extern int _network_game_list_version;
 
-NetworkGame *NetworkGameListAddItem(const std::string &connection_string);
+NetworkGame *NetworkGameListAddItem(std::string_view connection_string);
 void NetworkGameListRemoveItem(NetworkGame *remove);
 void NetworkGameListRemoveExpired();
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 8bpp_simple.cpp Implementation of the simple 8 bpp blitter. */
@@ -61,19 +61,21 @@ void Blitter_8bppSimple::Draw(Blitter::BlitterParams *bp, BlitterMode mode, Zoom
 	}
 }
 
-Sprite *Blitter_8bppSimple::Encode(const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
+Sprite *Blitter_8bppSimple::Encode(SpriteType, const SpriteLoader::SpriteCollection &sprite, SpriteAllocator &allocator)
 {
+	const auto &root_sprite = sprite.Root();
 	Sprite *dest_sprite;
-	dest_sprite = allocator.Allocate<Sprite>(sizeof(*dest_sprite) + static_cast<size_t>(sprite[ZOOM_LVL_MIN].height) * static_cast<size_t>(sprite[ZOOM_LVL_MIN].width));
+	dest_sprite = allocator.Allocate<Sprite>(sizeof(*dest_sprite) + static_cast<size_t>(root_sprite.height) * static_cast<size_t>(root_sprite.width));
 
-	dest_sprite->height = sprite[ZOOM_LVL_MIN].height;
-	dest_sprite->width  = sprite[ZOOM_LVL_MIN].width;
-	dest_sprite->x_offs = sprite[ZOOM_LVL_MIN].x_offs;
-	dest_sprite->y_offs = sprite[ZOOM_LVL_MIN].y_offs;
+	dest_sprite->height = root_sprite.height;
+	dest_sprite->width = root_sprite.width;
+	dest_sprite->x_offs = root_sprite.x_offs;
+	dest_sprite->y_offs = root_sprite.y_offs;
 
 	/* Copy over only the 'remap' channel, as that is what we care about in 8bpp */
-	for (int i = 0; i < sprite[ZOOM_LVL_MIN].height * sprite[ZOOM_LVL_MIN].width; i++) {
-		dest_sprite->data[i] = sprite[ZOOM_LVL_MIN].data[i].m;
+	uint8_t *dst = reinterpret_cast<uint8_t *>(dest_sprite->data);
+	for (int i = 0; i < root_sprite.height * root_sprite.width; i++) {
+		dst[i] = root_sprite.data[i].m;
 	}
 
 	return dest_sprite;

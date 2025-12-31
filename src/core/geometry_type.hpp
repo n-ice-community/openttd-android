@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file geometry_type.hpp All geometry types in OpenTTD. */
@@ -16,15 +16,41 @@
 #	define Point OTTD_Point
 #endif /* __APPLE__ */
 
+/**
+ * Determine where to position a centred object.
+ * @param min The top or left coordinate.
+ * @param max The bottom or right coordinate.
+ * @param size The height or width of the object to draw.
+ * @return Offset of where to position the object.
+ */
+inline int CentreBounds(int min, int max, int size)
+{
+	return (min + max - size + 1) / 2;
+}
+
+/** A coordinate with two dimensons. */
+template <typename T>
+struct Coord2D {
+	T x = 0; ///< X coordinate.
+	T y = 0; ///< Y coordinate.
+
+	constexpr Coord2D() = default;
+	constexpr Coord2D(T x, T y) : x(x), y(y) {}
+};
+
+/** A coordinate with three dimensions. */
+template <typename T>
+struct Coord3D {
+	T x = 0; ///< X coordinate.
+	T y = 0; ///< Y coordinate.
+	T z = 0; ///< Z coordinate.
+
+	constexpr Coord3D() = default;
+	constexpr Coord3D(T x, T y, T z) : x(x), y(y), z(z) {}
+};
 
 /** Coordinates of a point in 2D */
-struct Point {
-	int x;
-	int y;
-
-	constexpr Point() : x(0), y(0) {}
-	constexpr Point(int x, int y) : x(x), y(y) {}
-};
+using Point = Coord2D<int>;
 
 /** Dimensions (a width and height) of a rectangle in 2D */
 struct Dimension {
@@ -36,14 +62,14 @@ struct Dimension {
 
 	bool operator< (const Dimension &other) const
 	{
-		int x = (*this).width - other.width;
+		int x = this->width - other.width;
 		if (x != 0) return x < 0;
-		return (*this).height < other.height;
+		return this->height < other.height;
 	}
 
 	bool operator== (const Dimension &other) const
 	{
-		return (*this).width == other.width && (*this).height == other.height;
+		return this->width == other.width && this->height == other.height;
 	}
 };
 
@@ -185,8 +211,8 @@ struct Rect {
 	[[nodiscard]] inline Rect WithWidth(int width, bool end) const
 	{
 		return end
-			? Rect {this->right - width + 1, this->top, this->right,            this->bottom}
-			: Rect {this->left,              this->top, this->left + width - 1, this->bottom};
+			? this->WithX(this->right - width + 1, this->right)
+			: this->WithX(this->left, this->left + width - 1);
 	}
 
 	/**
@@ -198,21 +224,21 @@ struct Rect {
 	[[nodiscard]] inline Rect Indent(int indent, bool end) const
 	{
 		return end
-			? Rect {this->left,          this->top, this->right - indent, this->bottom}
-			: Rect {this->left + indent, this->top, this->right,          this->bottom};
+			? this->WithX(this->left, this->right - indent)
+			: this->WithX(this->left + indent, this->right);
 	}
 
 	/**
 	 * Copy Rect and set its height.
-	 * @param width height in pixels for new Rect.
+	 * @param height height in pixels for new Rect.
 	 * @param end   if set, set height at end of Rect, i.e. at bottom.
 	 * @return the new resized Rect.
 	 */
 	[[nodiscard]] inline Rect WithHeight(int height, bool end = false) const
 	{
 		return end
-			? Rect {this->left, this->bottom - height + 1, this->right, this->bottom}
-			: Rect {this->left, this->top,                 this->right, this->top + height - 1};
+			? this->WithY(this->bottom - height + 1, this->bottom)
+			: this->WithY(this->top, this->top + height - 1);
 	}
 
 	/**
@@ -223,8 +249,49 @@ struct Rect {
 	inline bool Contains(const Point &pt) const
 	{
 		/* This is a local version of IsInsideMM, to avoid including math_func everywhere. */
-		return (uint)(pt.x - this->left) < (uint)(this->right - this->left) && (uint)(pt.y - this->top) < (uint)(this->bottom - this->top);
+		return (uint)(pt.x - this->left) <= (uint)(this->right - this->left) && (uint)(pt.y - this->top) <= (uint)(this->bottom - this->top);
 	}
+
+	/**
+	 * Centre a vertical dimension within this Rect.
+	 * @param height The vertical dimension.
+	 * @return the new resized Rect.
+	 */
+	[[nodiscard]] inline Rect CentreToHeight(int height) const
+	{
+		int new_top = CentreBounds(this->top, this->bottom, height);
+		return {this->left, new_top, this->right, new_top + height - 1};
+	}
+
+	/**
+	 * Create a new Rect, replacing the left and right coordiates.
+	 * @param new_left New left coordinate.
+	 * @param new_right New right coordinate.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithX(int new_left, int new_right) const { return {new_left, this->top, new_right, this->bottom}; }
+
+	/**
+	 * Create a new Rect, replacing the top and bottom coordiates.
+	 * @param new_top New top coordinate.
+	 * @param new_bottom New bottom coordinate.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithY(int new_top, int new_bottom) const { return {this->left, new_top, this->right, new_bottom}; }
+
+	/**
+	 * Create a new Rect, replacing the left and right coordiates.
+	 * @param other Rect containing the new left and right coordinates.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithX(const Rect &other) const { return this->WithX(other.left, other.right); }
+
+	/**
+	 * Create a new Rect, replacing the top and bottom coordiates.
+	 * @param other Rect containing the new top and bottom coordinates.
+	 * @return The new Rect.
+	 */
+	[[nodiscard]] inline Rect WithY(const Rect &other) const { return this->WithY(other.top, other.bottom); }
 };
 
 /**

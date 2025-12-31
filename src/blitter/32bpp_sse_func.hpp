@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file 32bpp_sse_func.hpp Functions related to SSE 32 bpp blitter. */
@@ -309,8 +309,8 @@ inline void Blitter_32bppSSE4::Draw(const Blitter::BlitterParams *bp, ZoomLevel 
 
 					/* Remap colours. */
 					if (mvX2 & 0x00FF00FF) {
+						/* Written so the compiler uses CMOV. */
 						#define CMOV_REMAP(m_colour, m_colour_init, m_src, m_m) \
-							/* Written so the compiler uses CMOV. */ \
 							Colour m_colour = m_colour_init; \
 							{ \
 							const Colour srcm = (Colour) (m_src); \

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file vehicle_sl.cpp Code handling saving and loading of vehicles */
@@ -274,10 +274,10 @@ void AfterLoadVehiclesPhase1(bool part_of_load)
 		 * a) both next_shared and previous_shared are not set for pre 5,2 games
 		 * b) both next_shared and previous_shared are set for later games
 		 */
-		std::map<Order*, OrderList*> mapping;
+		std::map<uint32_t, OrderList *> mapping;
 
 		for (Vehicle *v : Vehicle::Iterate()) {
-			if (v->old_orders != nullptr) {
+			if (v->orders != nullptr) {
 				if (IsSavegameVersionBefore(SLV_105)) { // Pre-105 didn't save an OrderList
 					if (mapping[v->old_orders] == nullptr) {
 						/* This adds the whole shared vehicle chain for case b */
@@ -286,7 +286,11 @@ void AfterLoadVehiclesPhase1(bool part_of_load)
 						 * allowed in these savegames matches the number of OrderLists. As
 						 * such each vehicle can get an OrderList and it will (still) fit. */
 						assert(OrderList::CanAllocateItem());
-						v->orders = mapping[v->old_orders] = new OrderList(v->old_orders, v);
+						std::vector<Order> orders;
+						for (const OldOrderSaveLoadItem *old_order = GetOldOrder(v->old_orders); old_order != nullptr; old_order = GetOldOrder(old_order->next)) {
+							orders.push_back(std::move(old_order->order));
+						}
+						v->orders = mapping[v->old_orders] = new OrderList(std::move(orders), v);
 					} else {
 						v->orders = mapping[v->old_orders];
 						/* For old games (case a) we must create the shared vehicle chain */
@@ -296,7 +300,7 @@ void AfterLoadVehiclesPhase1(bool part_of_load)
 					}
 				} else { // OrderList was saved as such, only recalculate not saved values
 					if (v->PreviousShared() == nullptr) {
-						v->orders->Initialize(v->orders->first, v);
+						v->orders->Initialize(v);
 					}
 				}
 			}
@@ -320,7 +324,8 @@ void AfterLoadVehiclesPhase1(bool part_of_load)
 
 				/* As above, allocating OrderList here is safe. */
 				assert(OrderList::CanAllocateItem());
-				v->orders = new OrderList(nullptr, v);
+				v->orders = new OrderList();
+				v->orders->first_shared = v;
 				for (Vehicle *u = v; u != nullptr; u = u->next_shared) {
 					u->orders = v->orders;
 				}
@@ -434,7 +439,7 @@ void AfterLoadVehiclesPhase2(bool part_of_load)
 				if (rv->IsFrontEngine()) {
 					rv->gcache.last_speed = rv->cur_speed; // update displayed road vehicle speed
 
-					rv->roadtype = Engine::Get(rv->engine_type)->u.road.roadtype;
+					rv->roadtype = Engine::Get(rv->engine_type)->VehInfo<RoadVehicleInfo>().roadtype;
 					rv->compatible_roadtypes = GetRoadTypeInfo(rv->roadtype)->powered_roadtypes;
 					RoadTramType rtt = GetRoadTramType(rv->roadtype);
 					for (RoadVehicle *u = rv; u != nullptr; u = u->Next()) {
@@ -536,7 +541,7 @@ void AfterLoadVehiclesPhase2(bool part_of_load)
 		v->UpdateDeltaXY();
 		v->coord.left = INVALID_COORD;
 		v->sprite_cache.old_coord.left = INVALID_COORD;
-		v->UpdatePosition();
+		if (v->type != VEH_EFFECT) v->UpdatePosition();
 		v->UpdateViewport(false);
 	}
 }
@@ -639,7 +644,7 @@ static Money  _cargo_feeder_share;
 
 class SlVehicleCommon : public DefaultSaveLoadHandler<SlVehicleCommon, Vehicle> {
 public:
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		    SLE_VAR(Vehicle, subtype,               SLE_UINT8),
 
 		    SLE_REF(Vehicle, next,                  REF_VEHICLE_OLD),
@@ -715,7 +720,8 @@ public:
 		SLE_CONDVAR(Vehicle, timetable_start,       SLE_FILE_I32 | SLE_VAR_U64, SLV_129, SLV_TIMETABLE_START_TICKS),
 		SLE_CONDVAR(Vehicle, timetable_start,       SLE_UINT64,                 SLV_TIMETABLE_START_TICKS, SL_MAX_VERSION),
 
-		SLE_CONDREF(Vehicle, orders,                REF_ORDER,                    SL_MIN_VERSION, SLV_105),
+		SLE_CONDVARNAME(Vehicle, old_orders, "orders", SLE_FILE_U16 | SLE_VAR_U32, SL_MIN_VERSION, SLV_69),
+		SLE_CONDVARNAME(Vehicle, old_orders, "orders", SLE_UINT32,                 SLV_69, SLV_105),
 		SLE_CONDREF(Vehicle, orders,                REF_ORDERLIST,              SLV_105, SL_MAX_VERSION),
 
 		SLE_CONDVAR(Vehicle, age,                   SLE_FILE_U16 | SLE_VAR_I32,   SL_MIN_VERSION,  SLV_31),
@@ -754,7 +760,7 @@ public:
 
 		SLE_CONDVAR(Vehicle, random_bits,           SLE_FILE_U8 | SLE_VAR_U16,    SLV_2, SLV_EXTEND_VEHICLE_RANDOM),
 		SLE_CONDVAR(Vehicle, random_bits,           SLE_UINT16,                   SLV_EXTEND_VEHICLE_RANDOM, SL_MAX_VERSION),
-		SLE_CONDVAR(Vehicle, waiting_triggers,      SLE_UINT8,                    SLV_2, SL_MAX_VERSION),
+		SLE_CONDVARNAME(Vehicle, waiting_random_triggers, "waiting_triggers", SLE_UINT8, SLV_2, SL_MAX_VERSION),
 
 		SLE_CONDREF(Vehicle, next_shared,           REF_VEHICLE,                  SLV_2, SL_MAX_VERSION),
 		SLE_CONDVAR(Vehicle, group_id,              SLE_UINT16,                  SLV_60, SL_MAX_VERSION),
@@ -769,7 +775,7 @@ public:
 		SLE_CONDVAR(Vehicle, round_trip_time,       SLE_INT32,                   SLV_DEPOT_UNBUNCHING, SL_MAX_VERSION),
 	};
 
-	inline const static SaveLoadCompatTable compat_description = _vehicle_common_sl_compat;
+	static inline const SaveLoadCompatTable compat_description = _vehicle_common_sl_compat;
 
 	void Save(Vehicle *v) const override
 	{
@@ -789,11 +795,10 @@ public:
 
 class SlVehicleTrain : public DefaultSaveLoadHandler<SlVehicleTrain, Vehicle> {
 public:
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		 SLEG_STRUCT("common", SlVehicleCommon),
 		     SLE_VAR(Train, crash_anim_pos,      SLE_UINT16),
 		     SLE_VAR(Train, force_proceed,       SLE_UINT8),
-		     SLE_VAR(Train, railtype,            SLE_UINT8),
 		     SLE_VAR(Train, track,               SLE_UINT8),
 
 		 SLE_CONDVAR(Train, flags,               SLE_FILE_U8  | SLE_VAR_U16,   SLV_2,  SLV_100),
@@ -801,7 +806,7 @@ public:
 		 SLE_CONDVAR(Train, wait_counter,        SLE_UINT16,                 SLV_136, SL_MAX_VERSION),
 		 SLE_CONDVAR(Train, gv_flags,            SLE_UINT16,                 SLV_139, SL_MAX_VERSION),
 	};
-	inline const static SaveLoadCompatTable compat_description = _vehicle_train_sl_compat;
+	static inline const SaveLoadCompatTable compat_description = _vehicle_train_sl_compat;
 
 	void Save(Vehicle *v) const override
 	{
@@ -824,11 +829,11 @@ public:
 
 class SlVehicleRoadVehPath : public VectorSaveLoadHandler<SlVehicleRoadVehPath, RoadVehicle, RoadVehPathElement> {
 public:
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		SLE_VAR(RoadVehPathElement, trackdir, SLE_UINT8),
 		SLE_VAR(RoadVehPathElement, tile, SLE_UINT32),
 	};
-	inline const static SaveLoadCompatTable compat_description = {};
+	static inline const SaveLoadCompatTable compat_description = {};
 
 	std::vector<RoadVehPathElement> &GetVector(RoadVehicle *rv) const override { return rv->path; }
 };
@@ -839,7 +844,7 @@ public:
 	static inline std::vector<Trackdir> rv_path_td;
 	static inline std::vector<TileIndex> rv_path_tile;
 
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		  SLEG_STRUCT("common", SlVehicleCommon),
 		      SLE_VAR(RoadVehicle, state,                SLE_UINT8),
 		      SLE_VAR(RoadVehicle, frame,                SLE_UINT8),
@@ -853,7 +858,7 @@ public:
 		SLEG_CONDSTRUCTLIST("path", SlVehicleRoadVehPath, SLV_PATH_CACHE_FORMAT, SL_MAX_VERSION),
 		  SLE_CONDVAR(RoadVehicle, gv_flags,             SLE_UINT16,                 SLV_139, SL_MAX_VERSION),
 	};
-	inline const static SaveLoadCompatTable compat_description = _vehicle_roadveh_sl_compat;
+	static inline const SaveLoadCompatTable compat_description = _vehicle_roadveh_sl_compat;
 
 	static void ConvertPathCache(RoadVehicle &rv)
 	{
@@ -898,10 +903,10 @@ public:
 
 class SlVehicleShipPath : public VectorSaveLoadHandler<SlVehicleShipPath, Ship, ShipPathElement> {
 public:
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		SLE_VAR(ShipPathElement, trackdir, SLE_UINT8),
 	};
-	inline const static SaveLoadCompatTable compat_description = {};
+	static inline const SaveLoadCompatTable compat_description = {};
 
 	std::vector<ShipPathElement> &GetVector(Ship *s) const override { return s->path; }
 };
@@ -910,14 +915,14 @@ class SlVehicleShip : public DefaultSaveLoadHandler<SlVehicleShip, Vehicle> {
 public:
 	static inline std::vector<Trackdir> ship_path_td;
 
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		  SLEG_STRUCT("common", SlVehicleCommon),
 		      SLE_VAR(Ship, state,                     SLE_UINT8),
 		SLEG_CONDVECTOR("path", ship_path_td, SLE_UINT8, SLV_SHIP_PATH_CACHE, SLV_PATH_CACHE_FORMAT),
 		SLEG_CONDSTRUCTLIST("path", SlVehicleShipPath, SLV_PATH_CACHE_FORMAT, SL_MAX_VERSION),
 		  SLE_CONDVAR(Ship, rotation,                  SLE_UINT8,                  SLV_SHIP_ROTATION, SL_MAX_VERSION),
 	};
-	inline const static SaveLoadCompatTable compat_description = _vehicle_ship_sl_compat;
+	static inline const SaveLoadCompatTable compat_description = _vehicle_ship_sl_compat;
 
 	void Save(Vehicle *v) const override
 	{
@@ -946,7 +951,7 @@ public:
 
 class SlVehicleAircraft : public DefaultSaveLoadHandler<SlVehicleAircraft, Vehicle> {
 public:
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		 SLEG_STRUCT("common", SlVehicleCommon),
 		     SLE_VAR(Aircraft, crashed_counter,       SLE_UINT16),
 		     SLE_VAR(Aircraft, pos,                   SLE_UINT8),
@@ -963,7 +968,7 @@ public:
 		 SLE_CONDVAR(Aircraft, turn_counter,          SLE_UINT8,                  SLV_136, SL_MAX_VERSION),
 		 SLE_CONDVAR(Aircraft, flags,                 SLE_UINT8,                  SLV_167, SL_MAX_VERSION),
 	};
-	inline const static SaveLoadCompatTable compat_description = _vehicle_aircraft_sl_compat;
+	static inline const SaveLoadCompatTable compat_description = _vehicle_aircraft_sl_compat;
 
 	void Save(Vehicle *v) const override
 	{
@@ -986,7 +991,7 @@ public:
 
 class SlVehicleEffect : public DefaultSaveLoadHandler<SlVehicleEffect, Vehicle> {
 public:
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		     SLE_VAR(Vehicle, subtype,               SLE_UINT8),
 
 		 SLE_CONDVAR(Vehicle, tile,                  SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
@@ -1008,7 +1013,7 @@ public:
 
 		 SLE_CONDVAR(Vehicle, spritenum,             SLE_UINT8,                    SLV_2, SL_MAX_VERSION),
 	};
-	inline const static SaveLoadCompatTable compat_description = _vehicle_effect_sl_compat;
+	static inline const SaveLoadCompatTable compat_description = _vehicle_effect_sl_compat;
 
 	void Save(Vehicle *v) const override
 	{
@@ -1031,7 +1036,7 @@ public:
 
 class SlVehicleDisaster : public DefaultSaveLoadHandler<SlVehicleDisaster, Vehicle> {
 public:
-	inline static const SaveLoad description[] = {
+	static inline const SaveLoad description[] = {
 		    SLE_REF(Vehicle, next,                  REF_VEHICLE_OLD),
 
 		    SLE_VAR(Vehicle, subtype,               SLE_UINT8),
@@ -1066,7 +1071,7 @@ public:
 		SLE_CONDVAR(DisasterVehicle, flags,                     SLE_UINT8,                  SLV_194, SL_MAX_VERSION),
 	};
 
-	inline const static SaveLoadCompatTable compat_description = _vehicle_disaster_sl_compat;
+	static inline const SaveLoadCompatTable compat_description = _vehicle_disaster_sl_compat;
 
 	void Save(Vehicle *v) const override
 	{
@@ -1087,7 +1092,7 @@ public:
 	}
 };
 
-const static SaveLoad _vehicle_desc[] = {
+static const SaveLoad _vehicle_desc[] = {
 	SLE_SAVEBYTE(Vehicle, type),
 	SLEG_STRUCT("train", SlVehicleTrain),
 	SLEG_STRUCT("roadveh", SlVehicleRoadVeh),

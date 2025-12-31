@@ -2,13 +2,14 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file heightmap.cpp Creating of maps from heightmaps. */
 
 #include "stdafx.h"
 #include "heightmap.h"
+#include "landscape.h"
 #include "clear_map.h"
 #include "strings_func.h"
 #include "void_map.h"
@@ -20,6 +21,10 @@
 #include "fileio_func.h"
 
 #include "table/strings.h"
+
+#ifdef WITH_PNG
+#include <png.h>
+#endif /* WITH_PNG */
 
 #include "safeguards.h"
 
@@ -58,10 +63,10 @@ static inline bool IsValidHeightmapDimension(size_t width, size_t height)
 }
 
 /**
- * Convert RGB colours to Grayscale using 29.9% Red, 58.7% Green, 11.4% Blue
+ * Convert RGB colours to Greyscale using 29.9% Red, 58.7% Green, 11.4% Blue
  *  (average luminosity formula, NTSC Colour Space)
  */
-static inline uint8_t RGBToGrayscale(uint8_t red, uint8_t green, uint8_t blue)
+static inline uint8_t RGBToGreyscale(uint8_t red, uint8_t green, uint8_t blue)
 {
 	/* To avoid doubles and stuff, multiply it with a total of 65536 (16bits), then
 	 *  divide by it to normalize the value to a byte again. */
@@ -70,8 +75,6 @@ static inline uint8_t RGBToGrayscale(uint8_t red, uint8_t green, uint8_t blue)
 
 
 #ifdef WITH_PNG
-
-#include <png.h>
 
 /**
  * The PNG Heightmap loader.
@@ -84,7 +87,7 @@ static void ReadHeightmapPNGImageData(std::span<uint8_t> map, png_structp png_pt
 	bool has_palette = png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_PALETTE;
 	uint channels = png_get_channels(png_ptr, info_ptr);
 
-	/* Get palette and convert it to grayscale */
+	/* Get palette and convert it to greyscale */
 	if (has_palette) {
 		int i;
 		int palette_size;
@@ -94,7 +97,7 @@ static void ReadHeightmapPNGImageData(std::span<uint8_t> map, png_structp png_pt
 		png_get_PLTE(png_ptr, info_ptr, &palette, &palette_size);
 		for (i = 0; i < palette_size && (palette_size != 16 || all_gray); i++) {
 			all_gray &= palette[i].red == palette[i].green && palette[i].red == palette[i].blue;
-			gray_palette[i] = RGBToGrayscale(palette[i].red, palette[i].green, palette[i].blue);
+			gray_palette[i] = RGBToGreyscale(palette[i].red, palette[i].green, palette[i].blue);
 		}
 
 		/**
@@ -112,7 +115,7 @@ static void ReadHeightmapPNGImageData(std::span<uint8_t> map, png_structp png_pt
 
 	row_pointers = png_get_rows(png_ptr, info_ptr);
 
-	/* Read the raw image data and convert in 8-bit grayscale */
+	/* Read the raw image data and convert in 8-bit greyscale */
 	for (x = 0; x < png_get_image_width(png_ptr, info_ptr); x++) {
 		for (y = 0; y < png_get_image_height(png_ptr, info_ptr); y++) {
 			uint8_t *pixel = &map[y * png_get_image_width(png_ptr, info_ptr) + x];
@@ -121,7 +124,7 @@ static void ReadHeightmapPNGImageData(std::span<uint8_t> map, png_structp png_pt
 			if (has_palette) {
 				*pixel = gray_palette[row_pointers[y][x_offset]];
 			} else if (channels == 3) {
-				*pixel = RGBToGrayscale(row_pointers[y][x_offset + 0],
+				*pixel = RGBToGreyscale(row_pointers[y][x_offset + 0],
 						row_pointers[y][x_offset + 1], row_pointers[y][x_offset + 2]);
 			} else {
 				*pixel = row_pointers[y][x_offset];
@@ -133,9 +136,9 @@ static void ReadHeightmapPNGImageData(std::span<uint8_t> map, png_structp png_pt
 /**
  * Reads the heightmap and/or size of the heightmap from a PNG file.
  * If map == nullptr only the size of the PNG is read, otherwise a map
- * with grayscale pixels is allocated and assigned to *map.
+ * with greyscale pixels is allocated and assigned to *map.
  */
-static bool ReadHeightmapPNG(const char *filename, uint *x, uint *y, std::vector<uint8_t> *map)
+static bool ReadHeightmapPNG(std::string_view filename, uint *x, uint *y, std::vector<uint8_t> *map)
 {
 	png_structp png_ptr = nullptr;
 	png_infop info_ptr  = nullptr;
@@ -162,7 +165,7 @@ static bool ReadHeightmapPNG(const char *filename, uint *x, uint *y, std::vector
 	png_init_io(png_ptr, *fp);
 
 	/* Allocate memory and read image, without alpha or 16-bit samples
-	 * (result is either 8-bit indexed/grayscale or 24-bit RGB) */
+	 * (result is either 8-bit indexed/greyscale or 24-bit RGB) */
 	png_set_packing(png_ptr);
 	png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_PACKING | PNG_TRANSFORM_STRIP_ALPHA | PNG_TRANSFORM_STRIP_16, nullptr);
 
@@ -211,7 +214,7 @@ static void ReadHeightmapBMPImageData(std::span<uint8_t> map, const BmpInfo &inf
 		if (info.palette_size != 2) {
 			for (uint i = 0; i < info.palette_size && (info.palette_size != 16 || all_gray); i++) {
 				all_gray &= data.palette[i].r == data.palette[i].g && data.palette[i].r == data.palette[i].b;
-				gray_palette[i] = RGBToGrayscale(data.palette[i].r, data.palette[i].g, data.palette[i].b);
+				gray_palette[i] = RGBToGreyscale(data.palette[i].r, data.palette[i].g, data.palette[i].b);
 			}
 
 			/**
@@ -235,7 +238,7 @@ static void ReadHeightmapBMPImageData(std::span<uint8_t> map, const BmpInfo &inf
 		}
 	}
 
-	/* Read the raw image data and convert in 8-bit grayscale */
+	/* Read the raw image data and convert in 8-bit greyscale */
 	for (uint y = 0; y < info.height; y++) {
 		uint8_t *pixel = &map[y * static_cast<size_t>(info.width)];
 		const uint8_t *bitmap = &data.bitmap[y * static_cast<size_t>(info.width) * (info.bpp == 24 ? 3 : 1)];
@@ -244,7 +247,7 @@ static void ReadHeightmapBMPImageData(std::span<uint8_t> map, const BmpInfo &inf
 			if (info.bpp != 24) {
 				*pixel++ = gray_palette[*bitmap++];
 			} else {
-				*pixel++ = RGBToGrayscale(*bitmap, *(bitmap + 1), *(bitmap + 2));
+				*pixel++ = RGBToGreyscale(*bitmap, *(bitmap + 1), *(bitmap + 2));
 				bitmap += 3;
 			}
 		}
@@ -254,9 +257,9 @@ static void ReadHeightmapBMPImageData(std::span<uint8_t> map, const BmpInfo &inf
 /**
  * Reads the heightmap and/or size of the heightmap from a BMP file.
  * If map == nullptr only the size of the BMP is read, otherwise a map
- * with grayscale pixels is allocated and assigned to *map.
+ * with greyscale pixels is allocated and assigned to *map.
  */
-static bool ReadHeightmapBMP(const char *filename, uint *x, uint *y, std::vector<uint8_t> *map)
+static bool ReadHeightmapBMP(std::string_view filename, uint *x, uint *y, std::vector<uint8_t> *map)
 {
 	auto f = FioFOpenFile(filename, "rb", HEIGHTMAP_DIR);
 	if (!f.has_value()) {
@@ -295,13 +298,13 @@ static bool ReadHeightmapBMP(const char *filename, uint *x, uint *y, std::vector
 }
 
 /**
- * Converts a given grayscale map to something that fits in OTTD map system
+ * Converts a given greyscale map to something that fits in OTTD map system
  * and create a map of that data.
  * @param img_width  the with of the image in pixels/tiles
  * @param img_height the height of the image in pixels/tiles
  * @param map        the input map
  */
-static void GrayscaleToMapHeights(uint img_width, uint img_height, std::span<const uint8_t> map)
+static void GreyscaleToMapHeights(uint img_width, uint img_height, std::span<const uint8_t> map)
 {
 	/* Defines the detail of the aspect ratio (to avoid doubles) */
 	const uint num_div = 16384;
@@ -475,7 +478,7 @@ void FixSlopes()
  * @param[in,out] map If not \c nullptr, destination to store the loaded block of image data.
  * @return Whether loading was successful.
  */
-static bool ReadHeightMap(DetailedFileType dft, const char *filename, uint *x, uint *y, std::vector<uint8_t> *map)
+static bool ReadHeightMap(DetailedFileType dft, std::string_view filename, uint *x, uint *y, std::vector<uint8_t> *map)
 {
 	switch (dft) {
 		default:
@@ -499,7 +502,7 @@ static bool ReadHeightMap(DetailedFileType dft, const char *filename, uint *x, u
  * @param y dimension y
  * @return Returns false if loading of the image failed.
  */
-bool GetHeightmapDimensions(DetailedFileType dft, const char *filename, uint *x, uint *y)
+bool GetHeightmapDimensions(DetailedFileType dft, std::string_view filename, uint *x, uint *y)
 {
 	return ReadHeightMap(dft, filename, x, y, nullptr);
 }
@@ -511,7 +514,7 @@ bool GetHeightmapDimensions(DetailedFileType dft, const char *filename, uint *x,
  * @param dft Type of image file.
  * @param filename of the heightmap file to be imported
  */
-bool LoadHeightmap(DetailedFileType dft, const char *filename)
+bool LoadHeightmap(DetailedFileType dft, std::string_view filename)
 {
 	uint x, y;
 	std::vector<uint8_t> map;
@@ -520,9 +523,13 @@ bool LoadHeightmap(DetailedFileType dft, const char *filename)
 		return false;
 	}
 
-	GrayscaleToMapHeights(x, y, map);
+	GreyscaleToMapHeights(x, y, map);
 
 	FixSlopes();
+
+	/* If all map borders are water, we will draw infinite water. */
+	_settings_game.construction.freeform_edges = !IsMapSurroundedByWater();
+
 	MarkWholeScreenDirty();
 
 	return true;

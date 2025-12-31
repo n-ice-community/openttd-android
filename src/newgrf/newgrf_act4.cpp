@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act4.cpp NewGRF Action 0x04 handler. */
@@ -48,8 +48,8 @@ static void FeatureNewName(ByteReader &buf)
 
 	bool new_scheme = _cur_gps.grffile->grf_version >= 7;
 
-	uint8_t feature  = buf.ReadByte();
-	if (feature >= GSF_END && feature != 0x48) {
+	GrfSpecFeature feature{buf.ReadByte()};
+	if (feature >= GSF_END && feature != GSF_ORIGINAL_STRINGS) {
 		GrfMsg(1, "FeatureNewName: Unsupported feature 0x{:02X}, skipping", feature);
 		return;
 	}
@@ -77,7 +77,7 @@ static void FeatureNewName(ByteReader &buf)
 	uint32_t feature_overlay = generic ? 0 : ((feature + 1) << 16);
 
 	for (; id < endid && buf.HasData(); id++) {
-		const std::string_view name = buf.ReadString();
+		std::string_view name = buf.ReadString();
 		GrfMsg(8, "FeatureNewName: 0x{:04X} <- {}", id, StrMakeValid(name));
 
 		switch (feature) {

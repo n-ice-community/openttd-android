@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file direction_func.h Different functions related to conversions between directions. */
@@ -233,6 +233,23 @@ inline DiagDirection AxisToDiagDir(Axis a)
 {
 	assert(IsValidAxis(a));
 	return (DiagDirection)(2 - a);
+}
+
+/**
+ * Converts an Axis to DiagDirections
+ *
+ * This function returns both DiagDirections which
+ * belong to the axis.
+ *
+ * @param a The axis
+ * @return The DiagDirections.
+ */
+inline DiagDirections AxisToDiagDirs(Axis a)
+{
+	assert(IsValidAxis(a));
+	return a == AXIS_X
+		? DiagDirections{DIAGDIR_NE, DIAGDIR_SW}
+		: DiagDirections{DIAGDIR_SE, DIAGDIR_NW};
 }
 
 /**

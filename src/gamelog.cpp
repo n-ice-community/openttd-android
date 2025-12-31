@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file gamelog.cpp Definition of functions used for logging of fundamental changes to the game */
@@ -128,7 +128,7 @@ static void AddGrfInfo(std::back_insert_iterator<std::string> &output_iterator, 
 
 
 /** Text messages for various logged actions */
-static const char * const la_text[] = {
+static const std::string_view la_text[] = {
 	"new game started",
 	"game loaded",
 	"GRF config changed",

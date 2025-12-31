@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_canal.cpp Implementation of NewGRF canals. */
@@ -13,7 +13,6 @@
 #include "newgrf_canal.h"
 #include "water.h"
 #include "water_map.h"
-#include "spritecache.h"
 
 #include "safeguards.h"
 
@@ -66,7 +65,7 @@ struct CanalResolverObject : public ResolverObject {
 		case 0x80: {
 			int z = GetTileZ(this->tile);
 			/* Return consistent height within locks */
-			if (IsTileType(this->tile, MP_WATER) && IsLock(this->tile) && GetLockPart(this->tile) == LOCK_PART_UPPER) z--;
+			if (IsTileType(this->tile, MP_WATER) && IsLock(this->tile) && GetLockPart(this->tile) == LockPart::Upper) z--;
 			return z;
 		}
 
@@ -140,10 +139,10 @@ CanalResolverObject::CanalResolverObject(CanalFeature feature, TileIndex tile,
 SpriteID GetCanalSprite(CanalFeature feature, TileIndex tile)
 {
 	CanalResolverObject object(feature, tile);
-	const SpriteGroup *group = object.Resolve();
-	if (group == nullptr) return 0;
+	const auto *group = object.Resolve<ResultSpriteGroup>();
+	if (group == nullptr || group->num_sprites == 0) return 0;
 
-	return group->GetResult();
+	return group->sprite;
 }
 
 /**
@@ -153,12 +152,13 @@ SpriteID GetCanalSprite(CanalFeature feature, TileIndex tile)
  * @param param2   Callback parameter 2.
  * @param feature  For which feature to run the callback.
  * @param tile     Tile index of canal.
+ * @param[out] regs100 Additional result values from registers 100+
  * @return Callback result or #CALLBACK_FAILED if the callback failed.
  */
-static uint16_t GetCanalCallback(CallbackID callback, uint32_t param1, uint32_t param2, CanalFeature feature, TileIndex tile)
+static uint16_t GetCanalCallback(CallbackID callback, uint32_t param1, uint32_t param2, CanalFeature feature, TileIndex tile, std::span<int32_t> regs100 = {})
 {
 	CanalResolverObject object(feature, tile, callback, param1, param2);
-	return object.ResolveCallback();
+	return object.ResolveCallback(regs100);
 }
 
 /**

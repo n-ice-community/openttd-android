@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file driver.h Base for all drivers (video, sound, music, etc). */
@@ -13,9 +13,9 @@
 #include "core/enum_type.hpp"
 #include "string_type.h"
 
-const char *GetDriverParam(const StringList &parm, const char *name);
-bool GetDriverParamBool(const StringList &parm, const char *name);
-int GetDriverParamInt(const StringList &parm, const char *name, int def);
+std::optional<std::string_view> GetDriverParam(const StringList &parm, std::string_view name);
+bool GetDriverParamBool(const StringList &parm, std::string_view name);
+int GetDriverParamInt(const StringList &parm, std::string_view name, int def);
 
 /** A driver for communicating with the user. */
 class Driver {
@@ -103,7 +103,7 @@ private:
 	static void MarkVideoDriverOperational();
 
 protected:
-	DriverFactoryBase(Driver::Type type, int priority, const char *name, const char *description);
+	DriverFactoryBase(Driver::Type type, int priority, std::string_view name, std::string_view description);
 
 	virtual ~DriverFactoryBase();
 

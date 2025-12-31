@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file network_command.cpp Command handling over network connections. */
@@ -79,7 +79,6 @@ static constexpr auto _callback_tuple = std::make_tuple(
 	&CcCreateGroup,
 	&CcFoundRandomTown,
 	&CcRoadStop,
-	&CcBuildIndustry,
 	&CcStartStopVehicle,
 	&CcGame,
 	&CcAddVehicleNewGroup
@@ -110,7 +109,7 @@ inline auto MakeCallbackTable(std::index_sequence<i...>) noexcept
 }
 
 /** Type-erased table of callbacks. */
-static auto _callback_table = MakeCallbackTable(std::make_index_sequence<_callback_tuple_size>{});
+static const auto _callback_table = MakeCallbackTable(std::make_index_sequence<_callback_tuple_size>{});
 
 template <typename T> struct CallbackArgsHelper;
 template <typename... Targs>
@@ -358,22 +357,22 @@ void NetworkDistributeCommands()
  * Receives a command from the network.
  * @param p the packet to read from.
  * @param cp the struct to write the data to.
- * @return an error message. When nullptr there has been no error.
+ * @return An error message, or std::nullopt there has been no error.
  */
-const char *NetworkGameSocketHandler::ReceiveCommand(Packet &p, CommandPacket &cp)
+std::optional<std::string_view> NetworkGameSocketHandler::ReceiveCommand(Packet &p, CommandPacket &cp)
 {
 	cp.company = (CompanyID)p.Recv_uint8();
 	cp.cmd     = static_cast<Commands>(p.Recv_uint16());
-	if (!IsValidCommand(cp.cmd))               return "invalid command";
+	if (!IsValidCommand(cp.cmd)) return "invalid command";
 	if (GetCommandFlags(cp.cmd).Test(CommandFlag::Offline)) return "single-player only command";
 	cp.err_msg = p.Recv_uint16();
 	cp.data    = _cmd_dispatch[cp.cmd].Sanitize(p.Recv_buffer());
 
 	uint8_t callback = p.Recv_uint8();
-	if (callback >= _callback_table.size() || _cmd_dispatch[cp.cmd].Unpack[callback] == nullptr)  return "invalid callback";
+	if (callback >= _callback_table.size() || _cmd_dispatch[cp.cmd].Unpack[callback] == nullptr) return "invalid callback";
 
 	cp.callback = _callback_table[callback];
-	return nullptr;
+	return std::nullopt;
 }
 
 /**

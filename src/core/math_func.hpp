@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file math_func.hpp Integer math functions */
@@ -270,6 +270,12 @@ constexpr bool IsInsideMM(const size_t x, const size_t min, const size_t max) no
 }
 
 constexpr bool IsInsideMM(const ConvertibleThroughBase auto x, const size_t min, const size_t max) noexcept { return IsInsideMM(x.base(), min, max); }
+
+template <typename enum_type, std::enable_if_t<std::is_enum_v<enum_type>, bool> = true>
+constexpr bool IsInsideMM(enum_type x, enum_type min, enum_type max) noexcept
+{
+	return IsInsideMM(to_underlying(x), to_underlying(min), to_underlying(max));
+}
 
 /**
  * Converts a "fract" value 0..255 to "percent" value 0..100

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file common.hpp Common functionality for all blitter implementations. */
@@ -11,7 +11,6 @@
 #define BLITTER_COMMON_HPP
 
 #include "base.hpp"
-#include "../core/math_func.hpp"
 
 #include <utility>
 
@@ -78,11 +77,11 @@ void Blitter::DrawLineGeneric(int x1, int y1, int x2, int y2, int screen_width, 
 		int frac_low  = dy - frac_diff / 2;
 		int frac_high = dy + frac_diff / 2;
 
-		while (frac_low < -(dx / 2)) {
+		while (frac_low < -dx) {
 			frac_low += dx;
 			y_low -= stepy;
 		}
-		while (frac_high >= dx / 2) {
+		while (frac_high >= dy) {
 			frac_high -= dx;
 			y_high += stepy;
 		}
@@ -90,13 +89,14 @@ void Blitter::DrawLineGeneric(int x1, int y1, int x2, int y2, int screen_width, 
 		if (x1 < 0) {
 			dash_count = (-x1) % (dash + gap);
 			auto adjust_frac = [&](int64_t frac, int &y_bound) -> int {
-				frac -= ((int64_t) dy) * ((int64_t) x1);
+				frac -= ((int64_t) dy) * ((int64_t) (x1 + 1));
 				if (frac >= 0) {
 					int quotient = frac / dx;
 					int remainder = frac % dx;
 					y_bound += (1 + quotient) * stepy;
 					frac = remainder - dx;
 				}
+				frac += dy;
 				return frac;
 			};
 			frac_low = adjust_frac(frac_low, y_low);
@@ -140,11 +140,11 @@ void Blitter::DrawLineGeneric(int x1, int y1, int x2, int y2, int screen_width, 
 		int frac_low  = dx - frac_diff / 2;
 		int frac_high = dx + frac_diff / 2;
 
-		while (frac_low < -(dy / 2)) {
+		while (frac_low < -dy) {
 			frac_low += dy;
 			x_low -= stepx;
 		}
-		while (frac_high >= dy / 2) {
+		while (frac_high >= dx) {
 			frac_high -= dy;
 			x_high += stepx;
 		}
@@ -152,13 +152,14 @@ void Blitter::DrawLineGeneric(int x1, int y1, int x2, int y2, int screen_width, 
 		if (y1 < 0) {
 			dash_count = (-y1) % (dash + gap);
 			auto adjust_frac = [&](int64_t frac, int &x_bound) -> int {
-				frac -= ((int64_t) dx) * ((int64_t) y1);
+				frac -= ((int64_t) dx) * ((int64_t) (y1 + 1));
 				if (frac >= 0) {
 					int quotient = frac / dy;
 					int remainder = frac % dy;
 					x_bound += (1 + quotient) * stepx;
 					frac = remainder - dy;
 				}
+				frac += dx;
 				return frac;
 			};
 			frac_low = adjust_frac(frac_low, x_low);
@@ -188,6 +189,26 @@ void Blitter::DrawLineGeneric(int x1, int y1, int x2, int y2, int screen_width, 
 			frac_low += dx;
 			frac_high += dx;
 			if (++dash_count >= dash + gap) dash_count = 0;
+		}
+	}
+}
+
+template <typename T>
+/* static */ void Blitter::MovePixels(const T *src, T *dst, size_t width, size_t height, ptrdiff_t pitch)
+{
+	if (src == dst) return;
+
+	if (src < dst) {
+		for (size_t i = 0; i < height; ++i) {
+			std::move_backward(src, src + width, dst + width);
+			src += pitch;
+			dst += pitch;
+		}
+	} else {
+		for (size_t i = 0; i < height; ++i) {
+			std::move(src, src + width, dst);
+			src += pitch;
+			dst += pitch;
 		}
 	}
 }

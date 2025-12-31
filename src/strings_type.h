@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file strings_type.h Types related to strings. */
@@ -85,7 +85,7 @@ struct StringParameter {
 	inline StringParameter(const std::monostate &data) : data(data), type(0) {}
 	inline StringParameter(uint64_t data) : data(data), type(0) {}
 
-	inline StringParameter(const char *data) : data(std::string{data}), type(0) {}
+	inline StringParameter(std::string_view data) : data(std::string{data}), type(0) {}
 	inline StringParameter(std::string &&data) : data(std::move(data)), type(0) {}
 	inline StringParameter(const std::string &data) : data(data), type(0) {}
 

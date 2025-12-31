@@ -2,12 +2,13 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file console_gui.cpp Handling the GUI of the in-game console. */
 
 #include "stdafx.h"
+#include "core/string_consumer.hpp"
 #include "textbuf_type.h"
 #include "window_gui.h"
 #include "autocompletion.h"
@@ -82,7 +83,7 @@ public:
 private:
 	std::vector<std::string> GetSuggestions(std::string_view prefix, std::string_view query) override
 	{
-		prefix = StrTrimView(prefix);
+		prefix = StrTrimView(prefix, StringConsumer::WHITESPACE_NO_NEWLINE);
 		std::vector<std::string> suggestions;
 
 		/* We only suggest commands or aliases, so we only do it for the first token or an argument to help command. */
@@ -134,15 +135,15 @@ static inline void IConsoleResetHistoryPos()
 }
 
 
-static const char *IConsoleHistoryAdd(const char *cmd);
+static std::optional<std::string_view> IConsoleHistoryAdd(std::string_view cmd);
 static void IConsoleHistoryNavigate(int direction);
 
-static constexpr NWidgetPart _nested_console_window_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_console_window_widgets = {
 	NWidget(WWT_EMPTY, INVALID_COLOUR, WID_C_BACKGROUND), SetResize(1, 1),
 };
 
 static WindowDesc _console_window_desc(
-	WDP_MANUAL, nullptr, 0, 0,
+	WDP_MANUAL, {}, 0, 0,
 	WC_CONSOLE, WC_NONE,
 	{},
 	_nested_console_window_widgets
@@ -235,7 +236,7 @@ struct IConsoleWindow : Window
 	}
 
 	/** Check on a regular interval if the console buffer needs truncating. */
-	IntervalTimer<TimerWindow> truncate_interval = {std::chrono::seconds(3), [this](auto) {
+	const IntervalTimer<TimerWindow> truncate_interval = {std::chrono::seconds(3), [this](auto) {
 		assert(this->height >= 0 && this->line_height > 0);
 		size_t visible_lines = static_cast<size_t>(this->height / this->line_height);
 
@@ -292,10 +293,10 @@ struct IConsoleWindow : Window
 				 * aligned anyway. So enforce this in all cases by adding a left-to-right marker,
 				 * otherwise it will be drawn at the wrong side with right-to-left texts. */
 				IConsolePrint(CC_COMMAND, LRM "] {}", _iconsole_cmdline.GetText());
-				const char *cmd = IConsoleHistoryAdd(_iconsole_cmdline.GetText());
+				auto cmd = IConsoleHistoryAdd(_iconsole_cmdline.GetText());
 				IConsoleClearCommand();
 
-				if (cmd != nullptr) IConsoleCmdExec(cmd);
+				if (cmd.has_value()) IConsoleCmdExec(*cmd);
 				break;
 			}
 
@@ -333,7 +334,7 @@ struct IConsoleWindow : Window
 		return ES_HANDLED;
 	}
 
-	void InsertTextString(WidgetID, const char *str, bool marked, const char *caret, const char *insert_location, const char *replacement_end) override
+	void InsertTextString(WidgetID, std::string_view str, bool marked, std::optional<size_t> caret, std::optional<size_t> insert_location, std::optional<size_t> replacement_end) override
 	{
 		if (_iconsole_cmdline.InsertString(str, marked, caret, insert_location, replacement_end)) {
 			_iconsole_tab_completion.Reset();
@@ -356,7 +357,7 @@ struct IConsoleWindow : Window
 		return pt;
 	}
 
-	Rect GetTextBoundingRect(const char *from, const char *to) const override
+	Rect GetTextBoundingRect(size_t from, size_t to) const override
 	{
 		int delta = std::min<int>(this->width - this->line_offset - _iconsole_cmdline.pixels - ICON_RIGHT_BORDERWIDTH, 0);
 
@@ -376,8 +377,9 @@ struct IConsoleWindow : Window
 		return GetCharAtPosition(_iconsole_cmdline.GetText(), pt.x - delta);
 	}
 
-	void OnMouseWheel(int wheel) override
+	void OnMouseWheel(int wheel, WidgetID widget) override
 	{
+		if (widget != WID_C_BACKGROUND) return;
 		this->Scroll(-wheel);
 	}
 
@@ -482,13 +484,13 @@ void IConsoleClose()
  * @param cmd Text to be entered into the 'history'
  * @return the command to execute
  */
-static const char *IConsoleHistoryAdd(const char *cmd)
+static std::optional<std::string_view> IConsoleHistoryAdd(std::string_view cmd)
 {
 	/* Strip all spaces at the begin */
-	while (IsWhitespace(*cmd)) cmd++;
+	while (!cmd.empty() && IsWhitespace(cmd[0])) cmd.remove_prefix(1);
 
 	/* Do not put empty command in history */
-	if (StrEmpty(cmd)) return nullptr;
+	if (cmd.empty()) return std::nullopt;
 
 	/* Do not put in history if command is same as previous */
 	if (_iconsole_history.empty() || _iconsole_history.front() != cmd) {
@@ -498,7 +500,7 @@ static const char *IConsoleHistoryAdd(const char *cmd)
 
 	/* Reset the history position */
 	IConsoleResetHistoryPos();
-	return _iconsole_history.front().c_str();
+	return _iconsole_history.front();
 }
 
 /**
@@ -576,7 +578,7 @@ bool IsValidConsoleColour(TextColour c)
 	 * colour gradient, so it must be one of those. */
 	c &= ~TC_IS_PALETTE_COLOUR;
 	for (Colours i = COLOUR_BEGIN; i < COLOUR_END; i++) {
-		if (GetColourGradient(i, SHADE_NORMAL) == c) return true;
+		if (GetColourGradient(i, SHADE_NORMAL).p == c) return true;
 	}
 
 	return false;

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file test_window_desc.cpp Test WindowDescs for valid widget parts. */
@@ -14,6 +14,8 @@
 #include "mock_environment.h"
 
 #include "../window_gui.h"
+
+#include "../safeguards.h"
 
 /**
  * List of WindowDescs. Defined in window.cpp but not exposed as this unit-test is the only other place that needs it.
@@ -30,11 +32,11 @@ private:
 
 TEST_CASE("WindowDesc - ini_key uniqueness")
 {
-	std::set<std::string> seen;
+	std::set<std::string_view> seen;
 
 	for (const WindowDesc *window_desc : *_window_descs) {
 
-		if (window_desc->ini_key == nullptr) continue;
+		if (window_desc->ini_key.empty()) continue;
 
 		CAPTURE(window_desc->ini_key);
 		CHECK((seen.find(window_desc->ini_key) == std::end(seen)));
@@ -47,7 +49,7 @@ TEST_CASE("WindowDesc - ini_key validity")
 {
 	const WindowDesc *window_desc = GENERATE(from_range(std::begin(*_window_descs), std::end(*_window_descs)));
 
-	bool has_inikey = window_desc->ini_key != nullptr;
+	bool has_inikey = !window_desc->ini_key.empty();
 	bool has_widget = std::any_of(std::begin(window_desc->nwid_parts), std::end(window_desc->nwid_parts), [](const NWidgetPart &part) { return part.type == WWT_DEFSIZEBOX || part.type == WWT_STICKYBOX; });
 
 	INFO(fmt::format("{}:{}", window_desc->source_location.file_name(), window_desc->source_location.line()));

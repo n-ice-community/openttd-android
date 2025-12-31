@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_basestation.hpp Base for stations/waypoint handling. */
@@ -11,6 +11,7 @@
 #define SCRIPT_BASESTATION_HPP
 
 #include "script_text.hpp"
+#include "script_company.hpp"
 #include "script_date.hpp"
 #include "../../station_type.h"
 
@@ -31,6 +32,15 @@ public:
 	 * @note IsValidBaseStation == (IsValidStation || IsValidWaypoint).
 	 */
 	static bool IsValidBaseStation(StationID station_id);
+
+	/**
+	 * Get the owner of a basestation.
+	 * @param station_id The basestation to get the owner of.
+	 * @pre IsValidBaseStation(station_id).
+	 * @return The owner the basestation has.
+	 * @api -ai
+	 */
+	static ScriptCompany::CompanyID GetOwner(StationID station_id);
 
 	/**
 	 * Get the name of a basestation.

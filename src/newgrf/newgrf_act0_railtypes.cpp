@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_railtypes.cpp NewGRF Action 0x00 handler for railtypes. */
@@ -29,14 +29,15 @@ static ChangeInfoResult RailTypeChangeInfo(uint first, uint last, int prop, Byte
 	ChangeInfoResult ret = CIR_SUCCESS;
 
 	extern RailTypeInfo _railtypes[RAILTYPE_END];
+	const auto &type_map = _cur_gps.grffile->railtype_map;
 
-	if (last > RAILTYPE_END) {
-		GrfMsg(1, "RailTypeChangeInfo: Rail type {} is invalid, max {}, ignoring", last, RAILTYPE_END);
+	if (last > std::size(type_map)) {
+		GrfMsg(1, "RailTypeChangeInfo: Rail type {} is invalid, max {}, ignoring", last, std::size(type_map));
 		return CIR_INVALID_ID;
 	}
 
 	for (uint id = first; id < last; ++id) {
-		RailType rt = _cur_gps.grffile->railtype_map[id];
+		RailType rt = type_map[id];
 		if (rt == INVALID_RAILTYPE) return CIR_INVALID_ID;
 
 		RailTypeInfo *rti = &_railtypes[rt];
@@ -117,11 +118,11 @@ static ChangeInfoResult RailTypeChangeInfo(uint first, uint last, int prop, Byte
 				break;
 
 			case 0x15: // Acceleration model
-				rti->acceleration_type = Clamp(buf.ReadByte(), 0, 2);
+				rti->acceleration_type = static_cast<VehicleAccelerationModel>(Clamp(buf.ReadByte(), 0, 2));
 				break;
 
 			case 0x16: // Map colour
-				rti->map_colour = buf.ReadByte();
+				rti->map_colour = PixelColour{buf.ReadByte()};
 				break;
 
 			case 0x17: // Introduction date
@@ -163,9 +164,10 @@ static ChangeInfoResult RailTypeReserveInfo(uint first, uint last, int prop, Byt
 	ChangeInfoResult ret = CIR_SUCCESS;
 
 	extern RailTypeInfo _railtypes[RAILTYPE_END];
+	auto &type_map = _cur_gps.grffile->railtype_map;
 
-	if (last > RAILTYPE_END) {
-		GrfMsg(1, "RailTypeReserveInfo: Rail type {} is invalid, max {}, ignoring", last, RAILTYPE_END);
+	if (last > std::size(type_map)) {
+		GrfMsg(1, "RailTypeReserveInfo: Rail type {} is invalid, max {}, ignoring", last, std::size(type_map));
 		return CIR_INVALID_ID;
 	}
 
@@ -182,7 +184,7 @@ static ChangeInfoResult RailTypeReserveInfo(uint first, uint last, int prop, Byt
 					rt = AllocateRailType(rtl);
 				}
 
-				_cur_gps.grffile->railtype_map[id] = rt;
+				type_map[id] = rt;
 				break;
 			}
 
@@ -199,10 +201,10 @@ static ChangeInfoResult RailTypeReserveInfo(uint first, uint last, int prop, Byt
 				break;
 
 			case 0x1D: // Alternate rail type label list
-				if (_cur_gps.grffile->railtype_map[id] != INVALID_RAILTYPE) {
+				if (type_map[id] != INVALID_RAILTYPE) {
 					int n = buf.ReadByte();
 					for (int j = 0; j != n; j++) {
-						_railtypes[_cur_gps.grffile->railtype_map[id]].alternate_labels.push_back(std::byteswap(buf.ReadDWord()));
+						_railtypes[type_map[id]].alternate_labels.insert(std::byteswap(buf.ReadDWord()));
 					}
 					break;
 				}

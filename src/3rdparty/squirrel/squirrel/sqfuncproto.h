@@ -99,8 +99,9 @@ public:
 	{
 		SQFunctionProto *f;
 		//I compact the whole class and members in a single memory allocation
-		f = (SQFunctionProto *)sq_vm_malloc(_FUNC_SIZE(ninstructions,nliterals,nparameters,nfunctions,noutervalues,nlineinfos,nlocalvarinfos,ndefaultparams));
-		new (f) SQFunctionProto(ninstructions, nliterals, nparameters, nfunctions, noutervalues, nlineinfos, nlocalvarinfos, ndefaultparams);
+		SQInteger size = _FUNC_SIZE(ninstructions, nliterals, nparameters, nfunctions, noutervalues, nlineinfos, nlocalvarinfos, ndefaultparams);
+		f = (SQFunctionProto *)sq_vm_malloc(size);
+		new (f, size) SQFunctionProto(ninstructions, nliterals, nparameters, nfunctions, noutervalues, nlineinfos, nlocalvarinfos, ndefaultparams);
 		return f;
 	}
 	void Release() override {
@@ -114,7 +115,7 @@ public:
 		this->~SQFunctionProto();
 		sq_vm_free(this,size);
 	}
-	const SQChar* GetLocal(SQVM *v,SQUnsignedInteger stackbase,SQUnsignedInteger nseq,SQUnsignedInteger nop);
+	std::optional<std::string_view> GetLocal(SQVM *v,SQUnsignedInteger stackbase,SQUnsignedInteger nseq,SQUnsignedInteger nop);
 	SQInteger GetLine(SQInstruction *curr);
 	bool Save(SQVM *v,SQUserPointer up,SQWRITEFUNC write);
 	static bool Load(SQVM *v,SQUserPointer up,SQREADFUNC read,SQObjectPtr &ret);

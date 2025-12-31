@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file road.cpp Generic road related functions. */
@@ -24,6 +24,18 @@
 #include "safeguards.h"
 
 /**
+ * Get the RoadType for this RoadTypeInfo.
+ * @return RoadType in static RoadTypeInfo definitions.
+ */
+RoadType RoadTypeInfo::Index() const
+{
+	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
+	size_t index = this - _roadtypes;
+	assert(index < ROADTYPE_END);
+	return static_cast<RoadType>(index);
+}
+
+/**
  * Return if the tile is a valid tile for a crossing.
  *
  * @param tile the current tile
@@ -33,7 +45,7 @@
 static bool IsPossibleCrossing(const TileIndex tile, Axis ax)
 {
 	return (IsTileType(tile, MP_RAILWAY) &&
-		GetRailTileType(tile) == RAIL_TILE_NORMAL &&
+		GetRailTileType(tile) == RailTileType::Normal &&
 		GetTrackBits(tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X) &&
 		std::get<0>(GetFoundationSlope(tile)) == SLOPE_FLAT);
 }
@@ -179,7 +191,7 @@ RoadTypes AddDateIntroducedRoadTypes(RoadTypes current, TimerGameCalendar::Date 
 
 		/* Have we introduced all required roadtypes? */
 		RoadTypes required = rti->introduction_required_roadtypes;
-		if ((rts & required) != required) continue;
+		if (!rts.All(required)) continue;
 
 		rts.Set(rti->introduces_roadtypes);
 	}
@@ -204,7 +216,7 @@ RoadTypes GetCompanyRoadTypes(CompanyID company, bool introduces)
 
 		if (ei->climates.Test(_settings_game.game_creation.landscape) &&
 				(e->company_avail.Test(company) || TimerGameCalendar::date >= e->intro_date + CalendarTime::DAYS_IN_YEAR)) {
-			const RoadVehicleInfo *rvi = &e->u.road;
+			const RoadVehicleInfo *rvi = &e->VehInfo<RoadVehicleInfo>();
 			assert(rvi->roadtype < ROADTYPE_END);
 			if (introduces) {
 				rts.Set(GetRoadTypeInfo(rvi->roadtype)->introduces_roadtypes);
@@ -231,7 +243,7 @@ RoadTypes GetRoadTypes(bool introduces)
 		const EngineInfo *ei = &e->info;
 		if (!ei->climates.Test(_settings_game.game_creation.landscape)) continue;
 
-		const RoadVehicleInfo *rvi = &e->u.road;
+		const RoadVehicleInfo *rvi = &e->VehInfo<RoadVehicleInfo>();
 		assert(rvi->roadtype < ROADTYPE_END);
 		if (introduces) {
 			rts.Set(GetRoadTypeInfo(rvi->roadtype)->introduces_roadtypes);
@@ -252,21 +264,16 @@ RoadTypes GetRoadTypes(bool introduces)
  */
 RoadType GetRoadTypeByLabel(RoadTypeLabel label, bool allow_alternate_labels)
 {
+	extern RoadTypeInfo _roadtypes[ROADTYPE_END];
 	if (label == 0) return INVALID_ROADTYPE;
 
-	/* Loop through each road type until the label is found */
-	for (RoadType r = ROADTYPE_BEGIN; r != ROADTYPE_END; r++) {
-		const RoadTypeInfo *rti = GetRoadTypeInfo(r);
-		if (rti->label == label) return r;
+	auto it = std::ranges::find(_roadtypes, label, &RoadTypeInfo::label);
+	if (it == std::end(_roadtypes) && allow_alternate_labels) {
+		/* Test if any road type defines the label as an alternate. */
+		it = std::ranges::find_if(_roadtypes, [label](const RoadTypeInfo &rti) { return rti.alternate_labels.contains(label); });
 	}
 
-	if (allow_alternate_labels) {
-		/* Test if any road type defines the label as an alternate. */
-		for (RoadType r = ROADTYPE_BEGIN; r != ROADTYPE_END; r++) {
-			const RoadTypeInfo *rti = GetRoadTypeInfo(r);
-			if (std::ranges::find(rti->alternate_labels, label) != rti->alternate_labels.end()) return r;
-		}
-	}
+	if (it != std::end(_roadtypes)) return it->Index();
 
 	/* No matching label was found, so it is invalid */
 	return INVALID_ROADTYPE;

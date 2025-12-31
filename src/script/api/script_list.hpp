@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_list.hpp A list which can keep item/value pairs, which you can walk. */
@@ -88,11 +88,9 @@ protected:
 			sq_push(vm, 2);
 		}
 
-		/* Don't allow docommand from a Valuator, as we can't resume in
+		/* Don't allow docommand from a filter, as we can't resume in
 		 * mid C++-code. */
-		bool backup_allow = ScriptObject::GetAllowDoCommand();
-		ScriptObject::SetAllowDoCommand(false);
-
+		ScriptObject::DisableDoCommandScope disabler{};
 
 		if (nparam < 1) {
 			ScriptList::FillList<T>(list, item_valid);
@@ -101,7 +99,7 @@ protected:
 			SQOpsLimiter limiter(vm, MAX_VALUATE_OPS, "list filter function");
 
 			ScriptList::FillList<T>(list, item_valid,
-				[vm, nparam, backup_allow](const T *item) {
+				[vm, nparam](const T *item) {
 					/* Push the root table as instance object, this is what squirrel does for meta-functions. */
 					sq_pushroottable(vm);
 					/* Push all arguments for the valuator function. */
@@ -111,9 +109,8 @@ protected:
 					}
 
 					/* Call the function. Squirrel pops all parameters and pushes the return value. */
-					if (SQ_FAILED(sq_call(vm, nparam + 1, SQTrue, SQTrue))) {
-						ScriptObject::SetAllowDoCommand(backup_allow);
-						throw sq_throwerror(vm, "failed to run filter");
+					if (SQ_FAILED(sq_call(vm, nparam + 1, SQTrue, SQFalse))) {
+						throw static_cast<SQInteger>(SQ_ERROR);
 					}
 
 					SQBool add = SQFalse;
@@ -125,7 +122,6 @@ protected:
 							break;
 
 						default:
-							ScriptObject::SetAllowDoCommand(backup_allow);
 							throw sq_throwerror(vm, "return value of filter is not valid (not bool)");
 					}
 
@@ -139,8 +135,6 @@ protected:
 			/* Pop the filter function */
 			sq_poptop(vm);
 		}
-
-		ScriptObject::SetAllowDoCommand(backup_allow);
 	}
 
 	template <typename T>
@@ -151,6 +145,13 @@ protected:
 
 	virtual bool SaveObject(HSQUIRRELVM vm) override;
 	virtual bool LoadObject(HSQUIRRELVM vm) override;
+	virtual ScriptObject *CloneObject() override;
+
+	/**
+	 * Copy the content of a list.
+	 * @param list The list that will be copied.
+	 */
+	void CopyList(const ScriptList *list);
 
 public:
 	typedef std::set<SQInteger> ScriptItemList;                   ///< The list of items inside the bucket

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file statusbar_gui.cpp The GUI for the bottom status bar. */
@@ -75,9 +75,9 @@ struct StatusBarWindow : Window {
 		return pt;
 	}
 
-	void FindWindowPlacementAndResize([[maybe_unused]] int def_width, [[maybe_unused]] int def_height) override
+	void FindWindowPlacementAndResize(int, int def_height, bool allow_resize) override
 	{
-		Window::FindWindowPlacementAndResize(std::min(_toolbar_width, _screen.width * 2 / 3 - GetMinButtonSize() * 2), def_height);
+		Window::FindWindowPlacementAndResize(std::min(_toolbar_width, _screen.width * 2 / 3 - GetMinButtonSize() * 2), def_height, allow_resize);
 	}
 
 	void UpdateWidgetSize(WidgetID widget, Dimension &size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension &fill, [[maybe_unused]] Dimension &resize) override
@@ -116,7 +116,7 @@ struct StatusBarWindow : Window {
 	void DrawWidget(const Rect &r, WidgetID widget) const override
 	{
 		Rect tr = r.Shrink(WidgetDimensions::scaled.framerect, RectPadding::zero);
-		tr.top = CenterBounds(r.top, r.bottom, GetCharacterHeight(FS_NORMAL));
+		tr.top = CentreBounds(r.top, r.bottom, GetCharacterHeight(FS_NORMAL));
 		switch (widget) {
 			case WID_S_LEFT:
 				/* Draw the date */
@@ -165,7 +165,7 @@ struct StatusBarWindow : Window {
 
 				if (!this->reminder_timeout.HasFired()) {
 					Dimension icon_size = GetSpriteSize(SPR_UNREAD_NEWS);
-					DrawSprite(SPR_UNREAD_NEWS, PAL_NONE, tr.right - icon_size.width, CenterBounds(r.top, r.bottom, icon_size.height));
+					DrawSprite(SPR_UNREAD_NEWS, PAL_NONE, tr.right - icon_size.width, CentreBounds(r.top, r.bottom, icon_size.height));
 				}
 				break;
 		}
@@ -202,7 +202,7 @@ struct StatusBarWindow : Window {
 	}
 
 	/** Move information on the ticker slowly from one side to the other. */
-	IntervalTimer<TimerWindow> ticker_scroll_interval = {std::chrono::milliseconds(15), [this](uint count) {
+	const IntervalTimer<TimerWindow> ticker_scroll_interval = {std::chrono::milliseconds(15), [this](uint count) {
 		if (_pause_mode.Any()) return;
 
 		if (this->ticker_scroll < TICKER_STOP) {
@@ -215,12 +215,12 @@ struct StatusBarWindow : Window {
 		this->SetWidgetDirty(WID_S_MIDDLE);
 	}};
 
-	IntervalTimer<TimerGameCalendar> daily_interval = {{TimerGameCalendar::DAY, TimerGameCalendar::Priority::NONE}, [this](auto) {
+	const IntervalTimer<TimerGameCalendar> daily_interval = {{TimerGameCalendar::DAY, TimerGameCalendar::Priority::NONE}, [this](auto) {
 		this->SetWidgetDirty(WID_S_LEFT);
 	}};
 };
 
-static constexpr NWidgetPart _nested_main_status_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_main_status_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_PANEL, COLOUR_GREY, WID_S_LEFT), SetMinimalSize(140, 12), EndContainer(),
 		NWidget(WWT_PUSHBTN, COLOUR_GREY, WID_S_MIDDLE), SetMinimalSize(40, 12), SetToolTip(STR_STATUSBAR_TOOLTIP_SHOW_LAST_NEWS), SetResize(1, 0),
@@ -229,7 +229,7 @@ static constexpr NWidgetPart _nested_main_status_widgets[] = {
 };
 
 static WindowDesc _main_status_desc(
-	WDP_MANUAL, nullptr, 0, 0,
+	WDP_MANUAL, {}, 0, 0,
 	WC_STATUS_BAR, WC_NONE,
 	{WindowDefaultFlag::NoFocus, WindowDefaultFlag::NoClose},
 	_nested_main_status_widgets

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file yapf_costcache.hpp Caching of segment costs. */
@@ -20,8 +20,7 @@
  * defined (they don't count with any segment cost caching).
  */
 template <class Types>
-class CYapfSegmentCostCacheNoneT
-{
+class CYapfSegmentCostCacheNoneT {
 public:
 	typedef typename Types::Tpf Tpf; ///< the pathfinder class (derived from THIS class)
 	typedef typename Types::NodeList::Item Node; ///< this will be our node type
@@ -43,8 +42,7 @@ public:
  *  to be shared between all rail YAPF types (one shared counter, one notification
  *  function.
  */
-struct CSegmentCostCacheBase
-{
+struct CSegmentCostCacheBase {
 	static int   s_rail_change_counter;
 
 	static void NotifyTrackLayoutChange(TileIndex, Track)
@@ -124,7 +122,7 @@ protected:
 		return *static_cast<Tpf *>(this);
 	}
 
-	inline static Cache &stGetGlobalCache()
+	static inline Cache &stGetGlobalCache()
 	{
 		static int last_rail_change_counter = 0;
 		static Cache C;

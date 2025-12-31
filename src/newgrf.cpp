@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf.cpp Base of all NewGRF support. */
@@ -10,6 +10,7 @@
 #include "stdafx.h"
 #include "core/backup_type.hpp"
 #include "core/container_func.hpp"
+#include "company_manager_face.h"
 #include "debug.h"
 #include "fileio_func.h"
 #include "engine_func.h"
@@ -22,6 +23,7 @@
 #include "currency.h"
 #include "landscape.h"
 #include "newgrf_badge.h"
+#include "newgrf_badge_config.h"
 #include "newgrf_cargo.h"
 #include "newgrf_sound.h"
 #include "newgrf_station.h"
@@ -73,7 +75,7 @@ GRFLoadedFeatures _loaded_newgrf_features;
 
 GrfProcessingState _cur_gps;
 
-ReferenceThroughBaseContainer<std::vector<GRFTempEngineData>> _gted;  ///< Temporary engine data used during NewGRF loading
+TypedIndexContainer<std::vector<GRFTempEngineData>, EngineID> _gted;  ///< Temporary engine data used during NewGRF loading
 
 /**
  * Debug() function dedicated to newGRF debugging messages
@@ -146,9 +148,12 @@ GRFError *DisableGrf(StringID message, GRFConfig *config)
 
 	if (message == STR_NULL) return nullptr;
 
-	config->error = {STR_NEWGRF_ERROR_MSG_FATAL, message};
-	if (config == _cur_gps.grfconfig) config->error->param_value[0] = _cur_gps.nfo_line;
-	return &config->error.value();
+	auto it = std::ranges::find(config->errors, _cur_gps.nfo_line, &GRFError::nfo_line);
+	if (it == std::end(config->errors)) {
+		it = config->errors.emplace(it, STR_NEWGRF_ERROR_MSG_FATAL, _cur_gps.nfo_line, message);
+	}
+	if (config == _cur_gps.grfconfig) it->param_value[0] = _cur_gps.nfo_line;
+	return &*it;
 }
 
 /**
@@ -269,7 +274,8 @@ Engine *GetNewEngine(const GRFFile *file, VehicleType type, uint16_t internal_id
 		_gted.resize(Engine::GetPoolSize());
 	}
 	if (type == VEH_TRAIN) {
-		_gted[e->index].railtypelabel = GetRailTypeInfo(e->u.rail.railtype)->label;
+		_gted[e->index].railtypelabels.clear();
+		for (RailType rt : e->VehInfo<RailVehicleInfo>().railtypes) _gted[e->index].railtypelabels.push_back(GetRailTypeInfo(rt)->label);
 	}
 
 	GrfMsg(5, "Created new engine at index {} for GRFID {:x}, type {}, index {}", e->index, std::byteswap(file->grfid), type, internal_id);
@@ -323,7 +329,7 @@ CargoTypes TranslateRefitMask(uint32_t refit_mask)
  * @param error_location Function name for grf error messages
  * @param[out] index If \a base_pointer is valid, \a index is assigned to the matching price; else it is left unchanged
  */
-void ConvertTTDBasePrice(uint32_t base_pointer, const char *error_location, Price *index)
+void ConvertTTDBasePrice(uint32_t base_pointer, std::string_view error_location, Price *index)
 {
 	/* Special value for 'none' */
 	if (base_pointer == 0) {
@@ -389,7 +395,7 @@ static void ResetNewGRF()
 static void ResetNewGRFErrors()
 {
 	for (const auto &c : _grfconfig) {
-		c->error.reset();
+		c->errors.clear();
 	}
 }
 
@@ -423,7 +429,8 @@ void ResetNewGRFData()
 
 	/* Fill rail type label temporary data for default trains */
 	for (const Engine *e : Engine::IterateType(VEH_TRAIN)) {
-		_gted[e->index].railtypelabel = GetRailTypeInfo(e->u.rail.railtype)->label;
+		_gted[e->index].railtypelabels.clear();
+		for (RailType rt : e->VehInfo<RailVehicleInfo>().railtypes) _gted[e->index].railtypelabels.push_back(GetRailTypeInfo(rt)->label);
 	}
 
 	/* Reset GRM reservations */
@@ -461,6 +468,8 @@ void ResetNewGRFData()
 
 	/* Reset canal sprite groups and flags */
 	_water_feature.fill({});
+
+	ResetFaces();
 
 	/* Reset the snowline table. */
 	ClearSnowLine();
@@ -655,7 +664,7 @@ static void CalculateRefitMasks()
 		/* If the NewGRF did not set any cargo properties, we apply default values. */
 		if (_gted[engine].defaultcargo_grf == nullptr) {
 			/* If the vehicle has any capacity, apply the default refit masks */
-			if (e->type != VEH_TRAIN || e->u.rail.capacity != 0) {
+			if (e->type != VEH_TRAIN || e->VehInfo<RailVehicleInfo>().capacity != 0) {
 				static constexpr LandscapeType T = LandscapeType::Temperate;
 				static constexpr LandscapeType A = LandscapeType::Arctic;
 				static constexpr LandscapeType S = LandscapeType::Tropic;
@@ -710,8 +719,8 @@ static void CalculateRefitMasks()
 							}
 							break;
 					}
-					e->u.ship.old_refittable = true;
-				} else if (e->type == VEH_TRAIN && e->u.rail.railveh_type != RAILVEH_WAGON) {
+					e->VehInfo<ShipVehicleInfo>().old_refittable = true;
+				} else if (e->type == VEH_TRAIN && e->VehInfo<RailVehicleInfo>().railveh_type != RAILVEH_WAGON) {
 					/* Train engines default to all cargoes, so you can build single-cargo consists with fast engines.
 					 * Trains loading multiple cargoes may start stations accepting unwanted cargoes. */
 					_gted[engine].cargo_allowed = {CargoClass::Passengers, CargoClass::Mail, CargoClass::Armoured, CargoClass::Express, CargoClass::Bulk, CargoClass::PieceGoods, CargoClass::Liquid};
@@ -786,7 +795,7 @@ static void CalculateRefitMasks()
 
 		/* Ensure that the vehicle is either not refittable, or that the default cargo is one of the refittable cargoes.
 		 * Note: Vehicles refittable to no cargo are handle differently to vehicle refittable to a single cargo. The latter might have subtypes. */
-		if (!only_defaultcargo && (e->type != VEH_SHIP || e->u.ship.old_refittable) && IsValidCargoType(ei->cargo_type) && !HasBit(ei->refit_mask, ei->cargo_type)) {
+		if (!only_defaultcargo && (e->type != VEH_SHIP || e->VehInfo<ShipVehicleInfo>().old_refittable) && IsValidCargoType(ei->cargo_type) && !HasBit(ei->refit_mask, ei->cargo_type)) {
 			ei->cargo_type = INVALID_CARGO;
 		}
 
@@ -813,7 +822,7 @@ static void CalculateRefitMasks()
 				ei->cargo_type = (CargoType)FindFirstBit(ei->refit_mask);
 			}
 		}
-		if (!IsValidCargoType(ei->cargo_type) && e->type == VEH_TRAIN && e->u.rail.railveh_type != RAILVEH_WAGON && e->u.rail.capacity == 0) {
+		if (!IsValidCargoType(ei->cargo_type) && e->type == VEH_TRAIN && e->VehInfo<RailVehicleInfo>().railveh_type != RAILVEH_WAGON && e->VehInfo<RailVehicleInfo>().capacity == 0) {
 			/* For train engines which do not carry cargo it does not matter if their cargo type is invalid.
 			 * Fallback to the first available instead, if the cargo type has not been changed (as indicated by
 			 * cargo_label not being CT_INVALID). */
@@ -824,7 +833,7 @@ static void CalculateRefitMasks()
 		if (!IsValidCargoType(ei->cargo_type)) ei->climates = {};
 
 		/* Clear refit_mask for not refittable ships */
-		if (e->type == VEH_SHIP && !e->u.ship.old_refittable) {
+		if (e->type == VEH_SHIP && !e->VehInfo<ShipVehicleInfo>().old_refittable) {
 			ei->refit_mask = 0;
 		}
 	}
@@ -860,13 +869,17 @@ static void FinaliseEngineArray()
 		if (!e->info.climates.Test(_settings_game.game_creation.landscape)) continue;
 
 		switch (e->type) {
-			case VEH_TRAIN: AppendCopyableBadgeList(e->badges, GetRailTypeInfo(e->u.rail.railtype)->badges, GSF_TRAINS); break;
-			case VEH_ROAD: AppendCopyableBadgeList(e->badges, GetRoadTypeInfo(e->u.road.roadtype)->badges, GSF_ROADVEHICLES); break;
+			case VEH_TRAIN:
+				for (RailType rt : e->VehInfo<RailVehicleInfo>().railtypes) {
+					AppendCopyableBadgeList(e->badges, GetRailTypeInfo(rt)->badges, GSF_TRAINS);
+				}
+				break;
+			case VEH_ROAD: AppendCopyableBadgeList(e->badges, GetRoadTypeInfo(e->VehInfo<RoadVehicleInfo>().roadtype)->badges, GSF_ROADVEHICLES); break;
 			default: break;
 		}
 
 		/* Skip wagons, there livery is defined via the engine */
-		if (e->type != VEH_TRAIN || e->u.rail.railveh_type != RAILVEH_WAGON) {
+		if (e->type != VEH_TRAIN || e->VehInfo<RailVehicleInfo>().railveh_type != RAILVEH_WAGON) {
 			LiveryScheme ls = GetEngineLiveryScheme(e->index, EngineID::Invalid(), nullptr);
 			SetBit(_loaded_newgrf_features.used_liveries, ls);
 			/* Note: For ships and roadvehicles we assume that they cannot be refitted between passenger and freight */
@@ -894,12 +907,18 @@ static void FinaliseEngineArray()
 	}
 
 	/* Check engine variants don't point back on themselves (either directly or via a loop) then set appropriate flags
-	 * on variant engine. This is performed separately as all variant engines need to have been resolved. */
+	 * on variant engine. This is performed separately as all variant engines need to have been resolved.
+	 * Use Floyd's cycle-detection algorithm to handle the case where a cycle is present but does
+	 * not include the starting engine ID. */
 	for (Engine *e : Engine::Iterate()) {
 		EngineID parent = e->info.variant_id;
+		EngineID parent_slow = parent;
+		bool update_slow = false;
 		while (parent != EngineID::Invalid()) {
 			parent = Engine::Get(parent)->info.variant_id;
-			if (parent != e->index) continue;
+			if (update_slow) parent_slow = Engine::Get(parent_slow)->info.variant_id;
+			update_slow = !update_slow;
+			if (parent != e->index && parent != parent_slow) continue;
 
 			/* Engine looped back on itself, so clear the variant. */
 			e->info.variant_id = EngineID::Invalid();
@@ -909,7 +928,7 @@ static void FinaliseEngineArray()
 		}
 
 		if (e->info.variant_id != EngineID::Invalid()) {
-			Engine::Get(e->info.variant_id)->display_flags.Set(EngineDisplayFlag::HasVariants).Set(EngineDisplayFlag::IsFolded);
+			Engine::Get(e->info.variant_id)->display_flags.Set({EngineDisplayFlag::HasVariants, EngineDisplayFlag::IsFolded});
 		}
 	}
 }
@@ -945,40 +964,40 @@ void FinaliseCargoArray()
  * @param filename The filename of the newgrf this house was defined in.
  * @return Whether the given housespec is valid.
  */
-static bool IsHouseSpecValid(HouseSpec *hs, const HouseSpec *next1, const HouseSpec *next2, const HouseSpec *next3, const std::string &filename)
+static bool IsHouseSpecValid(HouseSpec &hs, const HouseSpec *next1, const HouseSpec *next2, const HouseSpec *next3, const std::string &filename)
 {
-	if ((hs->building_flags.Any(BUILDING_HAS_2_TILES) &&
+	if ((hs.building_flags.Any(BUILDING_HAS_2_TILES) &&
 				(next1 == nullptr || !next1->enabled || next1->building_flags.Any(BUILDING_HAS_1_TILE))) ||
-			(hs->building_flags.Any(BUILDING_HAS_4_TILES) &&
+			(hs.building_flags.Any(BUILDING_HAS_4_TILES) &&
 				(next2 == nullptr || !next2->enabled || next2->building_flags.Any(BUILDING_HAS_1_TILE) ||
 				next3 == nullptr || !next3->enabled || next3->building_flags.Any(BUILDING_HAS_1_TILE)))) {
-		hs->enabled = false;
-		if (!filename.empty()) Debug(grf, 1, "FinaliseHouseArray: {} defines house {} as multitile, but no suitable tiles follow. Disabling house.", filename, hs->grf_prop.local_id);
+		hs.enabled = false;
+		if (!filename.empty()) Debug(grf, 1, "FinaliseHouseArray: {} defines house {} as multitile, but no suitable tiles follow. Disabling house.", filename, hs.grf_prop.local_id);
 		return false;
 	}
 
 	/* Some places sum population by only counting north tiles. Other places use all tiles causing desyncs.
 	 * As the newgrf specs define population to be zero for non-north tiles, we just disable the offending house.
 	 * If you want to allow non-zero populations somewhen, make sure to sum the population of all tiles in all places. */
-	if ((hs->building_flags.Any(BUILDING_HAS_2_TILES) && next1->population != 0) ||
-			(hs->building_flags.Any(BUILDING_HAS_4_TILES) && (next2->population != 0 || next3->population != 0))) {
-		hs->enabled = false;
-		if (!filename.empty()) Debug(grf, 1, "FinaliseHouseArray: {} defines multitile house {} with non-zero population on additional tiles. Disabling house.", filename, hs->grf_prop.local_id);
+	if ((hs.building_flags.Any(BUILDING_HAS_2_TILES) && next1->population != 0) ||
+			(hs.building_flags.Any(BUILDING_HAS_4_TILES) && (next2->population != 0 || next3->population != 0))) {
+		hs.enabled = false;
+		if (!filename.empty()) Debug(grf, 1, "FinaliseHouseArray: {} defines multitile house {} with non-zero population on additional tiles. Disabling house.", filename, hs.grf_prop.local_id);
 		return false;
 	}
 
 	/* Substitute type is also used for override, and having an override with a different size causes crashes.
 	 * This check should only be done for NewGRF houses because grf_prop.subst_id is not set for original houses.*/
-	if (!filename.empty() && (hs->building_flags & BUILDING_HAS_1_TILE) != (HouseSpec::Get(hs->grf_prop.subst_id)->building_flags & BUILDING_HAS_1_TILE)) {
-		hs->enabled = false;
-		Debug(grf, 1, "FinaliseHouseArray: {} defines house {} with different house size then it's substitute type. Disabling house.", filename, hs->grf_prop.local_id);
+	if (!filename.empty() && (hs.building_flags & BUILDING_HAS_1_TILE) != (HouseSpec::Get(hs.grf_prop.subst_id)->building_flags & BUILDING_HAS_1_TILE)) {
+		hs.enabled = false;
+		Debug(grf, 1, "FinaliseHouseArray: {} defines house {} with different house size then it's substitute type. Disabling house.", filename, hs.grf_prop.local_id);
 		return false;
 	}
 
 	/* Make sure that additional parts of multitile houses are not available. */
-	if (!hs->building_flags.Any(BUILDING_HAS_1_TILE) && (hs->building_availability & HZ_ZONALL) != 0 && (hs->building_availability & HZ_CLIMALL) != 0) {
-		hs->enabled = false;
-		if (!filename.empty()) Debug(grf, 1, "FinaliseHouseArray: {} defines house {} without a size but marked it as available. Disabling house.", filename, hs->grf_prop.local_id);
+	if (!hs.building_flags.Any(BUILDING_HAS_1_TILE) && hs.building_availability.Any(HZ_ZONE_ALL) && hs.building_availability.Any(HZ_CLIMATE_ALL)) {
+		hs.enabled = false;
+		if (!filename.empty()) Debug(grf, 1, "FinaliseHouseArray: {} defines house {} without a size but marked it as available. Disabling house.", filename, hs.grf_prop.local_id);
 		return false;
 	}
 
@@ -997,7 +1016,7 @@ static void EnsureEarlyHouse(HouseZones bitmask)
 
 	for (const auto &hs : HouseSpec::Specs()) {
 		if (!hs.enabled) continue;
-		if ((hs.building_availability & bitmask) != bitmask) continue;
+		if (!hs.building_availability.All(bitmask)) continue;
 		if (hs.min_year < min_year) min_year = hs.min_year;
 	}
 
@@ -1005,7 +1024,7 @@ static void EnsureEarlyHouse(HouseZones bitmask)
 
 	for (auto &hs : HouseSpec::Specs()) {
 		if (!hs.enabled) continue;
-		if ((hs.building_availability & bitmask) != bitmask) continue;
+		if (!hs.building_availability.All(bitmask)) continue;
 		if (hs.min_year == min_year) hs.min_year = CalendarTime::MIN_YEAR;
 	}
 }
@@ -1027,12 +1046,12 @@ static void FinaliseHouseArray()
 	 * On the other hand, why 1930? Just 'fix' the houses with the lowest
 	 * minimum introduction date to 0.
 	 */
-	for (const auto &file : _grf_files) {
+	for (auto &file : _grf_files) {
 		if (file.housespec.empty()) continue;
 
 		size_t num_houses = file.housespec.size();
 		for (size_t i = 0; i < num_houses; i++) {
-			HouseSpec *hs = file.housespec[i].get();
+			auto &hs = file.housespec[i];
 
 			if (hs == nullptr) continue;
 
@@ -1040,10 +1059,14 @@ static void FinaliseHouseArray()
 			const HouseSpec *next2 = (i + 2 < num_houses ? file.housespec[i + 2].get() : nullptr);
 			const HouseSpec *next3 = (i + 3 < num_houses ? file.housespec[i + 3].get() : nullptr);
 
-			if (!IsHouseSpecValid(hs, next1, next2, next3, file.filename)) continue;
+			if (!IsHouseSpecValid(*hs, next1, next2, next3, file.filename)) continue;
 
-			_house_mngr.SetEntitySpec(hs);
+			_house_mngr.SetEntitySpec(std::move(*hs));
 		}
+
+		/* Won't be used again */
+		file.housespec.clear();
+		file.housespec.shrink_to_fit();
 	}
 
 	for (size_t i = 0; i < HouseSpec::Specs().size(); i++) {
@@ -1054,7 +1077,7 @@ static void FinaliseHouseArray()
 
 		/* We need to check all houses again to we are sure that multitile houses
 		 * did get consecutive IDs and none of the parts are missing. */
-		if (!IsHouseSpecValid(hs, next1, next2, next3, std::string{})) {
+		if (!IsHouseSpecValid(*hs, next1, next2, next3, std::string{})) {
 			/* GetHouseNorthPart checks 3 houses that are directly before
 			 * it in the house pool. If any of those houses have multi-tile
 			 * flags set it assumes it's part of a multitile house. Since
@@ -1073,19 +1096,11 @@ static void FinaliseHouseArray()
 		}
 	}
 
-	HouseZones climate_mask = (HouseZones)(1 << (to_underlying(_settings_game.game_creation.landscape) + 12));
-	EnsureEarlyHouse(HZ_ZON1 | climate_mask);
-	EnsureEarlyHouse(HZ_ZON2 | climate_mask);
-	EnsureEarlyHouse(HZ_ZON3 | climate_mask);
-	EnsureEarlyHouse(HZ_ZON4 | climate_mask);
-	EnsureEarlyHouse(HZ_ZON5 | climate_mask);
-
-	if (_settings_game.game_creation.landscape == LandscapeType::Arctic) {
-		EnsureEarlyHouse(HZ_ZON1 | HZ_SUBARTC_ABOVE);
-		EnsureEarlyHouse(HZ_ZON2 | HZ_SUBARTC_ABOVE);
-		EnsureEarlyHouse(HZ_ZON3 | HZ_SUBARTC_ABOVE);
-		EnsureEarlyHouse(HZ_ZON4 | HZ_SUBARTC_ABOVE);
-		EnsureEarlyHouse(HZ_ZON5 | HZ_SUBARTC_ABOVE);
+	HouseZones climate_mask = GetClimateMaskForLandscape();
+	for (HouseZone climate : climate_mask) {
+		for (HouseZone zone : HZ_ZONE_ALL) {
+			EnsureEarlyHouse({climate, zone});
+		}
 	}
 }
 
@@ -1096,18 +1111,24 @@ static void FinaliseHouseArray()
  */
 static void FinaliseIndustriesArray()
 {
-	for (const auto &file : _grf_files) {
-		for (const auto &indsp : file.industryspec) {
+	for (auto &file : _grf_files) {
+		for (auto &indsp : file.industryspec) {
 			if (indsp == nullptr || !indsp->enabled) continue;
 
-			_industry_mngr.SetEntitySpec(indsp.get());
+			_industry_mngr.SetEntitySpec(std::move(*indsp));
 		}
 
-		for (const auto &indtsp : file.indtspec) {
+		for (auto &indtsp : file.indtspec) {
 			if (indtsp != nullptr) {
-				_industile_mngr.SetEntitySpec(indtsp.get());
+				_industile_mngr.SetEntitySpec(std::move(*indtsp));
 			}
 		}
+
+		/* Won't be used again */
+		file.industryspec.clear();
+		file.industryspec.shrink_to_fit();
+		file.indtspec.clear();
+		file.indtspec.shrink_to_fit();
 	}
 
 	for (auto &indsp : _industry_specs) {
@@ -1144,12 +1165,16 @@ static void FinaliseIndustriesArray()
  */
 static void FinaliseObjectsArray()
 {
-	for (const auto &file : _grf_files) {
+	for (auto &file : _grf_files) {
 		for (auto &objectspec : file.objectspec) {
 			if (objectspec != nullptr && objectspec->grf_prop.HasGrfFile() && objectspec->IsEnabled()) {
-				_object_mngr.SetEntitySpec(objectspec.get());
+				_object_mngr.SetEntitySpec(std::move(*objectspec));
 			}
 		}
+
+		/* Won't be used again */
+		file.objectspec.clear();
+		file.objectspec.shrink_to_fit();
 	}
 
 	ObjectSpec::BindToClasses();
@@ -1162,18 +1187,24 @@ static void FinaliseObjectsArray()
  */
 static void FinaliseAirportsArray()
 {
-	for (const auto &file : _grf_files) {
+	for (auto &file : _grf_files) {
 		for (auto &as : file.airportspec) {
 			if (as != nullptr && as->enabled) {
-				_airport_mngr.SetEntitySpec(as.get());
+				_airport_mngr.SetEntitySpec(std::move(*as));
 			}
 		}
 
 		for (auto &ats : file.airtspec) {
 			if (ats != nullptr && ats->enabled) {
-				_airporttile_mngr.SetEntitySpec(ats.get());
+				_airporttile_mngr.SetEntitySpec(std::move(*ats));
 			}
 		}
+
+		/* Won't be used again */
+		file.airportspec.clear();
+		file.airportspec.shrink_to_fit();
+		file.airtspec.clear();
+		file.airtspec.shrink_to_fit();
 	}
 }
 
@@ -1218,23 +1249,26 @@ struct InvokeGrfActionHandler {
  * XXX: We consider GRF files trusted. It would be trivial to exploit OTTD by
  * a crafted invalid GRF file. We should tell that to the user somehow, or
  * better make this more robust in the future. */
-static void DecodeSpecialSprite(uint8_t *buf, uint num, GrfLoadingStage stage)
+static void DecodeSpecialSprite(ReusableBuffer<uint8_t> &allocator, uint num, GrfLoadingStage stage)
 {
+	uint8_t *buf;
 	auto it = _grf_line_to_action6_sprite_override.find({_cur_gps.grfconfig->ident.grfid, _cur_gps.nfo_line});
 	if (it == _grf_line_to_action6_sprite_override.end()) {
 		/* No preloaded sprite to work with; read the
 		 * pseudo sprite content. */
+		buf = allocator.Allocate(num);
 		_cur_gps.file->ReadBlock(buf, num);
 	} else {
 		/* Use the preloaded sprite data. */
 		buf = it->second.data();
+		assert(it->second.size() == num);
 		GrfMsg(7, "DecodeSpecialSprite: Using preloaded pseudo sprite data");
 
 		/* Skip the real (original) content of this action. */
 		_cur_gps.file->SeekTo(num, SEEK_CUR);
 	}
 
-	ByteReader br(buf, buf + num);
+	ByteReader br(buf, num);
 
 	try {
 		uint8_t action = br.ReadByte();
@@ -1302,7 +1336,7 @@ static void LoadNewGRFFileFromFile(GRFConfig &config, GrfLoadingStage stage, Spr
 
 	_cur_gps.ClearDataForNextFile();
 
-	ReusableBuffer<uint8_t> buf;
+	ReusableBuffer<uint8_t> allocator;
 
 	while ((num = (grf_container_version >= 2 ? file.ReadDword() : file.ReadWord())) != 0) {
 		uint8_t type = file.ReadByte();
@@ -1317,7 +1351,7 @@ static void LoadNewGRFFileFromFile(GRFConfig &config, GrfLoadingStage stage, Spr
 					break;
 				}
 
-				DecodeSpecialSprite(buf.Allocate(num), num, stage);
+				DecodeSpecialSprite(allocator, num, stage);
 
 				/* Stop all processing if we are to skip the remaining sprites */
 				if (_cur_gps.skip_sprites == -1) break;
@@ -1425,7 +1459,7 @@ static void ActivateOldShore()
 }
 
 /**
- * Replocate the old tram depot sprites to the new position, if no new ones were loaded.
+ * Relocate the old tram depot sprites to the new position, if no new ones were loaded.
  */
 static void ActivateOldTramDepot()
 {
@@ -1446,7 +1480,7 @@ static void FinalisePriceBaseMultipliers()
 {
 	extern const PriceBaseSpec _price_base_specs[];
 	/** Features, to which '_grf_id_overrides' applies. Currently vehicle features only. */
-	static const uint32_t override_features = (1 << GSF_TRAINS) | (1 << GSF_ROADVEHICLES) | (1 << GSF_SHIPS) | (1 << GSF_AIRCRAFT);
+	static constexpr GrfSpecFeatures override_features{GSF_TRAINS, GSF_ROADVEHICLES, GSF_SHIPS, GSF_AIRCRAFT};
 
 	/* Evaluate grf overrides */
 	int num_grfs = (uint)_grf_files.size();
@@ -1470,13 +1504,13 @@ static void FinalisePriceBaseMultipliers()
 		GRFFile &source = _grf_files[i];
 		GRFFile &dest = _grf_files[grf_overrides[i]];
 
-		uint32_t features = (source.grf_features | dest.grf_features) & override_features;
-		source.grf_features |= features;
-		dest.grf_features |= features;
+		GrfSpecFeatures features = (source.grf_features | dest.grf_features) & override_features;
+		source.grf_features.Set(features);
+		dest.grf_features.Set(features);
 
 		for (Price p = PR_BEGIN; p < PR_END; p++) {
 			/* No price defined -> nothing to do */
-			if (!HasBit(features, _price_base_specs[p].grf_feature) || source.price_base_multipliers[p] == INVALID_PRICE_MODIFIER) continue;
+			if (!features.Test(_price_base_specs[p].grf_feature) || source.price_base_multipliers[p] == INVALID_PRICE_MODIFIER) continue;
 			Debug(grf, 3, "'{}' overrides price base multiplier {} of '{}'", source.filename, p, dest.filename);
 			dest.price_base_multipliers[p] = source.price_base_multipliers[p];
 		}
@@ -1488,13 +1522,13 @@ static void FinalisePriceBaseMultipliers()
 		GRFFile &source = _grf_files[i];
 		GRFFile &dest = _grf_files[grf_overrides[i]];
 
-		uint32_t features = (source.grf_features | dest.grf_features) & override_features;
-		source.grf_features |= features;
-		dest.grf_features |= features;
+		GrfSpecFeatures features = (source.grf_features | dest.grf_features) & override_features;
+		source.grf_features.Set(features);
+		dest.grf_features.Set(features);
 
 		for (Price p = PR_BEGIN; p < PR_END; p++) {
 			/* Already a price defined -> nothing to do */
-			if (!HasBit(features, _price_base_specs[p].grf_feature) || dest.price_base_multipliers[p] != INVALID_PRICE_MODIFIER) continue;
+			if (!features.Test(_price_base_specs[p].grf_feature) || dest.price_base_multipliers[p] != INVALID_PRICE_MODIFIER) continue;
 			Debug(grf, 3, "Price base multiplier {} from '{}' propagated to '{}'", p, source.filename, dest.filename);
 			dest.price_base_multipliers[p] = source.price_base_multipliers[p];
 		}
@@ -1506,12 +1540,12 @@ static void FinalisePriceBaseMultipliers()
 		GRFFile &source = _grf_files[i];
 		GRFFile &dest = _grf_files[grf_overrides[i]];
 
-		uint32_t features = (source.grf_features | dest.grf_features) & override_features;
-		source.grf_features |= features;
-		dest.grf_features |= features;
+		GrfSpecFeatures features = (source.grf_features | dest.grf_features) & override_features;
+		source.grf_features.Set(features);
+		dest.grf_features.Set(features);
 
 		for (Price p = PR_BEGIN; p < PR_END; p++) {
-			if (!HasBit(features, _price_base_specs[p].grf_feature)) continue;
+			if (!features.Test(_price_base_specs[p].grf_feature)) continue;
 			if (source.price_base_multipliers[p] != dest.price_base_multipliers[p]) {
 				Debug(grf, 3, "Price base multiplier {} from '{}' propagated to '{}'", p, dest.filename, source.filename);
 			}
@@ -1541,7 +1575,7 @@ static void FinalisePriceBaseMultipliers()
 				/* No multiplier was set; set it to a neutral value */
 				price_base_multipliers[p] = 0;
 			} else {
-				if (!HasBit(file.grf_features, _price_base_specs[p].grf_feature)) {
+				if (!file.grf_features.Test(_price_base_specs[p].grf_feature)) {
 					/* The grf does not define any objects of the feature,
 					 * so it must be a difficulty setting. Apply it globally */
 					Debug(grf, 3, "'{}' sets global price base multiplier {}", file.filename, p);
@@ -1589,6 +1623,7 @@ static void FinaliseBadges()
 	}
 
 	ApplyBadgeFeaturesToClassBadges();
+	AddBadgeClassesToConfiguration();
 }
 
 extern void InitGRFTownGeneratorNames();
@@ -1661,14 +1696,14 @@ static void AfterLoadGRFs()
 	for (Engine *e : Engine::IterateType(VEH_ROAD)) {
 		if (_gted[e->index].rv_max_speed != 0) {
 			/* Set RV maximum speed from the mph/0.8 unit value */
-			e->u.road.max_speed = _gted[e->index].rv_max_speed * 4;
+			e->VehInfo<RoadVehicleInfo>().max_speed = _gted[e->index].rv_max_speed * 4;
 		}
 
 		RoadTramType rtt = e->info.misc_flags.Test(EngineMiscFlag::RoadIsTram) ? RTT_TRAM : RTT_ROAD;
 
 		const GRFFile *file = e->GetGRF();
 		if (file == nullptr || _gted[e->index].roadtramtype == 0) {
-			e->u.road.roadtype = (rtt == RTT_TRAM) ? ROADTYPE_TRAM : ROADTYPE_ROAD;
+			e->VehInfo<RoadVehicleInfo>().roadtype = (rtt == RTT_TRAM) ? ROADTYPE_TRAM : ROADTYPE_ROAD;
 			continue;
 		}
 
@@ -1681,7 +1716,7 @@ static void AfterLoadGRFs()
 			RoadTypeLabel rtl = (*list)[_gted[e->index].roadtramtype];
 			RoadType rt = GetRoadTypeByLabel(rtl);
 			if (rt != INVALID_ROADTYPE && GetRoadTramType(rt) == rtt) {
-				e->u.road.roadtype = rt;
+				e->VehInfo<RoadVehicleInfo>().roadtype = rt;
 				continue;
 			}
 		}
@@ -1691,13 +1726,18 @@ static void AfterLoadGRFs()
 	}
 
 	for (Engine *e : Engine::IterateType(VEH_TRAIN)) {
-		RailType railtype = GetRailTypeByLabel(_gted[e->index].railtypelabel);
-		if (railtype == INVALID_RAILTYPE) {
+		RailTypes railtypes{};
+		for (RailTypeLabel label : _gted[e->index].railtypelabels) {
+			auto rt = GetRailTypeByLabel(label);
+			if (rt != INVALID_RAILTYPE) railtypes.Set(rt);
+		}
+
+		if (railtypes.Any()) {
+			e->VehInfo<RailVehicleInfo>().railtypes = railtypes;
+			e->VehInfo<RailVehicleInfo>().intended_railtypes = railtypes;
+		} else {
 			/* Rail type is not available, so disable this engine */
 			e->info.climates = {};
-		} else {
-			e->u.rail.railtype = railtype;
-			e->u.rail.intended_railtype = railtype;
 		}
 	}
 
@@ -1804,7 +1844,7 @@ void LoadNewGRF(SpriteID load_index, uint num_baseset)
 				if (num_non_static == NETWORK_MAX_GRF_COUNT) {
 					Debug(grf, 0, "'{}' is not loaded as the maximum number of non-static GRFs has been reached", c->filename);
 					c->status = GCS_DISABLED;
-					c->error  = {STR_NEWGRF_ERROR_MSG_FATAL, STR_NEWGRF_ERROR_TOO_MANY_NEWGRFS_LOADED};
+					c->errors.emplace_back(STR_NEWGRF_ERROR_MSG_FATAL, 0, STR_NEWGRF_ERROR_TOO_MANY_NEWGRFS_LOADED);
 					continue;
 				}
 				num_non_static++;

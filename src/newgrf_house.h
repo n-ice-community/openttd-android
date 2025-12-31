@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_house.h Functions related to NewGRF houses. */
@@ -45,11 +45,11 @@ struct HouseScopeResolver : public ScopeResolver {
 
 	uint32_t GetRandomBits() const override;
 	uint32_t GetVariable(uint8_t variable, [[maybe_unused]] uint32_t parameter, bool &available) const override;
-	uint32_t GetTriggers() const override;
+	uint32_t GetRandomTriggers() const override;
 };
 
 /** Resolver object to be used for houses (feature 07 spritegroups). */
-struct HouseResolverObject : public ResolverObject {
+struct HouseResolverObject : public SpecializedResolverObject<HouseRandomTriggers> {
 	HouseScopeResolver house_scope;
 	TownScopeResolver  town_scope;
 
@@ -98,26 +98,19 @@ void DecreaseBuildingCount(Town *t, HouseID house_id);
 std::span<const uint> GetBuildingHouseIDCounts();
 
 void DrawNewHouseTile(TileInfo *ti, HouseID house_id);
+void DrawNewHouseTileInGUI(int x, int y, const HouseSpec *spec, HouseID house_id, int view);
 void AnimateNewHouseTile(TileIndex tile);
-void AnimateNewHouseConstruction(TileIndex tile);
+/* see also: void TriggerHouseAnimation_TileLoop(TileIndex tile, uint16_t random_bits) */
+void TriggerHouseAnimation_ConstructionStageChanged(TileIndex tile, bool first_call);
+void TriggerHouseAnimation_WatchedCargoAccepted(TileIndex tile, CargoTypes trigger_cargoes);
 
-uint16_t GetHouseCallback(CallbackID callback, uint32_t param1, uint32_t param2, HouseID house_id, Town *town, TileIndex tile,
+uint16_t GetHouseCallback(CallbackID callback, uint32_t param1, uint32_t param2, HouseID house_id, Town *town, TileIndex tile, std::span<int32_t> regs100 = {},
 		bool not_yet_constructed = false, uint8_t initial_random_bits = 0, CargoTypes watched_cargo_triggers = 0, int view = 0);
-void WatchedCargoCallback(TileIndex tile, CargoTypes trigger_cargoes);
 
 bool CanDeleteHouse(TileIndex tile);
 
 bool NewHouseTileLoop(TileIndex tile);
 
-enum HouseTrigger : uint8_t {
-	/* The tile of the house has been triggered during the tileloop. */
-	HOUSE_TRIGGER_TILE_LOOP     = 0x01,
-	/*
-	 * The top tile of a (multitile) building has been triggered during and all
-	 * the tileloop other tiles of the same building get the same random value.
-	 */
-	HOUSE_TRIGGER_TILE_LOOP_TOP = 0x02,
-};
-void TriggerHouse(TileIndex t, HouseTrigger trigger);
+void TriggerHouseRandomisation(TileIndex t, HouseRandomTrigger trigger);
 
 #endif /* NEWGRF_HOUSE_H */

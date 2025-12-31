@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_debug_widget.h Types related to the newgrf debug widgets. */
@@ -37,8 +37,8 @@ enum SpriteAlignerWidgets : WidgetID {
 	WID_SA_PICKER,      ///< Sprite picker.
 	WID_SA_LIST,        ///< Queried sprite list.
 	WID_SA_SCROLLBAR,   ///< Scrollbar for sprite list.
-	WID_SA_ZOOM,        ///< Zoom level buttons (from ZOOM_LVL_BEGIN to ZOOM_LVL_END).
-	WID_SA_ZOOM_LAST = WID_SA_ZOOM + ZOOM_LVL_END - 1, ///< Marker for last zoom level button.
+	WID_SA_ZOOM,        ///< Zoom level buttons (from ZoomLevel::Begin to ZoomLevel::Max).
+	WID_SA_ZOOM_LAST = WID_SA_ZOOM + to_underlying(ZoomLevel::Max), ///< Marker for last zoom level button.
 	WID_SA_RESET_REL,   ///< Reset relative sprite offset
 	WID_SA_CENTRE,      ///< Toggle centre sprite.
 	WID_SA_CROSSHAIR,   ///< Toggle crosshair.

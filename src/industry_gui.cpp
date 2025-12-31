@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file industry_gui.cpp GUIs related to industries. */
@@ -21,6 +21,7 @@
 #include "town.h"
 #include "cheat_type.h"
 #include "newgrf_badge.h"
+#include "newgrf_badge_gui.h"
 #include "newgrf_industries.h"
 #include "newgrf_text.h"
 #include "newgrf_debug.h"
@@ -47,6 +48,7 @@
 #include "timer/timer.h"
 #include "timer/timer_window.h"
 #include "hotkeys.h"
+#include "core/string_consumer.hpp"
 
 #include "widgets/industry_widget.h"
 
@@ -99,13 +101,14 @@ static void GetCargoSuffix(uint cargo, CargoSuffixType cst, const Industry *ind,
 
 	if (indspec->callback_mask.Test(IndustryCallbackMask::CargoSuffix)) {
 		TileIndex t = (cst != CST_FUND) ? ind->location.tile : INVALID_TILE;
-		uint16_t callback = GetIndustryCallback(CBID_INDUSTRY_CARGO_SUFFIX, 0, (cst << 8) | cargo, const_cast<Industry *>(ind), ind_type, t);
+		std::array<int32_t, 16> regs100;
+		uint16_t callback = GetIndustryCallback(CBID_INDUSTRY_CARGO_SUFFIX, 0, (cst << 8) | cargo, const_cast<Industry *>(ind), ind_type, t, regs100);
 		if (callback == CALLBACK_FAILED) return;
 
 		if (indspec->grf_prop.grffile->grf_version < 8) {
 			if (GB(callback, 0, 8) == 0xFF) return;
 			if (callback < 0x400) {
-				suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback, 6);
+				suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback, regs100);
 				suffix.display = CSD_CARGO_AMOUNT_TEXT;
 				return;
 			}
@@ -113,18 +116,30 @@ static void GetCargoSuffix(uint cargo, CargoSuffixType cst, const Industry *ind,
 			return;
 
 		} else { // GRF version 8 or higher.
-			if (callback == 0x400) return;
-			if (callback == 0x401) {
-				suffix.display = CSD_CARGO;
-				return;
+			switch (callback) {
+				case 0x400:
+					return;
+				case 0x401:
+					suffix.display = CSD_CARGO;
+					return;
+				case 0x40E:
+					suffix.display = CSD_CARGO_TEXT;
+					suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, static_cast<GRFStringID>(regs100[0]), std::span{regs100}.subspan(1));
+					return;
+				case 0x40F:
+					suffix.display = CSD_CARGO_AMOUNT_TEXT;
+					suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, static_cast<GRFStringID>(regs100[0]), std::span{regs100}.subspan(1));
+					return;
+				default:
+					break;
 			}
 			if (callback < 0x400) {
-				suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback, 6);
+				suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback, regs100);
 				suffix.display = CSD_CARGO_AMOUNT_TEXT;
 				return;
 			}
 			if (callback >= 0x800 && callback < 0xC00) {
-				suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback - 0x800, 6);
+				suffix.text = GetGRFStringWithTextStack(indspec->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback - 0x800, regs100);
 				suffix.display = CSD_CARGO_TEXT;
 				return;
 			}
@@ -174,12 +189,12 @@ static inline void GetAllCargoSuffixes(CargoSuffixInOut use_input, CargoSuffixTy
 		}
 		switch (use_input) {
 			case CARGOSUFFIX_OUT:
-				// Handle INDUSTRY_ORIGINAL_NUM_OUTPUTS cargoes
+				/* Handle INDUSTRY_ORIGINAL_NUM_OUTPUTS cargoes */
 				if (IsValidCargoType(cargoes[0])) GetCargoSuffix(3, cst, ind, ind_type, indspec, suffixes[0]);
 				if (IsValidCargoType(cargoes[1])) GetCargoSuffix(4, cst, ind, ind_type, indspec, suffixes[1]);
 				break;
 			case CARGOSUFFIX_IN:
-				// Handle INDUSTRY_ORIGINAL_NUM_INPUTS cargoes
+				/* Handle INDUSTRY_ORIGINAL_NUM_INPUTS cargoes */
 				if (IsValidCargoType(cargoes[0])) GetCargoSuffix(0, cst, ind, ind_type, indspec, suffixes[0]);
 				if (IsValidCargoType(cargoes[1])) GetCargoSuffix(1, cst, ind, ind_type, indspec, suffixes[1]);
 				if (IsValidCargoType(cargoes[2])) GetCargoSuffix(2, cst, ind, ind_type, indspec, suffixes[2]);
@@ -242,26 +257,7 @@ void SortIndustryTypes()
 	std::sort(_sorted_industry_types.begin(), _sorted_industry_types.end(), IndustryTypeNameSorter);
 }
 
-/**
- * Command callback. In case of failure to build an industry, show an error message.
- * @param result Result of the command.
- * @param tile   Tile where the industry is placed.
- * @param indtype Industry type.
- */
-void CcBuildIndustry(Commands, const CommandCost &result, TileIndex tile, IndustryType indtype, uint32_t, bool, uint32_t)
-{
-	if (result.Succeeded()) return;
-
-	if (indtype < NUM_INDUSTRYTYPES) {
-		const IndustrySpec *indsp = GetIndustrySpec(indtype);
-		if (indsp->enabled) {
-			ShowErrorMessage(GetEncodedString(STR_ERROR_CAN_T_BUILD_HERE, indsp->name),
-				GetEncodedString(result.GetErrorMessage()), WL_INFO, TileX(tile) * TILE_SIZE, TileY(tile) * TILE_SIZE);
-		}
-	}
-}
-
-static constexpr NWidgetPart _nested_build_industry_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_build_industry_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_FUND_INDUSTRY_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
@@ -389,7 +385,7 @@ class BuildIndustryWindow : public Window {
 		if (numcargo > 0) {
 			cargostring = GetString(prefixstr, CargoSpec::Get(cargolist[firstcargo])->name, cargo_suffix[firstcargo].text) + cargostring;
 		} else {
-			cargostring = GetString(prefixstr, STR_JUST_NOTHING, "");
+			cargostring = GetString(prefixstr, STR_JUST_NOTHING, ""sv);
 		}
 
 		return cargostring;
@@ -433,7 +429,7 @@ public:
 				for (const auto &indtype : this->list) {
 					d = maxdim(d, GetStringBoundingBox(GetIndustrySpec(indtype)->name));
 				}
-				resize.height = std::max<uint>({this->legend.height, d.height, count.height}) + padding.height;
+				fill.height = resize.height = std::max<uint>({this->legend.height, d.height, count.height}) + padding.height;
 				d.width += this->badge_classes.GetTotalColumnsWidth() + this->legend.width + WidgetDimensions::scaled.hsep_wide + WidgetDimensions::scaled.hsep_normal + count.width + padding.width;
 				d.height = 5 * resize.height;
 				size = maxdim(size, d);
@@ -592,15 +588,19 @@ public:
 
 				/* Get the additional purchase info text, if it has not already been queried. */
 				if (indsp->callback_mask.Test(IndustryCallbackMask::FundMoreText)) {
-					uint16_t callback_res = GetIndustryCallback(CBID_INDUSTRY_FUND_MORE_TEXT, 0, 0, nullptr, this->selected_type, INVALID_TILE);
+					std::array<int32_t, 16> regs100;
+					uint16_t callback_res = GetIndustryCallback(CBID_INDUSTRY_FUND_MORE_TEXT, 0, 0, nullptr, this->selected_type, INVALID_TILE, regs100);
 					if (callback_res != CALLBACK_FAILED && callback_res != 0x400) {
-						if (callback_res > 0x400) {
+						std::string str;
+						if (callback_res == 0x40F) {
+							str = GetGRFStringWithTextStack(indsp->grf_prop.grffile, static_cast<GRFStringID>(regs100[0]), std::span{regs100}.subspan(1));
+						} else if (callback_res > 0x400) {
 							ErrorUnknownCallbackResult(indsp->grf_prop.grfid, CBID_INDUSTRY_FUND_MORE_TEXT, callback_res);
 						} else {
-							std::string str = GetGRFStringWithTextStack(indsp->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback_res, 6);
-							if (!str.empty()) {
-								DrawStringMultiLine(ir, str, TC_YELLOW);
-							}
+							str = GetGRFStringWithTextStack(indsp->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback_res, regs100);
+						}
+						if (!str.empty()) {
+							DrawStringMultiLine(ir, str, TC_YELLOW);
 						}
 					}
 				}
@@ -745,7 +745,7 @@ public:
 			AutoRestoreBackup backup_generating_world(_generating_world, true);
 			AutoRestoreBackup backup_ignore_industry_restritions(_ignore_industry_restrictions, true);
 
-			Command<CMD_BUILD_INDUSTRY>::Post(STR_ERROR_CAN_T_CONSTRUCT_THIS_INDUSTRY, &CcBuildIndustry, end_tile, this->selected_type, layout_index, false, seed);
+			Command<CMD_BUILD_INDUSTRY>::Post(STR_ERROR_CAN_T_CONSTRUCT_THIS_INDUSTRY, end_tile, this->selected_type, layout_index, false, seed);
 		} else {
 			success = Command<CMD_BUILD_INDUSTRY>::Post(STR_ERROR_CAN_T_CONSTRUCT_THIS_INDUSTRY, end_tile, this->selected_type, layout_index, false, seed);
 		}
@@ -754,7 +754,7 @@ public:
 		if (success && !_settings_client.gui.persistent_buildingtools) ResetObjectToPlace();
 	}
 
-	IntervalTimer<TimerWindow> update_interval = {std::chrono::seconds(3), [this](auto) {
+	const IntervalTimer<TimerWindow> update_interval = {std::chrono::seconds(3), [this](auto) {
 		if (_game_mode == GM_EDITOR) return;
 		if (this->selected_type == IT_INVALID) return;
 
@@ -843,10 +843,10 @@ public:
 
 		this->InitNested(window_number);
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_IV_VIEWPORT);
-		nvp->InitializeViewport(this, Industry::Get(window_number)->location.GetCenterTile(), ScaleZoomGUI(ZOOM_LVL_INDUSTRY));
+		nvp->InitializeViewport(this, Industry::Get(window_number)->location.GetCenterTile(), ScaleZoomGUI(ZoomLevel::Industry));
 
 		const Industry *i = Industry::Get(window_number);
-		if (!i->IsCargoProduced()) this->DisableWidget(WID_IV_GRAPH);
+		if (!i->IsCargoProduced() && !i->IsCargoAccepted()) this->DisableWidget(WID_IV_GRAPH);
 
 		this->InvalidateData();
 	}
@@ -884,7 +884,7 @@ public:
 		SpriteID icon = CargoSpec::Get(cargo_type)->GetCargoIcon();
 		Dimension d = GetSpriteSize(icon);
 		Rect ir = r.WithWidth(this->cargo_icon_size.width, rtl).WithHeight(GetCharacterHeight(FS_NORMAL));
-		DrawSprite(icon, PAL_NONE, CenterBounds(ir.left, ir.right, d.width), CenterBounds(ir.top, ir.bottom, this->cargo_icon_size.height));
+		DrawSprite(icon, PAL_NONE, CentreBounds(ir.left, ir.right, d.width), CentreBounds(ir.top, ir.bottom, this->cargo_icon_size.height));
 	}
 
 	std::string GetAcceptedCargoString(const Industry::AcceptedCargo &ac, const CargoSuffix &suffix) const
@@ -990,16 +990,20 @@ public:
 
 		/* Get the extra message for the GUI */
 		if (ind->callback_mask.Test(IndustryCallbackMask::WindowMoreText)) {
-			uint16_t callback_res = GetIndustryCallback(CBID_INDUSTRY_WINDOW_MORE_TEXT, 0, 0, i, i->type, i->location.tile);
+			std::array<int32_t, 16> regs100;
+			uint16_t callback_res = GetIndustryCallback(CBID_INDUSTRY_WINDOW_MORE_TEXT, 0, 0, i, i->type, i->location.tile, regs100);
 			if (callback_res != CALLBACK_FAILED && callback_res != 0x400) {
-				if (callback_res > 0x400) {
+				std::string str;
+				if (callback_res == 0x40F) {
+					str = GetGRFStringWithTextStack(ind->grf_prop.grffile, static_cast<GRFStringID>(regs100[0]), std::span{regs100}.subspan(1));
+				} else if (callback_res > 0x400) {
 					ErrorUnknownCallbackResult(ind->grf_prop.grfid, CBID_INDUSTRY_WINDOW_MORE_TEXT, callback_res);
 				} else {
-					std::string str = GetGRFStringWithTextStack(ind->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback_res, 6);
-					if (!str.empty()) {
-						ir.top += WidgetDimensions::scaled.vsep_wide;
-						ir.top = DrawStringMultiLine(ir, str, TC_YELLOW);
-					}
+					str = GetGRFStringWithTextStack(ind->grf_prop.grffile, GRFSTR_MISC_GRF_TEXT + callback_res, regs100);
+				}
+				if (!str.empty()) {
+					ir.top += WidgetDimensions::scaled.vsep_wide;
+					ir.top = DrawStringMultiLine(ir, str, TC_YELLOW);
 				}
 			}
 		}
@@ -1149,8 +1153,9 @@ public:
 		}
 	}
 
-	void OnMouseWheel(int wheel) override
+	void OnMouseWheel(int wheel, WidgetID widget) override
 	{
+		if (widget != WID_IV_VIEWPORT) return;
 		if (_settings_client.gui.scrollwheel_scrolling != SWS_OFF) {
 			DoZoomInOutWindow(wheel < 0 ? ZOOM_IN : ZOOM_OUT, this);
 		}
@@ -1161,16 +1166,17 @@ public:
 		if (!str.has_value() || str->empty()) return;
 
 		Industry *i = Industry::Get(this->window_number);
-		uint value = atoi(str->c_str());
+		auto value = ParseInteger(*str, 10, true);
+		if (!value.has_value()) return;
 		switch (this->editbox_line) {
 			case IL_NONE: NOT_REACHED();
 
 			case IL_MULTIPLIER:
-				i->prod_level = ClampU(RoundDivSU(value * PRODLEVEL_DEFAULT, 100), PRODLEVEL_MINIMUM, PRODLEVEL_MAXIMUM);
+				i->prod_level = ClampU(RoundDivSU(*value * PRODLEVEL_DEFAULT, 100), PRODLEVEL_MINIMUM, PRODLEVEL_MAXIMUM);
 				break;
 
 			default:
-				i->produced[this->editbox_line - IL_RATE1].rate = ClampU(RoundDivSU(value, 8), 0, 255);
+				i->produced[this->editbox_line - IL_RATE1].rate = ClampU(RoundDivSU(*value, 8), 0, 255);
 				break;
 		}
 		UpdateIndustryProduction(i);
@@ -1218,7 +1224,7 @@ static void UpdateIndustryProduction(Industry *i)
 }
 
 /** Widget definition of the view industry gui */
-static constexpr NWidgetPart _nested_industry_view_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_industry_view_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_CREAM),
 		NWidget(WWT_CAPTION, COLOUR_CREAM, WID_IV_CAPTION),
@@ -1237,7 +1243,7 @@ static constexpr NWidgetPart _nested_industry_view_widgets[] = {
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_CREAM, WID_IV_DISPLAY), SetFill(1, 0), SetResize(1, 0), SetStringTip(STR_INDUSTRY_DISPLAY_CHAIN, STR_INDUSTRY_DISPLAY_CHAIN_TOOLTIP),
-		NWidget(WWT_PUSHTXTBTN, COLOUR_CREAM, WID_IV_GRAPH), SetFill(1, 0), SetResize(1, 0), SetStringTip(STR_INDUSTRY_VIEW_PRODUCTION_GRAPH, STR_INDUSTRY_VIEW_PRODUCTION_GRAPH_TOOLTIP),
+		NWidget(WWT_PUSHTXTBTN, COLOUR_CREAM, WID_IV_GRAPH), SetFill(1, 0), SetResize(1, 0), SetStringTip(STR_INDUSTRY_VIEW_CARGO_GRAPH, STR_INDUSTRY_VIEW_CARGO_GRAPH_TOOLTIP),
 		NWidget(WWT_RESIZEBOX, COLOUR_CREAM),
 	EndContainer(),
 };
@@ -1256,7 +1262,7 @@ void ShowIndustryViewWindow(IndustryID industry)
 }
 
 /** Widget definition of the industry directory gui */
-static constexpr NWidgetPart _nested_industry_directory_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_industry_directory_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
 		NWidget(WWT_CAPTION, COLOUR_BROWN, WID_ID_CAPTION),
@@ -1338,10 +1344,6 @@ static bool CargoFilter(const Industry * const *industry, const std::pair<CargoT
 
 static GUIIndustryList::FilterFunction * const _industry_filter_funcs[] = { &CargoFilter };
 
-/** Enum referring to the Hotkeys in the industry directory window */
-enum IndustryDirectoryHotkeys : int32_t {
-	IDHK_FOCUS_FILTER_BOX, ///< Focus the filter box
-};
 /**
  * The list of industries.
  */
@@ -1779,7 +1781,7 @@ public:
 
 			case WID_ID_INDUSTRY_LIST: {
 				Dimension d = GetStringBoundingBox(STR_INDUSTRY_DIRECTORY_NONE);
-				resize.height = d.height;
+				fill.height = resize.height = d.height;
 				d.height *= 5;
 				d.width += padding.width;
 				d.height += padding.height;
@@ -1841,7 +1843,7 @@ public:
 		}
 	}
 
-	void OnDropdownSelect(WidgetID widget, int index) override
+	void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
 		switch (widget) {
 			case WID_ID_DROPDOWN_CRITERIA: {
@@ -1888,7 +1890,7 @@ public:
 	}
 
 	/** Rebuild the industry list on a regular interval. */
-	IntervalTimer<TimerWindow> rebuild_interval = {std::chrono::seconds(3), [this](auto) {
+	const IntervalTimer<TimerWindow> rebuild_interval = {std::chrono::seconds(3), [this](auto) {
 		this->industries.ForceResort();
 		this->BuildSortIndustriesList();
 	}};
@@ -1916,21 +1918,8 @@ public:
 		}
 	}
 
-	EventState OnHotkey(int hotkey) override
-	{
-		switch (hotkey) {
-			case IDHK_FOCUS_FILTER_BOX:
-				this->SetFocusedWidget(WID_ID_FILTER);
-				SetFocusedWindow(this); // The user has asked to give focus to the text box, so make sure this window is focused.
-				break;
-			default:
-				return ES_NOT_HANDLED;
-		}
-		return ES_HANDLED;
-	}
-
 	static inline HotkeyList hotkeys {"industrydirectory", {
-		Hotkey('F', "focus_filter_box", IDHK_FOCUS_FILTER_BOX),
+		Hotkey('F', "focus_filter_box", WID_ID_FILTER),
 	}};
 };
 
@@ -1962,7 +1951,7 @@ void ShowIndustryDirectory()
 }
 
 /** Widgets of the industry cargoes window. */
-static constexpr NWidgetPart _nested_industry_cargoes_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_industry_cargoes_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_BROWN),
 		NWidget(WWT_CAPTION, COLOUR_BROWN, WID_IC_CAPTION),
@@ -2017,8 +2006,8 @@ struct CargoesField {
 	static Dimension cargo_space;
 	static Dimension cargo_stub;
 
-	static const int INDUSTRY_LINE_COLOUR;
-	static const int CARGO_LINE_COLOUR;
+	static const PixelColour INDUSTRY_LINE_COLOUR;
+	static const PixelColour CARGO_LINE_COLOUR;
 
 	static int small_height, normal_height;
 	static int cargo_field_width;
@@ -2426,8 +2415,8 @@ int CargoesField::vert_inter_industry_space; ///< Amount of space between two in
 
 int CargoesField::blob_distance; ///< Distance of the industry legend colour from the edge of the industry box.
 
-const int CargoesField::INDUSTRY_LINE_COLOUR = PC_YELLOW; ///< Line colour of the industry type box.
-const int CargoesField::CARGO_LINE_COLOUR    = PC_YELLOW; ///< Line colour around the cargo.
+const PixelColour CargoesField::INDUSTRY_LINE_COLOUR = PC_YELLOW; ///< Line colour of the industry type box.
+const PixelColour CargoesField::CARGO_LINE_COLOUR    = PC_YELLOW; ///< Line colour around the cargo.
 
 /** A single row of #CargoesField. */
 struct CargoesRow {
@@ -2656,7 +2645,7 @@ struct IndustryCargoesWindow : public Window {
 	{
 		switch (widget) {
 			case WID_IC_PANEL:
-				resize.height = CargoesField::normal_height;
+				fill.height = resize.height = CargoesField::normal_height;
 				size.width = CargoesField::industry_width * 3 + CargoesField::cargo_field_width * 2 + WidgetDimensions::scaled.frametext.Horizontal();
 				size.height = CargoesField::small_height + 2 * resize.height + WidgetDimensions::scaled.frametext.Vertical();
 				break;
@@ -2723,19 +2712,13 @@ struct IndustryCargoesWindow : public Window {
 	 */
 	static bool HousesCanAccept(const std::span<const CargoType> cargoes)
 	{
-		HouseZones climate_mask;
-		switch (_settings_game.game_creation.landscape) {
-			case LandscapeType::Temperate: climate_mask = HZ_TEMP; break;
-			case LandscapeType::Arctic:    climate_mask = HZ_SUBARTC_ABOVE | HZ_SUBARTC_BELOW; break;
-			case LandscapeType::Tropic:    climate_mask = HZ_SUBTROPIC; break;
-			case LandscapeType::Toyland:   climate_mask = HZ_TOYLND; break;
-			default: NOT_REACHED();
-		}
+		HouseZones climate_mask = GetClimateMaskForLandscape();
+
 		for (const CargoType cargo_type : cargoes) {
 			if (!IsValidCargoType(cargo_type)) continue;
 
 			for (const auto &hs : HouseSpec::Specs()) {
-				if (!hs.enabled || !(hs.building_availability & climate_mask)) continue;
+				if (!hs.enabled || !hs.building_availability.Any(climate_mask)) continue;
 
 				for (uint j = 0; j < lengthof(hs.accepts_cargo); j++) {
 					if (hs.cargo_acceptance[j] > 0 && cargo_type == hs.accepts_cargo[j]) return true;
@@ -3113,7 +3096,7 @@ struct IndustryCargoesWindow : public Window {
 			case WID_IC_NOTIFY:
 				this->ToggleWidgetLoweredState(WID_IC_NOTIFY);
 				this->SetWidgetDirty(WID_IC_NOTIFY);
-				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+				SndClickBeep();
 
 				if (this->IsWidgetLowered(WID_IC_NOTIFY)) {
 					if (FindWindowByClass(WC_SMALLMAP) == nullptr) ShowSmallMap();
@@ -3150,7 +3133,7 @@ struct IndustryCargoesWindow : public Window {
 		}
 	}
 
-	void OnDropdownSelect(WidgetID widget, int index) override
+	void OnDropdownSelect(WidgetID widget, int index, int) override
 	{
 		if (index < 0) return;
 

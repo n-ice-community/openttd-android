@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
  /** @file help_gui.cpp GUI to access manuals and related. */
@@ -94,7 +94,7 @@ static std::optional<std::string> FindGameManualFilePath(std::string_view filena
 
 /** Window class displaying the game manual textfile viewer. */
 struct GameManualTextfileWindow : public TextfileWindow {
-	GameManualTextfileWindow(std::string_view filename, Subdirectory subdir) : TextfileWindow(TFT_GAME_MANUAL)
+	GameManualTextfileWindow(std::string_view filename, Subdirectory subdir) : TextfileWindow(nullptr, TFT_GAME_MANUAL)
 	{
 		this->ConstructWindow();
 
@@ -227,7 +227,7 @@ private:
 	}
 };
 
-static constexpr NWidgetPart _nested_helpwin_widgets[] = {
+static constexpr std::initializer_list<NWidgetPart> _nested_helpwin_widgets = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
 		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetStringTip(STR_HELP_WINDOW_CAPTION),
@@ -262,7 +262,7 @@ static constexpr NWidgetPart _nested_helpwin_widgets[] = {
 };
 
 static WindowDesc _helpwin_desc(
-	WDP_CENTER, nullptr, 0, 0,
+	WDP_CENTER, {}, 0, 0,
 	WC_HELPWIN, WC_NONE,
 	{},
 	_nested_helpwin_widgets

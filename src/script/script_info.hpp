@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_info.hpp ScriptInfo keeps track of all information of a script, like Author, Description, ... */
@@ -82,12 +82,12 @@ public:
 	/**
 	 * Check if a given method exists.
 	 */
-	bool CheckMethod(const char *name) const;
+	bool CheckMethod(std::string_view name) const;
 
 	/**
 	 * Process the creation of a FileInfo object.
 	 */
-	static SQInteger Constructor(HSQUIRRELVM vm, ScriptInfo *info);
+	static SQInteger Constructor(HSQUIRRELVM vm, ScriptInfo &info);
 
 	/**
 	 * Get the scanner which has found this ScriptInfo.
@@ -107,7 +107,7 @@ public:
 	/**
 	 * Get the description of a certain Script config option.
 	 */
-	const ScriptConfigItem *GetConfigItem(const std::string_view name) const;
+	const ScriptConfigItem *GetConfigItem(std::string_view name) const;
 
 	/**
 	 * Set a setting.
@@ -149,7 +149,7 @@ private:
 	class ScriptScanner *scanner = nullptr; ///< ScriptScanner object that was used to scan this script info.
 };
 
-void Script_CreateDummyInfo(HSQUIRRELVM vm, const char *type, const char *dir);
-void Script_CreateDummy(HSQUIRRELVM vm, StringID string, const char *type);
+void Script_CreateDummyInfo(HSQUIRRELVM vm, std::string_view type, std::string_view dir);
+void Script_CreateDummy(HSQUIRRELVM vm, StringID string, std::string_view type);
 
 #endif /* SCRIPT_INFO_HPP */

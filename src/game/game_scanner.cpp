@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file game_scanner.cpp allows scanning Game scripts */
@@ -23,12 +23,12 @@ void GameScannerInfo::Initialize()
 	ScriptScanner::Initialize("GSScanner");
 }
 
-std::string GameScannerInfo::GetScriptName(ScriptInfo *info)
+std::string GameScannerInfo::GetScriptName(ScriptInfo &info)
 {
-	return info->GetName();
+	return info.GetName();
 }
 
-void GameScannerInfo::RegisterAPI(class Squirrel *engine)
+void GameScannerInfo::RegisterAPI(class Squirrel &engine)
 {
 	GameInfo::RegisterAPI(engine);
 }
@@ -75,13 +75,13 @@ void GameScannerLibrary::Initialize()
 	ScriptScanner::Initialize("GSScanner");
 }
 
-std::string GameScannerLibrary::GetScriptName(ScriptInfo *info)
+std::string GameScannerLibrary::GetScriptName(ScriptInfo &info)
 {
-	GameLibrary *library = static_cast<GameLibrary *>(info);
-	return fmt::format("{}.{}", library->GetCategory(), library->GetInstanceName());
+	GameLibrary &library = static_cast<GameLibrary &>(info);
+	return fmt::format("{}.{}", library.GetCategory(), library.GetInstanceName());
 }
 
-void GameScannerLibrary::RegisterAPI(class Squirrel *engine)
+void GameScannerLibrary::RegisterAPI(class Squirrel &engine)
 {
 	GameLibrary::RegisterAPI(engine);
 }
@@ -92,8 +92,8 @@ GameLibrary *GameScannerLibrary::FindLibrary(const std::string &library, int ver
 	std::string library_name = fmt::format("{}.{}", library, version);
 
 	/* Check if the library + version exists */
-	ScriptInfoList::iterator it = this->info_list.find(library_name);
+	auto it = this->info_list.find(library_name);
 	if (it == this->info_list.end()) return nullptr;
 
-	return static_cast<GameLibrary *>((*it).second);
+	return static_cast<GameLibrary *>(it->second);
 }

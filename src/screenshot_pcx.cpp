@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file screenshot_pcx.cpp PCX screenshots provider. */
@@ -41,11 +41,10 @@ class ScreenshotProvider_Pcx : public ScreenshotProvider {
 public:
 	ScreenshotProvider_Pcx() : ScreenshotProvider("pcx", "PCX", 20) {}
 
-	bool MakeImage(const char *name, ScreenshotCallback *callb, void *userdata, uint w, uint h, int pixelformat, const Colour *palette) override
+	bool MakeImage(std::string_view name, const ScreenshotCallback &callb, uint w, uint h, int pixelformat, const Colour *palette) const override
 	{
 		uint maxlines;
 		uint y;
-		PcxHeader pcx;
 		bool success;
 
 		if (pixelformat == 32) {
@@ -58,9 +57,8 @@ public:
 		if (!of.has_value()) return false;
 		auto &f = *of;
 
-		memset(&pcx, 0, sizeof(pcx));
-
 		/* setup pcx header */
+		PcxHeader pcx{};
 		pcx.manufacturer = 10;
 		pcx.version = 5;
 		pcx.rle = 1;
@@ -93,7 +91,7 @@ public:
 			uint i;
 
 			/* render the pixels into the buffer */
-			callb(userdata, buff.data(), y, w, n);
+			callb(buff.data(), y, w, n);
 			y += n;
 
 			/* write them to pcx */
@@ -151,6 +149,9 @@ public:
 
 		return success;
 	}
+
+private:
+	static ScreenshotProvider_Pcx instance;
 };
 
-static ScreenshotProvider_Pcx s_screenshot_provider_pcx;
+/* static */ ScreenshotProvider_Pcx ScreenshotProvider_Pcx::instance{};

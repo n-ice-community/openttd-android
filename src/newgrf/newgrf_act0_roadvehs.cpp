@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_roadvehs.cpp NewGRF Action 0x00 handler for road vehicles. */
@@ -36,7 +36,7 @@ static ChangeInfoResult RoadVehicleChangeInfo(uint first, uint last, int prop, B
 		if (e == nullptr) return CIR_INVALID_ID; // No engine could be allocated, so neither can any next vehicles
 
 		EngineInfo *ei = &e->info;
-		RoadVehicleInfo *rvi = &e->u.road;
+		RoadVehicleInfo *rvi = &e->VehInfo<RoadVehicleInfo>();
 
 		switch (prop) {
 			case 0x05: // Road/tram type
@@ -62,9 +62,9 @@ static ChangeInfoResult RoadVehicleChangeInfo(uint first, uint last, int prop, B
 				uint8_t orig_spriteid = spriteid;
 
 				/* cars have different custom id in the GRF file */
-				if (spriteid == 0xFF) spriteid = 0xFD;
+				if (spriteid == 0xFF) spriteid = CUSTOM_VEHICLE_SPRITENUM;
 
-				if (spriteid < 0xFD) spriteid >>= 1;
+				if (spriteid < CUSTOM_VEHICLE_SPRITENUM) spriteid >>= 1;
 
 				if (IsValidNewGRFImageIndex<VEH_ROAD>(spriteid)) {
 					rvi->image_index = spriteid;

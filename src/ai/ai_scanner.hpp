@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file ai_scanner.hpp declarations of the class for AI scanner */
@@ -37,17 +37,17 @@ public:
 	/**
 	 * Set the Dummy AI.
 	 */
-	void SetDummyAI(class AIInfo *info);
+	void SetDummyAI(std::unique_ptr<class AIInfo> &&info);
 
 protected:
-	std::string GetScriptName(ScriptInfo *info) override;
-	const char *GetFileName() const override { return PATHSEP "info.nut"; }
+	std::string GetScriptName(ScriptInfo &info) override;
+	std::string_view GetFileName() const override { return PATHSEP "info.nut"; }
 	Subdirectory GetDirectory() const override { return AI_DIR; }
-	const char *GetScannerName() const override { return "AIs"; }
-	void RegisterAPI(class Squirrel *engine) override;
+	std::string_view GetScannerName() const override { return "AIs"; }
+	void RegisterAPI(class Squirrel &engine) override;
 
 private:
-	AIInfo *info_dummy; ///< The dummy AI.
+	std::unique_ptr<AIInfo> info_dummy; ///< The dummy AI.
 };
 
 class AIScannerLibrary : public ScriptScanner {
@@ -63,11 +63,11 @@ public:
 	class AILibrary *FindLibrary(const std::string &library, int version);
 
 protected:
-	std::string GetScriptName(ScriptInfo *info) override;
-	const char *GetFileName() const override { return PATHSEP "library.nut"; }
+	std::string GetScriptName(ScriptInfo &info) override;
+	std::string_view GetFileName() const override { return PATHSEP "library.nut"; }
 	Subdirectory GetDirectory() const override { return AI_LIBRARY_DIR; }
-	const char *GetScannerName() const override { return "AI Libraries"; }
-	void RegisterAPI(class Squirrel *engine) override;
+	std::string_view GetScannerName() const override { return "AI Libraries"; }
+	void RegisterAPI(class Squirrel &engine) override;
 };
 
 #endif /* AI_SCANNER_HPP */

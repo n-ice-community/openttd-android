@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file group.h Base class for groups and group functions. */
@@ -11,6 +11,7 @@
 #define GROUP_H
 
 #include "group_type.h"
+#include "core/flatset_type.hpp"
 #include "core/pool_type.hpp"
 #include "company_type.h"
 #include "vehicle_type.h"
@@ -78,6 +79,7 @@ struct Group : GroupPool::PoolItem<&_group_pool> {
 	Livery livery{}; ///< Custom colour scheme for vehicles in this group
 	GroupStatistics statistics{}; ///< NOSAVE: Statistics and caches on the vehicles in the group.
 
+	FlatSet<GroupID> children; ///< NOSAVE: child groups belonging to this group.
 	bool folded = false; ///< NOSAVE: Is this group folded in the group view?
 
 	GroupID parent = GroupID::Invalid(); ///< Parent group
@@ -104,6 +106,7 @@ inline bool IsAllGroupID(GroupID id_g)
 }
 
 
+void UpdateGroupChildren();
 uint GetGroupNumEngines(CompanyID company, GroupID id_g, EngineID id_e);
 uint GetGroupNumVehicle(CompanyID company, GroupID id_g, VehicleType type);
 uint GetGroupNumVehicleMinAge(CompanyID company, GroupID id_g, VehicleType type);

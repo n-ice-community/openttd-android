@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file win32_s.cpp Handling of sound for Windows. */
@@ -39,7 +39,7 @@ static void PrepareHeader(HeaderDataPair &hdr)
 	hdr.first.dwBufferLength = _bufsize * 4;
 	hdr.first.dwFlags = 0;
 	hdr.first.lpData = hdr.second.get();
-	if (waveOutPrepareHeader(_waveout, &hdr.first, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) throw "waveOutPrepareHeader failed";
+	if (waveOutPrepareHeader(_waveout, &hdr.first, sizeof(WAVEHDR)) != MMSYSERR_NOERROR) throw "waveOutPrepareHeader failed"sv;
 }
 
 static DWORD WINAPI SoundThread(LPVOID)
@@ -76,16 +76,16 @@ std::optional<std::string_view> SoundDriver_Win32::Start(const StringList &parm)
 	_bufsize = std::min<int>(_bufsize, UINT16_MAX);
 
 	try {
-		if (nullptr == (_event = CreateEvent(nullptr, FALSE, FALSE, nullptr))) throw "Failed to create event";
+		if (nullptr == (_event = CreateEvent(nullptr, FALSE, FALSE, nullptr))) throw "Failed to create event"sv;
 
-		if (waveOutOpen(&_waveout, WAVE_MAPPER, &wfex, (DWORD_PTR)_event, 0, CALLBACK_EVENT) != MMSYSERR_NOERROR) throw "waveOutOpen failed";
+		if (waveOutOpen(&_waveout, WAVE_MAPPER, &wfex, (DWORD_PTR)_event, 0, CALLBACK_EVENT) != MMSYSERR_NOERROR) throw "waveOutOpen failed"sv;
 
 		MxInitialize(wfex.nSamplesPerSec);
 
 		for (auto &hdr : _wave_hdr) PrepareHeader(hdr);
 
-		if (nullptr == (_thread = CreateThread(nullptr, 8192, SoundThread, 0, 0, &_threadId))) throw "Failed to create thread";
-	} catch (const char *error) {
+		if (nullptr == (_thread = CreateThread(nullptr, 8192, SoundThread, 0, 0, &_threadId))) throw "Failed to create thread"sv;
+	} catch (std::string_view error) {
 		this->Stop();
 		return error;
 	}

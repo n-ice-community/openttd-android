@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file train_gui.cpp GUI for trains. */
@@ -32,8 +32,13 @@ void CcBuildWagon(Commands, const CommandCost &result, VehicleID new_veh_id, uin
 
 	/* find a locomotive in the depot. */
 	const Vehicle *found = nullptr;
-	for (const Train *t : Train::Iterate()) {
-		if (t->IsFrontEngine() && t->tile == tile && t->IsStoppedInDepot()) {
+	/* The non-deterministic order returned from VehiclesOnTile() does not
+	 * matter here as there must only be one locomotive for anything to happen. */
+	for (const Vehicle *v : VehiclesOnTile(tile)) {
+		if (v->type != VEH_TRAIN) continue;
+
+		const Train *t = Train::From(v);
+		if (t->IsFrontEngine() && t->IsStoppedInDepot()) {
 			if (found != nullptr) return; // must be exactly one.
 			found = t;
 		}
@@ -167,7 +172,7 @@ void DrawTrainImage(const Train *v, const Rect &r, VehicleID selection, EngineIm
 		 * the next engine after the highlight could overlap it. */
 		int height = ScaleSpriteTrad(12);
 		Rect hr = {highlight_l, 0, highlight_r, height - 1};
-		DrawFrameRect(hr.Translate(r.left, CenterBounds(r.top, r.bottom, height)).Expand(WidgetDimensions::scaled.bevel), COLOUR_WHITE, FrameFlag::BorderOnly);
+		DrawFrameRect(hr.Translate(r.left, CentreBounds(r.top, r.bottom, height)).Expand(WidgetDimensions::scaled.bevel), COLOUR_WHITE, FrameFlag::BorderOnly);
 	}
 }
 
@@ -396,7 +401,7 @@ void DrawTrainDetails(const Train *v, const Rect &r, int vscroll_pos, uint16_t v
 				if (vscroll_pos <= 0 && vscroll_pos > -vscroll_cap) {
 					int py = r.top - line_height * vscroll_pos + text_y_offset;
 					if (i > 0 || separate_sprite_row) {
-						if (vscroll_pos != 0) GfxFillRect(r.left, py - WidgetDimensions::scaled.matrix.top - 1, r.right, py - WidgetDimensions::scaled.matrix.top, GetColourGradient(COLOUR_GREY, SHADE_LIGHT));
+						if (vscroll_pos != 0) GfxFillRect(r.WithY(py - WidgetDimensions::scaled.matrix.top - 1, py - WidgetDimensions::scaled.matrix.top), GetColourGradient(COLOUR_GREY, SHADE_LIGHT));
 					}
 					switch (det_tab) {
 						case TDW_TAB_CARGO:

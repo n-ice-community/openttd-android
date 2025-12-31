@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file script_admin.cpp Implementation of ScriptAdmin. */
@@ -45,10 +45,10 @@ bool ScriptAdminMakeJSON(nlohmann::json &json, HSQUIRRELVM vm, SQInteger index, 
 		}
 
 		case OT_STRING: {
-			const SQChar *buf;
-			sq_getstring(vm, index, &buf);
+			std::string_view view;
+			sq_getstring(vm, index, view);
 
-			json = std::string(buf);
+			json = view;
 			return true;
 		}
 
@@ -78,9 +78,9 @@ bool ScriptAdminMakeJSON(nlohmann::json &json, HSQUIRRELVM vm, SQInteger index, 
 			sq_pushnull(vm);
 			while (SQ_SUCCEEDED(sq_next(vm, index - 1))) {
 				sq_tostring(vm, -2);
-				const SQChar *buf;
-				sq_getstring(vm, -1, &buf);
-				std::string key = std::string(buf);
+				std::string_view view;
+				sq_getstring(vm, -1, view);
+				std::string key{view};
 				sq_pop(vm, 1);
 
 				nlohmann::json value;

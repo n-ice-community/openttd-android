@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_act0_cargo.cpp NewGRF Action 0x00 handler for cargo. */
@@ -97,11 +97,11 @@ static ChangeInfoResult CargoReserveInfo(uint first, uint last, int prop, ByteRe
 				break;
 
 			case 0x13: // Colour for station rating bars
-				cs->rating_colour = buf.ReadByte();
+				cs->rating_colour = PixelColour{buf.ReadByte()};
 				break;
 
 			case 0x14: // Colour for cargo graph
-				cs->legend_colour = buf.ReadByte();
+				cs->legend_colour = PixelColour{buf.ReadByte()};
 				break;
 
 			case 0x15: // Freight status
@@ -142,7 +142,7 @@ static ChangeInfoResult CargoReserveInfo(uint first, uint last, int prop, ByteRe
 				cs->callback_mask = static_cast<CargoCallbackMasks>(buf.ReadByte());
 				break;
 
-			case 0x1D: // Vehicle capacity muliplier
+			case 0x1D: // Vehicle capacity multiplier
 				cs->multiplier = std::max<uint16_t>(1u, buf.ReadWord());
 				break;
 

@@ -2,7 +2,7 @@
  * This file is part of OpenTTD.
  * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
  * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <https://www.gnu.org/licenses/old-licenses/gpl-2.0>.
  */
 
 /** @file newgrf_debug.h Functions/types related to NewGRF debugging. */
@@ -10,6 +10,7 @@
 #ifndef NEWGRF_DEBUG_H
 #define NEWGRF_DEBUG_H
 
+#include "core/flatset_type.hpp"
 #include "newgrf.h"
 #include "tile_type.h"
 #include "vehicle_type.h"
@@ -25,7 +26,7 @@ enum NewGrfDebugSpritePickerMode : uint8_t {
 struct NewGrfDebugSpritePicker {
 	NewGrfDebugSpritePickerMode mode;   ///< Current state
 	void *clicked_pixel;                ///< Clicked pixel (pointer to blitter buffer)
-	std::vector<SpriteID> sprites;       ///< Sprites found
+	FlatSet<SpriteID> sprites; ///< Sprites found
 };
 
 extern NewGrfDebugSpritePicker _newgrf_debug_sprite_picker;
