@@ -346,6 +346,9 @@ static inline void GfxDoDrawLine(void *video, int x, int y, int x2, int y2, int 
 		margin  *= 2; // account for rounding errors
 	}
 
+	/* Prevent division by zero. */
+	if (grade_x == 0) grade_x = 1;
+
 	/* Imagine that the line is infinitely long and it intersects with
 	 * infinitely long left and right edges of the clipping rectangle.
 	 * If both intersection points are outside the clipping rectangle
@@ -541,7 +544,7 @@ static int DrawLayoutLine(const ParagraphLayouter::Line &line, int y, int left, 
 		 * another size would be chosen it won't have truncated too little for
 		 * the truncation dots.
 		 */
-		truncation_layout.emplace(GetEllipsis(), INT32_MAX, line.GetVisualRun(0).GetFont().GetFontCache().GetSize());
+		truncation_layout.emplace(GetEllipsis(), INT32_MAX, line.GetVisualRun(0).GetFont()->fc->GetSize());
 		truncation_width = truncation_layout->GetBounds().width;
 
 		/* Is there enough space even for an ellipsis? */
@@ -597,15 +600,15 @@ static int DrawLayoutLine(const ParagraphLayouter::Line &line, int y, int left, 
 			const ParagraphLayouter::VisualRun &run = line.GetVisualRun(run_index);
 			const auto &glyphs = run.GetGlyphs();
 			const auto &positions = run.GetPositions();
-			const Font &f = run.GetFont();
+			const Font *f = run.GetFont();
 
-			FontCache &fc = f.GetFontCache();
-			TextColour colour = f.colour;
+			FontCache *fc = f->fc;
+			TextColour colour = f->colour;
 			if (colour == TC_INVALID || HasFlag(initial_colour, TC_FORCED)) colour = initial_colour;
 			bool colour_has_shadow = (colour & TC_NO_SHADE) == 0 && colour != TC_BLACK;
 			/* Update the last colour for the truncation ellipsis. */
 			last_colour = colour;
-			if (do_shadow && (!fc.GetDrawGlyphShadow() || !colour_has_shadow)) continue;
+			if (do_shadow && (!fc->GetDrawGlyphShadow() || !colour_has_shadow)) continue;
 			SetColourRemap(do_shadow ? TC_BLACK : colour);
 
 			for (int i = 0; i < run.GetGlyphCount(); i++) {
@@ -620,10 +623,13 @@ static int DrawLayoutLine(const ParagraphLayouter::Line &line, int y, int left, 
 
 				/* Truncated away. */
 				if (truncation && (begin_x < min_x || end_x > max_x)) continue;
-				/* Outside the clipping area. */
-				if (begin_x > dpi_right || end_x < dpi_left) continue;
 
-				const Sprite *sprite = fc.GetGlyph(glyph);
+				const Sprite *sprite = fc->GetGlyph(glyph);
+				/* Check clipping (the "+ 1" is for the shadow). */
+				if (begin_x + sprite->x_offs > dpi_right || begin_x + sprite->x_offs + sprite->width /* - 1 + 1 */ < dpi_left) continue;
+
+				if (do_shadow && (glyph & SPRITE_GLYPH) != 0) continue;
+
 				GfxMainBlitter(sprite, begin_x + (do_shadow ? shadow_offset : 0), top + (do_shadow ? shadow_offset : 0), BlitterMode::ColourRemap);
 			}
 		}

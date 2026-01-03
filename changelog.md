@@ -1,5 +1,51 @@
 ## 15.x
 
+### 15.0 (2026-01-01)
+
+- Fix: Small ufos would loop over vehicles in depots forever (#15008)
+- Fix #14982: Can't place buoys under bridges (#15007)
+- Fix #15004: Crashes when dropdown is held open during endgame screen (#15006)
+- Fix: Further improve town spawning near water (#15002)
+- Fix: Use correct 'minutes per year' setting for old savegames (#14995)
+- Fix: Rare crash dividing by 0 when drawing a line (#14994)
+- Fix #14992: Respect non-stop order setting when adding waypoint orders (#14993)
+
+### 15.0-RC4 (2025-12-26)
+
+- Fix: Incorrect text colour in fund industry window (#14987)
+- Fix: Towns failed to find spawn locations near water (#14988)
+- Fix: Don't draw bridge deck rail sprites for default bridges (#14985)
+- Fix: "(Invalid parameter)" in error message when trying to remove another player's object (#14981)
+- Fix #14978: Don't clear water tiles after removing buoys (#14980)
+- Fix #14973: Composed strings are incorrect colour (#14976)
+- Fix: Badge filter toggles no longer worked (#14972)
+- Fix #12465: Click/tooltip alignment of industry chain cargo lines (#14963)
+- Fix #14951: Possible incorrect data in industry production graphs (#14962)
+- Fix #14958: Crash when opening station window (#14959)
+- Fix #14938: Don't allow cacti to die off (#14956)
+- Fix: Don't allow joining a company after it was taken over (#14955)
+- Fix #14949: Crash when moving station sign in a network game (#14950)
+- Fix #14945: Hang when deleting implicit orders during vehicle loading (#14946)
+
+### 15.0-RC3 (2025-12-20)
+
+- Fix #14932: [NewGRF] Increase internal badge index size to avoid overflowing BadgeIDs (#14933)
+- Fix: Crash related to object picker recolours in Scenario Editor (#14929)
+- Fix #14921: Crash during station autorefit if station doesn't accept current cargo type (#14924)
+- Fix #14917: Crash when opening house picker with no houses available (#14920)
+- Fix #14916: Duration of error message window could be too short (#14919)
+- Fix #14915: Crash due to divide-by-zero of industry probabilities (#14918)
+- Fix: Script configs were cleared by intro game (#14910)
+- Fix: [NewGRF] Automatically push/pop colours when formatting a sub-string (#14006)
+
+### 15.0-RC2 (2025-12-13)
+
+- Fix #14677: Desync due to using newgame time settings to validate savegame time settings (#14904)
+- Fix: Graph label allocated size could be too small (#14901)
+- Fix #14891: Minimum sprite zoomlevel could break in some cases showing placeholder sprites instead (#14894)
+- Fix #14889: [FluidSynth] Don't try to load a soundfont that doesn't exist (#14890)
+- Revert: Dynamic font loading changes removed (#14903)
+
 ### 15.0-RC1 (2025-12-07)
 
 - Feature: Automatically load extra fonts for missing glyphs (#13303, #14856)

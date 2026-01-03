@@ -81,7 +81,9 @@ static constexpr auto _callback_tuple = std::make_tuple(
 	&CcRoadStop,
 	&CcStartStopVehicle,
 	&CcGame,
-	&CcAddVehicleNewGroup
+	&CcAddVehicleNewGroup,
+	&CcMoveStationName,
+	&CcMoveWaypointName
 );
 
 #ifdef SILENCE_GCC_FUNCTION_POINTER_CAST
@@ -110,6 +112,16 @@ inline auto MakeCallbackTable(std::index_sequence<i...>) noexcept
 
 /** Type-erased table of callbacks. */
 static const auto _callback_table = MakeCallbackTable(std::make_index_sequence<_callback_tuple_size>{});
+
+/**
+ * Helper function to ensure that callbacks used when Posting commands are actually registered for the network calls.
+ * @param callback The callback to check.
+ * @return \c true when the callback is in the callback table, otherwise \c false.
+ */
+bool IsNetworkRegisteredCallback(CommandCallback *callback)
+{
+	return std::ranges::find(_callback_table, callback) != _callback_table.end();
+}
 
 template <typename T> struct CallbackArgsHelper;
 template <typename... Targs>
