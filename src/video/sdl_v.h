@@ -34,7 +34,6 @@ public:
 	std::string_view GetName() const override { return "sdl"; }
 
 #ifdef __ANDROID__
-	float GetDPIScale() override;
 	Dimension GetScreenSize() const override;
 #endif
 
