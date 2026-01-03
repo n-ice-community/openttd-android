@@ -1653,8 +1653,8 @@ struct GameOptionsWindow : Window {
 		this->SetWidgetDisabledState(WID_GO_GUI_FONT_AA, _fcsettings.prefer_sprite);
 #endif /* HAS_TRUETYPE_FONT */
 
-		this->SetWidgetDisabledState(WID_GO_MOUSE_CURSOR, _settings_client.gui.draw_mouse_cursor);
-		this->SetWidgetDisabledState(WID_GO_WINDOWS_TITLEBARS, _settings_client.gui.windows_titlebars);
+		this->SetWidgetLoweredState(WID_GO_MOUSE_CURSOR, _settings_client.gui.draw_mouse_cursor);
+		this->SetWidgetLoweredState(WID_GO_WINDOWS_TITLEBARS, _settings_client.gui.windows_titlebars);
 
 
 		this->SetWidgetDisabledState(WID_GO_BASE_GRF_DROPDOWN, _game_mode != GM_MENU);
