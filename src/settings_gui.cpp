@@ -677,6 +677,12 @@ struct GameOptionsWindow : Window {
 			case WID_GO_GUI_SCALE_BEVEL_TEXT:
 				return GetToggleString(STR_GAME_OPTIONS_GUI_SCALE_BEVELS, WID_GO_GUI_SCALE_BEVEL_BUTTON);
 
+			case WID_GO_MOUSE_CURSOR_TEXT:
+				return GetToggleString(STR_CONFIG_SETTING_MOUSE_CURSOR, WID_GO_MOUSE_CURSOR);
+
+			case WID_GO_WINDOWS_TITLEBARS_TEXT:
+				return GetToggleString(STR_CONFIG_SETTING_WINDOWS_TITLEBARS, WID_GO_WINDOWS_TITLEBARS);
+
 			case WID_GO_GUI_FONT_SPRITE_TEXT:
 				return GetToggleString(STR_GAME_OPTIONS_GUI_FONT_SPRITE, WID_GO_GUI_FONT_SPRITE);
 
@@ -1629,7 +1635,11 @@ struct GameOptionsWindow : Window {
 		this->SetWidgetLoweredState(WID_GO_VIDEO_ACCEL_BUTTON, _video_hw_accel);
 		this->SetWidgetDisabledState(WID_GO_REFRESH_RATE_DROPDOWN, _video_vsync);
 
-#ifndef __APPLE__
+#ifndef __ANDROID__
+		this->SetWidgetLoweredState(WID_GO_FULLSCREEN_BUTTON, _fullscreen);
+		this->SetWidgetDisabledState(WID_GO_FULLSCREEN_BUTTON, _fullscreen);
+#endif
+#if !defined __APPLE__ && !defined __ANDROID__
 		this->SetWidgetLoweredState(WID_GO_VIDEO_VSYNC_BUTTON, _video_hw_accel && _video_vsync);
 		this->SetWidgetDisabledState(WID_GO_VIDEO_VSYNC_BUTTON, !_video_hw_accel);
 #endif
@@ -1642,6 +1652,10 @@ struct GameOptionsWindow : Window {
 		this->SetWidgetLoweredState(WID_GO_GUI_FONT_AA, _fcsettings.global_aa);
 		this->SetWidgetDisabledState(WID_GO_GUI_FONT_AA, _fcsettings.prefer_sprite);
 #endif /* HAS_TRUETYPE_FONT */
+
+		this->SetWidgetDisabledState(WID_GO_MOUSE_CURSOR, _settings_client.gui.draw_mouse_cursor);
+		this->SetWidgetDisabledState(WID_GO_WINDOWS_TITLEBARS, _settings_client.gui.windows_titlebars);
+
 
 		this->SetWidgetDisabledState(WID_GO_BASE_GRF_DROPDOWN, _game_mode != GM_MENU);
 
@@ -1708,6 +1722,8 @@ static constexpr std::initializer_list<NWidgetPart> _nested_game_options_widgets
 	NWidget(WWT_PANEL, GAME_OPTIONS_BACKGROUND),
 		NWidget(NWID_HORIZONTAL, NWidContainerFlag::EqualSize), SetPadding(WidgetDimensions::unscaled.sparse),
 			NWidget(WWT_TEXTBTN, GAME_OPTIONS_BUTTON, WID_GO_TAB_GENERAL),  SetMinimalTextLines(2, 0), SetStringTip(STR_GAME_OPTIONS_TAB_GENERAL, STR_GAME_OPTIONS_TAB_GENERAL_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
+			NWidget(WWT_TEXTBTN, GAME_OPTIONS_BUTTON, WID_GO_TAB_INTERFACE), SetMinimalTextLines(2, 0), SetStringTip(STR_GAME_OPTIONS_TAB_INTERFACE, STR_GAME_OPTIONS_TAB_INTERFACE_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
+			NWidget(WWT_TEXTBTN, GAME_OPTIONS_BUTTON, WID_GO_TAB_FONTS), SetMinimalTextLines(2, 0), SetStringTip(STR_GAME_OPTIONS_TAB_FONTS, STR_GAME_OPTIONS_TAB_FONTS_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
 			NWidget(WWT_TEXTBTN, GAME_OPTIONS_BUTTON, WID_GO_TAB_GRAPHICS), SetMinimalTextLines(2, 0), SetStringTip(STR_GAME_OPTIONS_TAB_GRAPHICS, STR_GAME_OPTIONS_TAB_GRAPHICS_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
 			NWidget(WWT_TEXTBTN, GAME_OPTIONS_BUTTON, WID_GO_TAB_SOUND),    SetMinimalTextLines(2, 0), SetStringTip(STR_GAME_OPTIONS_TAB_SOUND, STR_GAME_OPTIONS_TAB_SOUND_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
 			NWidget(WWT_TEXTBTN, GAME_OPTIONS_BUTTON, WID_GO_TAB_SOCIAL),   SetMinimalTextLines(2, 0), SetStringTip(STR_GAME_OPTIONS_TAB_SOCIAL, STR_GAME_OPTIONS_TAB_SOCIAL_TOOLTIP), SetFill(1, 0), SetResize(1, 0),
@@ -1747,40 +1763,77 @@ static constexpr std::initializer_list<NWidgetPart> _nested_game_options_widgets
 				NWidget(NWID_SPACER), SetFill(1, 1), SetResize(1, 1), // Allows this pane to resize
 			EndContainer(),
 
+			/* Interface tab */
+			NWidget(NWID_VERTICAL), SetPadding(WidgetDimensions::unscaled.sparse), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
+				NWidget(WWT_FRAME, COLOUR_GREY), SetStringTip(STR_GAME_OPTIONS_GUI_SCALE_FRAME, STR_NULL), SetTextStyle(GAME_OPTIONS_FRAME),
+					NWidget(WWT_EMPTY, INVALID_COLOUR, WID_GO_GUI_SCALE), SetMinimalTextLines(1, 12 + WidgetDimensions::unscaled.vsep_normal, FS_SMALL), SetFill(1, 0), SetResize(1, 0), SetToolTip(STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP),
+				EndContainer(),
+				NWidget(WWT_FRAME, COLOUR_GREY), SetStringTip(STR_CONFIG_SETTING_BUTTON_SIZE, STR_NULL), SetTextStyle(GAME_OPTIONS_FRAME),
+					NWidget(WWT_EMPTY, INVALID_COLOUR, WID_GO_GUI_BUTTON_RATIO), SetMinimalTextLines(1, 12 + WidgetDimensions::unscaled.vsep_normal, FS_SMALL), SetFill(1, 0), SetResize(1, 0), SetToolTip(STR_NULL),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_SCALE_AUTO), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP),
+					NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_SCALE_AUTO_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_SCALE_BEVEL_BUTTON), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_SCALE_BEVELS_TOOLTIP),
+					NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_SCALE_BEVEL_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_MOUSE_CURSOR), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_CONFIG_SETTING_MOUSE_CURSOR_HELPTEXT),
+					NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_MOUSE_CURSOR_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_WINDOWS_TITLEBARS), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_CONFIG_SETTING_WINDOWS_TITLEBARS_HELPTEXT),
+					NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_WINDOWS_TITLEBARS_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
+				EndContainer(),
+			EndContainer(),
+
+			/* Fonts tab */
+			NWidget(NWID_VERTICAL), SetPadding(WidgetDimensions::unscaled.sparse), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
+#ifdef HAS_TRUETYPE_FONT
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_FONT_SPRITE), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP),
+					NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_FONT_SPRITE_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_FONT_DEFAULT), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_FONT_DEFAULT_TOOLTIP),
+					NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_FONT_DEFAULT_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
+					NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_FONT_AA), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP),
+					NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_FONT_AA_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
+				EndContainer(),
+#endif /* HAS_TRUETYPE_FONT */
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
+					NWidget(WWT_TEXT, INVALID_COLOUR), SetTextStyle(GAME_OPTIONS_LABEL, FS_NORMAL), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_NORMAL, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_L), SetArrowWidgetTypeTip(AWV_DECREASE) ,
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_NORMAL_FONT_R), SetArrowWidgetTypeTip(AWV_INCREASE),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
+					NWidget(WWT_TEXT, INVALID_COLOUR), SetTextStyle(GAME_OPTIONS_LABEL, FS_SMALL), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_SMALL, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_SMALL_FONT_L), SetArrowWidgetTypeTip(AWV_DECREASE),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_SMALL_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_SMALL_FONT_R), SetArrowWidgetTypeTip(AWV_INCREASE),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
+					NWidget(WWT_TEXT, INVALID_COLOUR), SetTextStyle(GAME_OPTIONS_LABEL, FS_LARGE), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_LARGE, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_LARGE_FONT_L), SetArrowWidgetTypeTip(AWV_DECREASE),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_LARGE_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_LARGE_FONT_R), SetArrowWidgetTypeTip(AWV_INCREASE),
+				EndContainer(),
+				NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
+					NWidget(WWT_TEXT, INVALID_COLOUR), SetTextStyle(GAME_OPTIONS_LABEL, FS_MONO), SetMinimalSize(0, 12), SetFill(1, 0), SetStringTip(STR_GAME_OPTIONS_FONT_MONO, STR_NULL),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_MONO_FONT_L), SetArrowWidgetTypeTip(AWV_DECREASE),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_GO_MONO_FONT_VALUE), SetStringTip(STR_JUST_INT, STR_NULL), SetTextStyle(TC_WHITE),
+					NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_GO_MONO_FONT_R), SetArrowWidgetTypeTip(AWV_INCREASE),
+				EndContainer(),
+			EndContainer(),
+
 			/* Graphics tab */
 			NWidget(NWID_VERTICAL), SetPadding(WidgetDimensions::unscaled.sparse_resize),
-				NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
-					NWidget(WWT_FRAME, GAME_OPTIONS_BACKGROUND), SetStringTip(STR_GAME_OPTIONS_INTERFACE), SetTextStyle(GAME_OPTIONS_FRAME),
-						NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_normal, 0),
-							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
-								NWidget(WWT_TEXT, INVALID_COLOUR), SetStringTip(STR_GAME_OPTIONS_GUI_SCALE_FRAME), SetTextStyle(GAME_OPTIONS_LABEL),
-								NWidget(WWT_EMPTY, INVALID_COLOUR, WID_GO_GUI_SCALE), SetMinimalTextLines(1, 12 + WidgetDimensions::unscaled.vsep_normal, FS_SMALL), SetFill(1, 0), SetResize(1, 0), SetToolTip(STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP),
-							EndContainer(),
-							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
-								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_SCALE_AUTO), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP),
-								NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_SCALE_AUTO_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
-							EndContainer(),
-							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
-								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_SCALE_BEVEL_BUTTON), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_SCALE_BEVELS_TOOLTIP),
-								NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_SCALE_BEVEL_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
-							EndContainer(),
-#ifdef HAS_TRUETYPE_FONT
-							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
-								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_FONT_SPRITE), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP),
-								NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_FONT_SPRITE_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
-							EndContainer(),
-							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
-								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_FONT_DEFAULT), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_FONT_DEFAULT_TOOLTIP),
-								NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_FONT_DEFAULT_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
-							EndContainer(),
-							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
-								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_GUI_FONT_AA), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP),
-								NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_GUI_FONT_AA_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
-							EndContainer(),
-#endif /* HAS_TRUETYPE_FONT */
-						EndContainer(),
-					EndContainer(),
-
+				NWidget(NWID_HORIZONTAL_LTR), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
 					NWidget(WWT_FRAME, GAME_OPTIONS_BACKGROUND), SetStringTip(STR_GAME_OPTIONS_DISPLAY), SetTextStyle(GAME_OPTIONS_FRAME),
 						NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_normal, 0),
 							NWidget(NWID_HORIZONTAL, NWidContainerFlag::EqualSize), SetPIP(0, WidgetDimensions::unscaled.hsep_normal, 0),
@@ -1791,6 +1844,7 @@ static constexpr std::initializer_list<NWidgetPart> _nested_game_options_widgets
 								NWidget(WWT_TEXT, INVALID_COLOUR), SetFill(1, 0), SetResize(1, 0), SetStringTip(STR_GAME_OPTIONS_REFRESH_RATE), SetTextStyle(GAME_OPTIONS_LABEL),
 								NWidget(WWT_DROPDOWN, GAME_OPTIONS_BUTTON, WID_GO_REFRESH_RATE_DROPDOWN), SetFill(1, 0), SetToolTip(STR_GAME_OPTIONS_REFRESH_RATE_TOOLTIP),
 							EndContainer(),
+#ifndef __ANDROID__
 							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
 								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_FULLSCREEN_BUTTON), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP),
 								NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_FULLSCREEN_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
@@ -1799,7 +1853,8 @@ static constexpr std::initializer_list<NWidgetPart> _nested_game_options_widgets
 								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_VIDEO_ACCEL_BUTTON), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP),
 								NWidget(WWT_TEXT, INVALID_COLOUR,WID_GO_VIDEO_ACCEL_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
 							EndContainer(),
-#ifndef __APPLE__
+#endif
+#if !defined __APPLE__ && !defined __ANDROID__
 							NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
 								NWidget(WWT_BOOLBTN, GAME_OPTIONS_BACKGROUND, WID_GO_VIDEO_VSYNC_BUTTON), SetAlternateColourTip(GAME_OPTIONS_BUTTON, STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP),
 								NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_VIDEO_VSYNC_TEXT), SetFill(1, 0), SetResize(1, 0), SetTextStyle(GAME_OPTIONS_LABEL),
@@ -1835,8 +1890,8 @@ static constexpr std::initializer_list<NWidgetPart> _nested_game_options_widgets
 
 			/* Sound/Music tab */
 			NWidget(NWID_VERTICAL), SetPadding(WidgetDimensions::unscaled.sparse_resize),
-				NWidget(NWID_VERTICAL), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
-					NWidget(WWT_FRAME, GAME_OPTIONS_BACKGROUND), SetStringTip(STR_GAME_OPTIONS_VOLUME), SetTextStyle(GAME_OPTIONS_FRAME), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
+				NWidget(NWID_HORIZONTAL_LTR), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0),
+					NWidget(WWT_FRAME, GAME_OPTIONS_BACKGROUND), SetStringTip(STR_GAME_OPTIONS_VOLUME), SetTextStyle(GAME_OPTIONS_FRAME), SetPIP(0, WidgetDimensions::unscaled.vsep_wide, 0), SetFill(1, 0),
 						NWidget(NWID_HORIZONTAL), SetPIP(0, WidgetDimensions::unscaled.hsep_wide, 0),
 							NWidget(WWT_TEXT, INVALID_COLOUR, WID_GO_TEXT_SFX_VOLUME), SetStringTip(STR_GAME_OPTIONS_SFX_VOLUME), SetTextStyle(GAME_OPTIONS_LABEL),
 							NWidget(WWT_EMPTY, INVALID_COLOUR, WID_GO_BASE_SFX_VOLUME), SetMinimalTextLines(1, 12 + WidgetDimensions::unscaled.vsep_normal, FS_SMALL), SetFill(1, 0), SetResize(1, 0), SetToolTip(STR_MUSIC_TOOLTIP_DRAG_SLIDERS_TO_SET_MUSIC),
