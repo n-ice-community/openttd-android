@@ -278,7 +278,7 @@ static constexpr std::initializer_list<NWidgetPart> _nested_save_dialog_widgets 
 			NWidget(WWT_PANEL, COLOUR_GREY, WID_SL_DETAILS), SetResize(1, 1), SetFill(1, 1),
 			EndContainer(),
 			NWidget(NWID_HORIZONTAL),
-				NWidget(WWT_PANEL, COLOUR_GREY), SetResize(1, 0), SetFill(1, 1),
+				NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_SL_SAVE_NETWORK_BUTTON), SetStringTip(STR_SAVELOAD_SAVE_NETWORK_BUTTON, STR_SAVELOAD_SAVE_NETWORK_TOOLTIP), SetFill(1, 1), SetResize(1, 0),
 				EndContainer(),
 				NWidget(WWT_RESIZEBOX, COLOUR_GREY),
 			EndContainer(),
