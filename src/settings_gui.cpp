@@ -1114,13 +1114,16 @@ struct GameOptionsWindow : Window {
 			case WID_GO_MONO_FONT_L:
 			case WID_GO_MONO_FONT_R: {
 				int index = widget - WID_GO_NORMAL_FONT_L;
-				FontSize fs = static_cast<FontSize>(Clamp((widget - WID_GO_NORMAL_FONT_L) / 2, FS_BEGIN, FS_END));
+				FontSize fs = static_cast<FontSize>(Clamp(index / 2, FS_BEGIN, FS_END));
 
 				if (index % 2 == 0) {
 					this->font_sizes[fs] = Clamp(this->font_sizes[fs] - 1, 0, 200);
 				} else {
 					this->font_sizes[fs] = Clamp(this->font_sizes[fs] + 1, 0, 200);
 				}
+
+				this->gui_scale_changed = true;
+				this->SetWidgetDirty(widget);
 				break;
 			}
 
@@ -1132,6 +1135,7 @@ struct GameOptionsWindow : Window {
 				this->query_widget = widget;
 				FontSize fs = static_cast<FontSize>(index);
 				ShowQueryString(GetString(STR_JUST_INT, this->font_sizes[fs]), STR_GAME_OPTIONS_FONT_NORMAL + index, 3, this, CS_NUMERAL, QueryStringFlags{});
+				this->SetWidgetDirty(widget);
 				break;
 			}
 
@@ -1171,6 +1175,7 @@ struct GameOptionsWindow : Window {
 
 			case WID_GO_GUI_BUTTON_RATIO:
 				if (ClickSliderWidget(this->GetWidget<NWidgetBase>(widget)->GetCurrentRect(), pt, MIN_INTERFACE_SCALE, MAX_INTERFACE_SCALE, _ctrl_pressed ? 0 : SCALE_NMARKS, this->button_ratio)) {
+					this->gui_scale_changed = true;
 					this->SetWidgetDirty(widget);
 				}
 
@@ -1497,6 +1502,16 @@ struct GameOptionsWindow : Window {
 
 		this->gui_scale_changed = false;
 		_gui_scale_cfg = this->gui_scale;
+		_button_ratio_cfg = this->button_ratio;
+
+		for (FontSize fs = FS_BEGIN; fs < FS_END; fs++) {
+			FontCacheSubSetting *fc = GetFontCacheSubSetting(fs);
+			if (this->font_sizes[fs] != fc->size) {
+				SetFont(fs, fc->font, this->font_sizes[fs]);
+				return;
+			}
+		}
+
 
 		if (AdjustGUIZoom(false)) {
 			ReInitAllWindows(true);
