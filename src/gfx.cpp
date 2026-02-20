@@ -1824,6 +1824,8 @@ void UpdateGUIZoom()
  */
 bool AdjustGUIZoom(bool automatic)
 {
+	if (VideoDriver::GetInstance() == nullptr) return false;
+
 	ZoomLevel old_gui_zoom = _gui_zoom;
 	ZoomLevel old_font_zoom = _font_zoom;
 	int old_scale = _gui_scale;

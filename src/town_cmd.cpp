@@ -2146,7 +2146,7 @@ static CommandCost TownCanBePlacedHere(TileIndex tile, bool check_surrounding)
 			switch (GetTileType(t)) {
 				case MP_CLEAR:
 					/* Don't allow rough tiles, as they are likely wetlands. */
-					if (GetClearDensity(t) == CLEAR_ROUGH) continue;
+					if (GetClearGround(t) == CLEAR_ROUGH) continue;
 					break;
 
 				case MP_TREES:
@@ -4107,10 +4107,10 @@ CommandCost CheckforTownRating(DoCommandFlags flags, Town *t, TownRatingCheckTyp
 template <>
 Town::SuppliedHistory SumHistory(std::span<const Town::SuppliedHistory> history)
 {
-	uint32_t production = std::accumulate(std::begin(history), std::end(history), 0, [](uint32_t r, const auto &s) { return r + s.production; });
-	uint32_t transported = std::accumulate(std::begin(history), std::end(history), 0, [](uint32_t r, const auto &s) { return r + s.transported; });
+	uint64_t production = std::accumulate(std::begin(history), std::end(history), 0, [](uint64_t r, const auto &s) { return r + s.production; });
+	uint64_t transported = std::accumulate(std::begin(history), std::end(history), 0, [](uint64_t r, const auto &s) { return r + s.transported; });
 	auto count = std::size(history);
-	return {.production = ClampTo<uint16_t>(production / count), .transported = ClampTo<uint16_t>(transported / count)};
+	return {.production = ClampTo<uint32_t>(production / count), .transported = ClampTo<uint32_t>(transported / count)};
 }
 
 static const IntervalTimer<TimerGameEconomy> _economy_towns_monthly({TimerGameEconomy::MONTH, TimerGameEconomy::Priority::TOWN}, [](auto)
