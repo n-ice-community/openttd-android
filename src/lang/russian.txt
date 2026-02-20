@@ -1207,7 +1207,7 @@ STR_GAME_OPTIONS_LANGUAGE_TOOLTIP                               :Язык пол
 STR_GAME_OPTIONS_LANGUAGE_PERCENTAGE                            :{STRING} ({NUM}% перевед{P ён ено ено})
 
 STR_GAME_OPTIONS_FULLSCREEN                                     :Полноэкранный режим
-STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :Включить/отключить полноэкранный режим
+STR_GAME_OPTIONS_FULLSCREEN_TOOLTIP                             :Включить полноэкранный режим
 
 STR_GAME_OPTIONS_RESOLUTION                                     :Разрешение экрана
 STR_GAME_OPTIONS_RESOLUTION_TOOLTIP                             :Выбор разрешения экрана
@@ -1215,11 +1215,11 @@ STR_GAME_OPTIONS_RESOLUTION_OTHER                               :Другое
 STR_GAME_OPTIONS_RESOLUTION_ITEM                                :{NUM}x{NUM}
 
 STR_GAME_OPTIONS_VIDEO_ACCELERATION                             :Аппаратное ускорение
-STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :Включить/отключить аппаратное ускорение. После изменения настройки игру потребуется перезапустить.
+STR_GAME_OPTIONS_VIDEO_ACCELERATION_TOOLTIP                     :Использовать аппаратное ускорение (после изменения настройки игру потребуется перезапустить)
 STR_GAME_OPTIONS_VIDEO_ACCELERATION_RESTART                     :{WHITE}Эта настройка будет применена только после перезапуска игры
 
 STR_GAME_OPTIONS_VIDEO_VSYNC                                    :Вертикальная синхронизация
-STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :Включить/отключить вертикальную синхронизацию. После изменения настройки игру потребуется перезапустить. Работает только при включённом аппаратном ускорении.
+STR_GAME_OPTIONS_VIDEO_VSYNC_TOOLTIP                            :Включить вертикальную синхронизацию (после изменения настройки игру потребуется перезапустить; работает только при включённом аппаратном ускорении)
 
 STR_GAME_OPTIONS_VIDEO_DRIVER_INFO                              :Видеодрайвер: {STRING}
 
@@ -1228,15 +1228,15 @@ STR_GAME_OPTIONS_INTERFACE                                      :Интерфе�
 STR_GAME_OPTIONS_GUI_SCALE_FRAME                                :Масштаб интерфейса
 STR_GAME_OPTIONS_GUI_SCALE_TOOLTIP                              :Изменяйте масштаб интерфейса с помощью ползунка. Удерживайте Ctrl для плавной настройки.
 STR_GAME_OPTIONS_GUI_SCALE_AUTO                                 :Автоопределение
-STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :Нажмите для автоматической установки масштаба интерфейса
+STR_GAME_OPTIONS_GUI_SCALE_AUTO_TOOLTIP                         :Установить масштаб интерфейса автоматически
 
 STR_GAME_OPTIONS_GUI_SCALE_BEVELS                               :Рельефные элементы
 STR_GAME_OPTIONS_GUI_SCALE_BEVELS_TOOLTIP                       :Масштабировать рельефные элементы интерфейса
 
 STR_GAME_OPTIONS_GUI_FONT_SPRITE                                :Использовать растровый шрифт
-STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP                        :Включить/отключить использование классического растрового шрифта фиксированного размера
+STR_GAME_OPTIONS_GUI_FONT_SPRITE_TOOLTIP                        :Использовать классический растровый шрифт фиксированного размера
 STR_GAME_OPTIONS_GUI_FONT_AA                                    :Сглаживание шрифтов
-STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP                            :Включить/отключить сглаживание масштабируемых шрифтов
+STR_GAME_OPTIONS_GUI_FONT_AA_TOOLTIP                            :Сглаживать масштабируемые шрифты
 
 STR_GAME_OPTIONS_GUI_SCALE_MARK                                 :{DECIMAL}x
 
@@ -1260,7 +1260,7 @@ STR_GAME_OPTIONS_BASE_GRF_TOOLTIP                               :Выбор ос
 STR_GAME_OPTIONS_BASE_GRF_DESCRIPTION_TOOLTIP                   :Дополнительная информация о выбранном графическом пакете
 
 STR_GAME_OPTIONS_BASE_SFX                                       :Основной звуковой пакет
-STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :Выбор основного пакета звуковых эффектов (его нельзя сменить в игре; только в главном меню)
+STR_GAME_OPTIONS_BASE_SFX_TOOLTIP                               :Выбор основного пакета звуковых эффектов
 STR_GAME_OPTIONS_BASE_SFX_DESCRIPTION_TOOLTIP                   :Дополнительная информация о выбранном пакете звуковых эффектов
 
 STR_GAME_OPTIONS_BASE_MUSIC                                     :Основной музыкальный пакет
@@ -2355,7 +2355,7 @@ STR_CONFIG_ERROR                                                :{WHITE}Ошиб
 STR_CONFIG_ERROR_ARRAY                                          :{WHITE}... ошибка в массиве «{STRING}»
 STR_CONFIG_ERROR_INVALID_VALUE                                  :{WHITE}... неверное значение «{STRING}» параметра «{STRING}»
 STR_CONFIG_ERROR_TRAILING_CHARACTERS                            :{WHITE}... лишние символы после «{STRING}»
-STR_CONFIG_ERROR_DUPLICATE_GRFID                                :{WHITE}... игнорируется NewGRF «{STRING}»: у него такой же идентификатор GRF, как и у «{STRING}»
+STR_CONFIG_ERROR_DUPLICATE_GRFID                                :{WHITE}... NewGRF «{STRING}» игнорируется: у него такой же идентификатор NewGRF, как и у «{STRING}»
 STR_CONFIG_ERROR_INVALID_GRF                                    :{WHITE}... игнорируется неверный NewGRF «{STRING}»: {STRING}
 STR_CONFIG_ERROR_INVALID_GRF_NOT_FOUND                          :не найден
 STR_CONFIG_ERROR_INVALID_GRF_UNSAFE                             :использование в качестве статического небезопасно
@@ -3795,7 +3795,7 @@ STR_NEWGRF_ERROR_INVALID_PARAMETER                              :Неверны�
 STR_NEWGRF_ERROR_LOAD_BEFORE                                    :{1:STRING} должен быть загружен перед {2:STRING}.
 STR_NEWGRF_ERROR_LOAD_AFTER                                     :{1:STRING} должен быть загружен после {2:STRING}.
 STR_NEWGRF_ERROR_OTTD_VERSION_NUMBER                            :Для {1:STRING} требуется OpenTTD версии {2:STRING} или выше
-STR_NEWGRF_ERROR_AFTER_TRANSLATED_FILE                          :файл GRF, который им переводится.
+STR_NEWGRF_ERROR_AFTER_TRANSLATED_FILE                          :файл NewGRF, который им переводится
 STR_NEWGRF_ERROR_TOO_MANY_NEWGRFS_LOADED                        :Загружено слишком много модулей NewGRF
 STR_NEWGRF_ERROR_STATIC_GRF_CAUSES_DESYNC                       :Загрузка {1:STRING} в качестве статического NewGRF с {2:STRING} может вызвать рассинхронизацию
 STR_NEWGRF_ERROR_UNEXPECTED_SPRITE                              :Неверный спрайт (спрайт {3:NUM})
@@ -3804,7 +3804,7 @@ STR_NEWGRF_ERROR_INVALID_ID                                     :Попытка 
 STR_NEWGRF_ERROR_CORRUPT_SPRITE                                 :{YELLOW}{STRING} содержит повреждённый спрайт. Все повреждённые спрайты будут показаны красным знаком вопроса (?).
 STR_NEWGRF_ERROR_MULTIPLE_ACTION_8                              :Содержит несколько блоков «Action 8» (спрайт {3:NUM})
 STR_NEWGRF_ERROR_READ_BOUNDS                                    :Чтение за концом псевдо-спрайта (спрайт {3:NUM})
-STR_NEWGRF_ERROR_GRM_FAILED                                     :Запрошенные ресурсы GRF недоступны (спрайт {3:NUM})
+STR_NEWGRF_ERROR_GRM_FAILED                                     :Запрошенные ресурсы NewGRF недоступны (спрайт {3:NUM})
 STR_NEWGRF_ERROR_FORCEFULLY_DISABLED                            :{1:STRING} был отключён из-за {2:STRING}
 STR_NEWGRF_ERROR_INVALID_SPRITE_LAYOUT                          :Недопустимый/неизвестный формат расположения спрайтов (спрайт {3:NUM})
 STR_NEWGRF_ERROR_LIST_PROPERTY_TOO_LONG                         :Слишком много элементов в списке значений (спрайт {3:NUM}, свойство {4:HEX})
@@ -3814,13 +3814,13 @@ STR_NEWGRF_ERROR_INDPROD_CALLBACK                               :Неверна�
 STR_NEWGRF_POPUP_CAUTION_CAPTION                                :{WHITE}Осторожно!
 STR_NEWGRF_CONFIRMATION_TEXT                                    :{YELLOW}Вы собираетесь внести изменения в запущенную игру. Это может привести к нестабильной работе или к аварийному завершению OpenTTD. В этом случае не надо присылать отчёты об ошибках.{}Вы действительно хотите это сделать?
 
-STR_NEWGRF_DUPLICATE_GRFID                                      :{WHITE}Невозможно добавить файл: дублируются GRF ID
-STR_NEWGRF_COMPATIBLE_LOADED                                    :{ORANGE}Соответствующий файл не найден (загружен совместимый GRF)
+STR_NEWGRF_DUPLICATE_GRFID                                      :{WHITE}Невозможно добавить файл: дублируются NewGRF ID
+STR_NEWGRF_COMPATIBLE_LOADED                                    :{ORANGE}Соответствующий файл не найден (загружен совместимый NewGRF)
 STR_NEWGRF_TOO_MANY_NEWGRFS                                     :{WHITE}Не удалось добавить файл: слишком много модулей NewGRF
 
-STR_NEWGRF_COMPATIBLE_LOAD_WARNING                              :{WHITE}Вместо отсутствующих загружены совместимые файлы NewGRF
+STR_NEWGRF_COMPATIBLE_LOAD_WARNING                              :{WHITE}Вместо отсутствующих файлов загружены совместимые модули NewGRF
 STR_NEWGRF_DISABLED_WARNING                                     :{WHITE}Отсутствующие файлы NewGRF были отключены
-STR_NEWGRF_UNPAUSE_WARNING_TITLE                                :{YELLOW}Недостающие GRF файлы
+STR_NEWGRF_UNPAUSE_WARNING_TITLE                                :{YELLOW}Отсутствующие файлы NewGRF
 STR_NEWGRF_UNPAUSE_WARNING                                      :{WHITE}Снятие с паузы может привести к ошибке OpenTTD.{}Вы хотите запустить игру?
 
 # NewGRF status
