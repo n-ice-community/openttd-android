@@ -400,7 +400,7 @@ static void ResetAllSettingsConfirmationCallback(Window *w, bool confirmed)
 }
 
 struct GameOptionsWindow : Window {
-	WidgetID query_widget = 0;
+	WidgetID query_widget{};
 	static inline GameSettings *settings_ptr; ///< Pointer to the game settings being displayed and modified.
 
 	SettingEntry *valuewindow_entry = nullptr; ///< If non-nullptr, pointer to setting for which a value-entering window has been opened.
@@ -1135,7 +1135,6 @@ struct GameOptionsWindow : Window {
 				this->query_widget = widget;
 				FontSize fs = static_cast<FontSize>(index);
 				ShowQueryString(GetString(STR_JUST_INT, this->font_sizes[fs]), STR_GAME_OPTIONS_FONT_NORMAL + index, 3, this, CS_NUMERAL, QueryStringFlags{});
-				this->SetWidgetDirty(widget);
 				break;
 			}
 
@@ -1455,6 +1454,7 @@ struct GameOptionsWindow : Window {
 				if (min_val < 0) charset_filter = CS_NUMERAL_SIGNED; // special case, also allow '-' sign for negative input
 
 				this->valuewindow_entry = pe;
+				this->query_widget = INVALID_WIDGET;
 				/* Limit string length to 14 so that MAX_INT32 * max currency rate doesn't exceed MAX_INT64. */
 				ShowQueryString(GetString(STR_JUST_INT, value64), STR_CONFIG_SETTING_QUERY_CAPTION, 15, this, charset_filter, QueryStringFlag::EnableDefault);
 			}
@@ -1476,7 +1476,19 @@ struct GameOptionsWindow : Window {
 		/* The user pressed cancel */
 		if (!str.has_value()) return;
 
+		switch(this->query_widget) {
+			case WID_GO_NORMAL_FONT_VALUE:
+			case WID_GO_SMALL_FONT_VALUE:
+			case WID_GO_LARGE_FONT_VALUE:
+			case WID_GO_MONO_FONT_VALUE:
+				int index = Clamp(this->query_widget -  WID_GO_NORMAL_FONT_VALUE, FS_BEGIN, FS_END);
+				this->font_sizes[index] = Clamp(ParseInteger<uint32_t>(str.value()).value_or(this->font_sizes[index]), 0, 200);
+				this->SetDirty();
+				return;
+		}
+
 		assert(this->valuewindow_entry != nullptr);
+
 		const IntSettingDesc *sd = this->valuewindow_entry->setting;
 
 		int32_t value;
